@@ -1,25 +1,24 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { LayoutShell } from "@/components/layout/LayoutShell";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { useRole } from "@/context/RoleContext";
+import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
+import { TabBar } from "@/components/shared/TabBar";
 import { StatusPill } from "@/components/shared/StatusPill";
+import { CountdownTimer } from "@/components/shared/CountdownTimer";
+import { MatchProgressBar } from "@/components/shared/MatchProgressBar";
+import { SupplierProfileSidebar } from "@/components/rfq/SupplierProfileSidebar";
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  FileText,
-  Search,
-  Filter,
-  Plus,
-  Clock,
-  Building2,
-  ArrowUpRight
-} from "lucide-react";
+import { FileText, Search, Plus, Building2, Truck, Flag } from "lucide-react";
 import { rfqs, formatCurrency, formatVolume, type RFQ } from "@/data/mockData";
 
 export default function RFQs() {
+  const { role } = useRole();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<'all' | 'open' | 'closed' | 'awarded'>('all');
+  const [activeTab, setActiveTab] = useState('live');
 
   const filteredRfqs = rfqs.filter(rfq => {
     const matchesSearch = rfq.commodity.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -28,140 +27,148 @@ export default function RFQs() {
     return matchesSearch && matchesStatus;
   });
 
+  const tabs = [
+    { id: 'live', label: 'LIVE RFQs' },
+    { id: 'history', label: 'HISTORY' },
+    { id: 'templates', label: 'TEMPLATES' },
+  ];
+
   const columns = [
     {
-      key: 'id',
-      header: 'RFQ ID',
+      key: 'buyerCompany',
+      header: 'COMPANY',
       render: (rfq: RFQ) => (
-        <Link to={`/rfqs/${rfq.id}`} className="font-mono text-primary hover:underline">
-          {rfq.id}
-        </Link>
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🇺🇸</span>
+          <span className="font-medium text-sm">{rfq.buyerCompany}</span>
+        </div>
       )
     },
     {
       key: 'commodity',
-      header: 'Commodity',
-      render: (rfq: RFQ) => (
-        <div>
-          <p className="font-medium">{rfq.commodity}</p>
-          <p className="text-xs text-muted-foreground">{rfq.grade} • {rfq.requiredPurity}</p>
-        </div>
-      )
-    },
-    {
-      key: 'buyerCompany',
-      header: 'Buyer',
-      render: (rfq: RFQ) => (
-        <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <span>{rfq.buyerCompany}</span>
-        </div>
-      )
+      header: 'PRODUCT',
+      render: (rfq: RFQ) => <span className="text-sm">{rfq.commodity}</span>
     },
     {
       key: 'volume',
-      header: 'Volume',
-      className: 'text-right',
-      render: (rfq: RFQ) => (
-        <span className="font-mono font-bold">{formatVolume(rfq.volume, rfq.unit)}</span>
-      )
-    },
-    {
-      key: 'targetPrice',
-      header: 'Target Price',
-      className: 'text-right',
-      render: (rfq: RFQ) => (
-        <span className="font-mono">{formatCurrency(rfq.targetPrice)}/{rfq.unit}</span>
-      )
-    },
-    {
-      key: 'bidsCount',
-      header: 'Bids',
-      className: 'text-center',
-      render: (rfq: RFQ) => (
-        <span className="px-2 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-          {rfq.bidsCount}
-        </span>
-      )
+      header: 'QUANTITY',
+      render: (rfq: RFQ) => <span className="font-mono text-sm">{formatVolume(rfq.volume, rfq.unit)}</span>
     },
     {
       key: 'expiresAt',
-      header: 'Expires',
-      render: (rfq: RFQ) => (
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <Clock className="h-3.5 w-3.5" />
-          {new Date(rfq.expiresAt).toLocaleDateString()}
-        </div>
-      )
+      header: 'REMAINING',
+      render: (rfq: RFQ) => <CountdownTimer expiresAt={rfq.expiresAt} />
     },
     {
-      key: 'status',
-      header: 'Status',
-      className: 'text-right',
-      render: (rfq: RFQ) => <StatusPill status={rfq.status} />
-    }
+      key: 'match',
+      header: 'MATCH',
+      render: () => <MatchProgressBar percentage={Math.floor(Math.random() * 60) + 30} className="w-24" />
+    },
+    {
+      key: 'targetPrice',
+      header: 'VALUE',
+      render: (rfq: RFQ) => <span className="font-mono font-bold">{formatCurrency(rfq.targetPrice * rfq.volume)}</span>
+    },
+    {
+      key: 'escrow',
+      header: 'ESCROW',
+      render: () => <span className="text-xs text-muted-foreground">@{Math.floor(Math.random() * 5) + 1}H {Math.floor(Math.random() * 59)}M</span>
+    },
   ];
 
   return (
     <LayoutShell>
       <div className="space-y-6 animate-fade-in">
-        <PageHeader
-          title="Live RFQs"
-          description="Request for quotes from verified buyers"
-          icon={FileText}
-          actions={
-            <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90">
-              <Plus className="h-4 w-4 mr-2" />
-              Create RFQ
-            </Button>
-          }
-        />
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: 'Open RFQs', value: rfqs.filter(r => r.status === 'open').length, color: 'text-primary' },
-            { label: 'Total Bids', value: rfqs.reduce((acc, r) => acc + r.bidsCount, 0), color: 'text-foreground' },
-            { label: 'Awarded', value: rfqs.filter(r => r.status === 'awarded').length, color: 'text-success' },
-            { label: 'Avg. Bids/RFQ', value: (rfqs.reduce((acc, r) => acc + r.bidsCount, 0) / rfqs.length).toFixed(1), color: 'text-accent' },
-          ].map((stat) => (
-            <div key={stat.label} className="glass-panel rounded-lg p-4">
-              <p className="text-sm text-muted-foreground">{stat.label}</p>
-              <p className={`text-2xl font-bold font-mono tabular-nums ${stat.color}`}>{stat.value}</p>
-            </div>
-          ))}
+        <BreadcrumbNav items={[{ label: 'PLATFORM' }, { label: 'TRADING DESK' }, { label: 'RFQs' }]} />
+        
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">Live RFQs</h1>
+          <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
+            <Plus className="h-4 w-4 mr-2" />
+            Create RFQ
+          </Button>
         </div>
 
-        {/* Filters */}
-        <div className="glass-panel rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search RFQs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-secondary/50 border-border/50"
+        <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+
+        <div className="grid lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3 space-y-4">
+            {/* Filters */}
+            <div className="glass-panel rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="relative flex-1 sm:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search RFQs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-secondary/50 border-border/50"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                {(['all', 'open', 'awarded', 'closed'] as const).map((status) => (
+                  <Button
+                    key={status}
+                    variant={filterStatus === status ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setFilterStatus(status)}
+                    className="capitalize text-xs"
+                  >
+                    {status}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <DataTable columns={columns} data={filteredRfqs} />
+
+            {/* Bottom Status Cards */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="glass-panel rounded-lg p-4 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-warning/10">
+                  <Truck className="h-5 w-5 text-warning" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Logistics Fulfillment</p>
+                  <p className="text-xs text-muted-foreground">Pending dispatch for Order #77421 (Santiago Port)</p>
+                </div>
+              </div>
+              <div className="glass-panel rounded-lg p-4 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-destructive/10">
+                  <Flag className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Pending Settlements</p>
+                  <p className="text-xs text-muted-foreground">3 Escrow releases awaiting final verification</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Supplier Profile Sidebar */}
+          {role === 'supplier' && (
+            <div className="lg:col-span-1">
+              <SupplierProfileSidebar
+                name="Diego Santos"
+                title="Chief Operating Officer"
+                company="LithiumCorp"
+                verificationTier="gold"
+                kycVerified={true}
+                purityGrade={96.5}
+                recycledMaterial="Up to 10%"
+                trustScore={97}
+                pricePerMT={66500}
+                origin="Chile"
+                originFlag="🇨🇱"
+                certifications={['ISO 9001', 'ISO 14001', 'RMI-RMAP', 'DCC']}
+                verificationPipeline={[
+                  { name: 'Site Inspection 2024', status: 'approved' },
+                  { name: 'RMI Sustainability Audit', status: 'in_review' },
+                  { name: 'LME Grade Registration', status: 'active' },
+                ]}
               />
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {(['all', 'open', 'awarded', 'closed'] as const).map((status) => (
-              <Button
-                key={status}
-                variant={filterStatus === status ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setFilterStatus(status)}
-                className="capitalize"
-              >
-                {status}
-              </Button>
-            ))}
-          </div>
+          )}
         </div>
-
-        {/* Table */}
-        <DataTable columns={columns} data={filteredRfqs} />
       </div>
     </LayoutShell>
   );
