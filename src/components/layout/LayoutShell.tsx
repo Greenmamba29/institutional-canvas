@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useRole } from "@/context/RoleContext";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { GMVSummaryPanel } from "./GMVSummaryPanel";
+import { NotificationDropdown } from "./NotificationDropdown";
 import { CountBadge } from "@/components/shared/CountBadge";
 import { VerificationBadge } from "@/components/shared/VerificationBadge";
 import {
@@ -16,17 +17,14 @@ import {
   ChevronRight,
   Menu,
   X,
-  Bell,
   Search,
   Settings,
   Sparkles,
-  Activity,
   ShieldCheck,
   Users,
   Package,
   MessageSquare,
   Plus,
-  ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -302,12 +300,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
                 <span className="text-[10px] font-semibold text-success tracking-wider">LIVE MARKET STATUS: NORMAL</span>
               </div>
 
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 flex items-center justify-center h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
-                  3
-                </span>
-              </Button>
+              <NotificationDropdown />
 
               {/* User Profile */}
               <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-border/50">
