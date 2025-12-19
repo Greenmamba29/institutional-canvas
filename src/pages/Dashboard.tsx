@@ -49,7 +49,7 @@ const escrowedAssets = [
 
 export default function Dashboard() {
   const { role } = useRole();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(role === 'supplier' ? 'overview' : 'dashboard');
 
   const tabs = role === 'supplier' 
     ? [{ id: 'overview', label: 'OVERVIEW' }, { id: 'listings', label: 'MY LISTINGS' }, { id: 'financials', label: 'FINANCIALS' }]
@@ -61,19 +61,48 @@ export default function Dashboard() {
 
   const title = role === 'supplier' ? 'Supplier Performance Terminal' : 'Institutional Trading Console';
 
-  return (
-    <LayoutShell>
-      <div className="space-y-6 animate-fade-in">
-        <BreadcrumbNav items={breadcrumbs} />
-        
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+  const renderTabContent = () => {
+    // Supplier tabs
+    if (role === 'supplier') {
+      if (activeTab === 'listings') {
+        return (
+          <div className="glass-panel rounded-xl p-8 text-center">
+            <h3 className="text-lg font-semibold mb-2">My Listings</h3>
+            <p className="text-muted-foreground">Manage your active material listings and inventory here.</p>
+          </div>
+        );
+      }
+      if (activeTab === 'financials') {
+        return (
+          <div className="glass-panel rounded-xl p-8 text-center">
+            <h3 className="text-lg font-semibold mb-2">Financials</h3>
+            <p className="text-muted-foreground">View your earnings, pending payments, and transaction history.</p>
+          </div>
+        );
+      }
+    }
+    
+    // Admin/Buyer tabs
+    if (activeTab === 'auctions') {
+      return (
+        <div className="glass-panel rounded-xl p-8 text-center">
+          <h3 className="text-lg font-semibold mb-2">Auction Listings</h3>
+          <p className="text-muted-foreground">Browse and manage all active and upcoming auctions.</p>
         </div>
+      );
+    }
+    if (activeTab === 'performance') {
+      return (
+        <div className="glass-panel rounded-xl p-8 text-center">
+          <h3 className="text-lg font-semibold mb-2">Performance Analytics</h3>
+          <p className="text-muted-foreground">Detailed platform performance metrics and trends.</p>
+        </div>
+      );
+    }
 
-        <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <SystemAlert message="Chilean export quota re-allocations are live. Review updated compliance requirements." />
-
+    // Default: Overview/Dashboard content
+    return (
+      <>
         {/* KPI Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="glass-panel rounded-xl p-4">
@@ -161,6 +190,24 @@ export default function Dashboard() {
         </div>
 
         <BottomKPIs />
+      </>
+    );
+  };
+
+  return (
+    <LayoutShell>
+      <div className="space-y-6 animate-fade-in">
+        <BreadcrumbNav items={breadcrumbs} />
+        
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        </div>
+
+        <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+
+        <SystemAlert message="Chilean export quota re-allocations are live. Review updated compliance requirements." />
+
+        {renderTabContent()}
       </div>
     </LayoutShell>
   );
