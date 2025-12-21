@@ -15,6 +15,12 @@ import Settings from "./pages/Settings";
 import Verification from "./pages/Verification";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
+import Deals from "./pages/Deals";
+import TeleBuy from "./pages/TeleBuy";
+import AIStudio from "./pages/AIStudio";
+import Data from "./pages/Data";
+import Orders from "./pages/Orders";
+import Billing from "./pages/Billing";
 
 const queryClient = new QueryClient();
 
@@ -36,8 +42,16 @@ const App = () => (
               <Route path="/bids" element={<Bids />} />
               <Route path="/auctions" element={<Auctions />} />
               <Route path="/auctions/:id" element={<Auctions />} />
+              <Route path="/deals" element={<Deals />} />
+              <Route path="/deals/:id" element={<Deals />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/telebuy" element={<TeleBuy />} />
+              <Route path="/telebuy/session/:id" element={<TeleBuy />} />
+              <Route path="/ai-studio" element={<AIStudio />} />
+              <Route path="/data" element={<Data />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/billing" element={<Billing />} />
               <Route path="/verification" element={<Verification />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="*" element={<NotFound />} />

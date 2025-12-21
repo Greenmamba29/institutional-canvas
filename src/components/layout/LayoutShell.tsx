@@ -25,6 +25,12 @@ import {
   Package,
   MessageSquare,
   Plus,
+  Handshake,
+  Video,
+  Brain,
+  Database,
+  CreditCard,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -32,28 +38,41 @@ interface LayoutShellProps {
   children: React.ReactNode;
 }
 
+// Buyer/Admin Navigation - MVP locked ordering
+// TODO: Realtime publish later: subscribe to bid events + notification events
 const adminNavItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Marketplace', path: '/marketplace', icon: Store },
-  { label: 'RFQs', path: '/rfqs', icon: FileText, count: 8 },
   { label: 'Auctions', path: '/auctions', icon: Gavel, count: 14 },
-  { label: 'Orders', path: '/bids', icon: Package, count: 3 },
+  { label: 'Bids', path: '/bids', icon: Target, count: 5 },
+  { label: 'RFQs', path: '/rfqs', icon: FileText, count: 8 },
+  { label: 'Deals', path: '/deals', icon: Handshake },
+  { label: 'Orders', path: '/orders', icon: Package, count: 3 },
+  { label: 'TeleBuy', path: '/telebuy', icon: Video },
+  { label: 'AI Studio', path: '/ai-studio', icon: Brain },
+  { label: 'Data', path: '/data', icon: Database },
+  { label: 'Messages', path: '/messages', icon: MessageSquare, count: 3 },
   { label: 'Verification', path: '/verification', icon: ShieldCheck, count: 5 },
   { label: 'Analytics', path: '/analytics', icon: TrendingUp },
 ];
 
+// Supplier Navigation - MVP locked ordering
+// TODO: Realtime publish later: subscribe to bid events + notification events
 const supplierNavItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'RFQs', path: '/rfqs', icon: FileText, count: 15 },
   { label: 'Auctions', path: '/auctions', icon: Gavel, count: 2 },
-  { label: 'Orders', path: '/bids', icon: Package, count: 3 },
-  { label: 'Analytics', path: '/analytics', icon: TrendingUp },
+  { label: 'Bid Activity', path: '/bids', icon: Target, count: 3 },
+  { label: 'Deals', path: '/deals', icon: Handshake },
+  { label: 'Orders', path: '/orders', icon: Package, count: 3 },
+  { label: 'TeleBuy', path: '/telebuy', icon: Video },
   { label: 'Messages', path: '/messages', icon: MessageSquare, count: 3 },
-  { label: 'Directory', path: '/marketplace', icon: Users },
+  { label: 'Analytics', path: '/analytics', icon: TrendingUp },
 ];
 
 const bottomNavItems = [
   { label: 'Settings', path: '/settings', icon: Settings },
+  { label: 'Billing', path: '/settings/billing', icon: CreditCard },
 ];
 
 export function LayoutShell({ children }: LayoutShellProps) {
