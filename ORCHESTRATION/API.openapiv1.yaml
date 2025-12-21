@@ -1,0 +1,597 @@
+openapi: 3.1.0
+info:
+  title: LithiumBuy API
+  description: |
+    Supabase RPC endpoints and Edge Functions for LithiumBuy B2B Lithium Marketplace.
+    
+    **Note:** Most frontend calls use `supabase.rpc()` which maps to these endpoints.
+  version: 1.0.0
+  contact:
+    name: LithiumBuy Team
+
+servers:
+  - url: https://vuekwckknfjivjighhfd.supabase.co
+    description: Production Supabase
+
+tags:
+  - name: Dashboard
+    description: Dashboard statistics and activity
+  - name: Files
+    description: File management operations
+  - name: Usage
+    description: Usage tracking and limits
+  - name: Documents
+    description: Document matching and embeddings
+  - name: Jobs
+    description: Background job operations
+  - name: TeleBuy
+    description: Video session management (planned)
+  - name: Orders
+    description: Order management (planned)
+
+paths:
+  /rest/v1/rpc/get_dashboard_stats:
+    post:
+      tags: [Dashboard]
+      summary: Get dashboard statistics
+      description: Returns file counts and size metrics for the authenticated user
+      operationId: getDashboardStats
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardStats'
+
+  /rest/v1/rpc/get_dashboard_activity:
+    post:
+      tags: [Dashboard]
+      summary: Get recent activity
+      description: Returns recent file activities for the authenticated user
+      operationId: getDashboardActivity
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                p_limit:
+                  type: integer
+                  default: 20
+      responses:
+        '200':
+          description: Activity list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activity'
+
+  /rest/v1/rpc/get_file_activities:
+    post:
+      tags: [Files]
+      summary: Get file activities
+      description: Returns activities for a specific file or all files
+      operationId: getFileActivities
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                p_file_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+                p_limit:
+                  type: integer
+                  default: 50
+                p_offset:
+                  type: integer
+                  default: 0
+      responses:
+        '200':
+          description: File activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileActivity'
+
+  /rest/v1/rpc/update_file_metadata:
+    post:
+      tags: [Files]
+      summary: Update file metadata
+      description: Updates metadata, tags, or AI summary for a file
+      operationId: updateFileMetadata
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - p_file_id
+              properties:
+                p_file_id:
+                  type: string
+                  format: uuid
+                p_metadata:
+                  type: object
+                  nullable: true
+                p_tags:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                p_ai_summary:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Updated metadata
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /rest/v1/rpc/check_usage_limit:
+    post:
+      tags: [Usage]
+      summary: Check usage limits
+      description: Returns current usage vs daily limit for a user
+      operationId: checkUsageLimit
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - p_user_id
+              properties:
+                p_user_id:
+                  type: string
+                  format: uuid
+                p_tier:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Usage limit info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageLimit'
+
+  /rest/v1/rpc/can_process:
+    post:
+      tags: [Usage]
+      summary: Check if user can process
+      description: Checks if user has remaining quota for processing
+      operationId: canProcess
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - p_user
+              properties:
+                p_user:
+                  type: string
+                  format: uuid
+                p_requested:
+                  type: integer
+                  default: 1
+      responses:
+        '200':
+          description: Processing capability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CanProcessResult'
+
+  /rest/v1/rpc/increment_usage_counters:
+    post:
+      tags: [Usage]
+      summary: Increment usage counters
+      description: Updates usage counters for a user (files processed, tokens, cost)
+      operationId: incrementUsageCounters
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - p_user_id
+              properties:
+                p_user_id:
+                  type: string
+                  format: uuid
+                p_files_count:
+                  type: integer
+                  default: 1
+                p_tokens:
+                  type: integer
+                  default: 0
+                p_cost:
+                  type: number
+                  default: 0
+      responses:
+        '200':
+          description: Updated usage counter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageCounter'
+
+  /rest/v1/rpc/match_documents:
+    post:
+      tags: [Documents]
+      summary: Match documents by embedding
+      description: Finds similar documents using vector similarity search
+      operationId: matchDocuments
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query_embedding
+              properties:
+                query_embedding:
+                  type: string
+                  description: Vector embedding as string
+                match_count:
+                  type: integer
+                  nullable: true
+                filter:
+                  type: object
+                  default: {}
+      responses:
+        '200':
+          description: Matched documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MatchedDocument'
+
+  /rest/v1/rpc/log_job_metrics:
+    post:
+      tags: [Jobs]
+      summary: Log job metrics
+      description: Calculates and stores metrics for a completed job
+      operationId: logJobMetrics
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - p_job
+              properties:
+                p_job:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Job metrics result
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /rest/v1/rpc/ensure_folder_path:
+    post:
+      tags: [Files]
+      summary: Ensure folder path exists
+      description: Creates folder hierarchy if it doesn't exist
+      operationId: ensureFolderPath
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - p_user
+                - p_path
+              properties:
+                p_user:
+                  type: string
+                  format: uuid
+                p_path:
+                  type: string
+      responses:
+        '200':
+          description: Folder ID
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+
+  # ============================================
+  # PLANNED RPC ENDPOINTS (Not yet implemented)
+  # ============================================
+
+  /rest/v1/rpc/create_telebuy_session:
+    post:
+      tags: [TeleBuy]
+      summary: Create TeleBuy session (PLANNED)
+      description: |
+        **Status: PLANNED**
+        Creates a new TeleBuy video session with a supplier
+      operationId: createTelebuySession
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - p_supplier_id
+                - p_scheduled_at
+              properties:
+                p_supplier_id:
+                  type: string
+                  format: uuid
+                p_scheduled_at:
+                  type: string
+                  format: date-time
+                p_meeting_url:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Created session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelebuySession'
+
+  /rest/v1/rpc/create_order:
+    post:
+      tags: [Orders]
+      summary: Create order (PLANNED)
+      description: |
+        **Status: PLANNED**
+        Creates a new order from a quote or auction win
+      operationId: createOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - p_supplier_id
+                - p_total_amount
+              properties:
+                p_supplier_id:
+                  type: string
+                  format: uuid
+                p_quote_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+                p_total_amount:
+                  type: number
+                p_currency:
+                  type: string
+                  default: USD
+      responses:
+        '200':
+          description: Created order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase JWT token
+
+  schemas:
+    DashboardStats:
+      type: object
+      properties:
+        total_files:
+          type: integer
+        total_size:
+          type: integer
+        recent_files:
+          type: integer
+        media_files:
+          type: integer
+        document_files:
+          type: integer
+
+    Activity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        file_id:
+          type: string
+          format: uuid
+        file_name:
+          type: string
+        activity_type:
+          type: string
+        user_name:
+          type: string
+        details:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+
+    FileActivity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        file_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        activity_type:
+          type: string
+        details:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+
+    UsageLimit:
+      type: object
+      properties:
+        current_usage:
+          type: integer
+        daily_limit:
+          type: integer
+        remaining:
+          type: integer
+        can_process:
+          type: boolean
+
+    CanProcessResult:
+      type: object
+      properties:
+        can_process:
+          type: boolean
+        reason:
+          type: string
+        remaining:
+          type: integer
+        tier:
+          type: string
+        daily_limit:
+          type: integer
+        current_usage:
+          type: integer
+
+    UsageCounter:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        files_processed:
+          type: integer
+        tier:
+          type: string
+        tokens_used:
+          type: integer
+        cost_usd:
+          type: number
+
+    MatchedDocument:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        metadata:
+          type: object
+        embedding:
+          type: object
+        similarity:
+          type: number
+
+    TelebuySession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        supplier_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        meeting_url:
+          type: string
+        scheduled_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, in_progress, completed, cancelled]
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        supplier_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        quote_id:
+          type: string
+          format: uuid
+          nullable: true
+        total_amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, shipped, delivered, cancelled]
+        payment_status:
+          type: string
+          enum: [pending, paid, refunded]
+        created_at:
+          type: string
+          format: date-time
+
+security:
+  - bearerAuth: []
