@@ -31,6 +31,26 @@
 
 ## 2. Allowed Write Paths
 
+### ⚠️ CRITICAL: RPC-Only Write Protocol
+
+> **"All writes happen via RPC only. If UI needs a new action, add it to `API.openapiv1.yaml` first, then request backend implementation."**
+
+This is **non-negotiable**. The mandatory workflow is:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  FRONTEND NEEDS NEW WRITE ACTION                                │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Add endpoint spec to ORCHESTRATION/API.openapiv1.yaml       │
+│  2. Request backend (Replit) to implement the RPC function      │
+│  3. Backend creates: migration + RPC + RLS + tests              │
+│  4. Types regenerate automatically                              │
+│  5. Frontend consumes via supabase.rpc('function_name', {...})  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Never skip step 1.** The OpenAPI spec is the contract handshake.
+
 ### 2.1 Frontend (Lovable) — READ + RPC ONLY
 
 ```typescript
