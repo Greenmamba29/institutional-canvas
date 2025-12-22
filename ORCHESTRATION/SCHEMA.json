@@ -1,0 +1,297 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lithiumbuy.com/schemas/v1",
+  "title": "LithiumBuy Entity Schemas",
+  "description": "Canonical JSON Schema definitions for LithiumBuy core entities",
+  "version": "1.0.0",
+  "definitions": {
+    "UUID": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "Currency": {
+      "type": "string",
+      "enum": ["USD", "EUR", "CNY", "AUD", "CLP"],
+      "default": "USD"
+    },
+    "VerificationTier": {
+      "type": "string",
+      "enum": ["basic", "verified", "premium", "enterprise"]
+    },
+    "OrderStatus": {
+      "type": "string",
+      "enum": ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]
+    },
+    "PaymentStatus": {
+      "type": "string",
+      "enum": ["pending", "paid", "refunded", "failed"]
+    },
+    "SessionStatus": {
+      "type": "string",
+      "enum": ["scheduled", "in_progress", "completed", "cancelled"]
+    },
+    "QuoteStatus": {
+      "type": "string",
+      "enum": ["pending", "accepted", "rejected", "expired"]
+    },
+    "UserRole": {
+      "type": "string",
+      "enum": ["buyer", "supplier", "admin"]
+    },
+    "Tier": {
+      "type": "string",
+      "enum": ["free", "pro", "veteran", "agency", "admin"]
+    },
+
+    "Supplier": {
+      "type": "object",
+      "required": ["id", "name", "verification_tier"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "logo_url": { "type": ["string", "null"], "format": "uri" },
+        "verification_tier": { "$ref": "#/definitions/VerificationTier" },
+        "rating": { "type": ["number", "null"], "minimum": 0, "maximum": 5 },
+        "review_count": { "type": "integer", "minimum": 0, "default": 0 },
+        "transaction_count": { "type": "integer", "minimum": 0, "default": 0 },
+        "years_in_business": { "type": ["integer", "null"], "minimum": 0 },
+        "response_time": { "type": ["string", "null"] },
+        "created_at": { "$ref": "#/definitions/Timestamp" },
+        "updated_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "Product": {
+      "type": "object",
+      "required": ["id", "supplier_id", "name", "product_type", "purity_level", "price_per_unit", "availability"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "supplier_id": { "$ref": "#/definitions/UUID" },
+        "name": { "type": "string", "minLength": 1 },
+        "product_type": { 
+          "type": "string",
+          "enum": ["lithium_carbonate", "lithium_hydroxide", "spodumene", "lithium_chloride"]
+        },
+        "purity_level": { "type": "string" },
+        "price_per_unit": { "type": "number", "minimum": 0 },
+        "unit": { "type": "string", "default": "ton" },
+        "currency": { "$ref": "#/definitions/Currency" },
+        "availability": { "type": "string" },
+        "min_order_quantity": { "type": ["integer", "null"], "minimum": 1 },
+        "has_bulk_discount": { "type": "boolean", "default": false },
+        "bulk_discount_threshold": { "type": ["integer", "null"] },
+        "bulk_discount_percentage": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "created_at": { "$ref": "#/definitions/Timestamp" },
+        "updated_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "Order": {
+      "type": "object",
+      "required": ["id", "supplier_id", "total_amount", "status", "payment_status"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "user_id": { "$ref": "#/definitions/UUID" },
+        "supplier_id": { "$ref": "#/definitions/UUID" },
+        "quote_id": { "type": ["string", "null"], "format": "uuid" },
+        "total_amount": { "type": "number", "minimum": 0 },
+        "currency": { "$ref": "#/definitions/Currency" },
+        "status": { "$ref": "#/definitions/OrderStatus" },
+        "payment_status": { "$ref": "#/definitions/PaymentStatus" },
+        "created_at": { "$ref": "#/definitions/Timestamp" },
+        "updated_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "Quote": {
+      "type": "object",
+      "required": ["id", "supplier_id", "quantity", "status"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "user_id": { "$ref": "#/definitions/UUID" },
+        "supplier_id": { "$ref": "#/definitions/UUID" },
+        "product_id": { "type": ["string", "null"], "format": "uuid" },
+        "quantity": { "type": "integer", "minimum": 1 },
+        "requested_price": { "type": ["number", "null"], "minimum": 0 },
+        "status": { "$ref": "#/definitions/QuoteStatus" },
+        "notes": { "type": ["string", "null"] },
+        "expires_at": { "type": ["string", "null"], "format": "date-time" },
+        "created_at": { "$ref": "#/definitions/Timestamp" },
+        "updated_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "TelebuySession": {
+      "type": "object",
+      "required": ["id", "supplier_id", "meeting_url", "scheduled_at", "status"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "user_id": { "$ref": "#/definitions/UUID" },
+        "supplier_id": { "$ref": "#/definitions/UUID" },
+        "meeting_id": { "type": ["string", "null"] },
+        "meeting_url": { "type": "string", "format": "uri" },
+        "scheduled_at": { "$ref": "#/definitions/Timestamp" },
+        "started_at": { "type": ["string", "null"], "format": "date-time" },
+        "ended_at": { "type": ["string", "null"], "format": "date-time" },
+        "status": { "$ref": "#/definitions/SessionStatus" },
+        "recording_url": { "type": ["string", "null"], "format": "uri" },
+        "transcript": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] },
+        "created_at": { "$ref": "#/definitions/Timestamp" },
+        "updated_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "Profile": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "email": { "type": ["string", "null"], "format": "email" },
+        "full_name": { "type": ["string", "null"] },
+        "username": { "type": ["string", "null"] },
+        "avatar_url": { "type": ["string", "null"], "format": "uri" },
+        "tier": { "$ref": "#/definitions/Tier" },
+        "is_admin": { "type": "boolean", "default": false },
+        "org_id": { "type": ["string", "null"], "format": "uuid" },
+        "credits": { "type": "integer", "default": 20 },
+        "preferences": { "type": "object", "default": {} },
+        "created_at": { "$ref": "#/definitions/Timestamp" },
+        "updated_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "UserProfile": {
+      "type": "object",
+      "required": ["id", "user_id", "role"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "user_id": { "$ref": "#/definitions/UUID" },
+        "role": { "$ref": "#/definitions/UserRole" },
+        "company_name": { "type": ["string", "null"] },
+        "phone": { "type": ["string", "null"] },
+        "preferences": { "type": "object", "default": {} },
+        "created_at": { "$ref": "#/definitions/Timestamp" },
+        "updated_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "Certification": {
+      "type": "object",
+      "required": ["id", "supplier_id", "certification_type"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "supplier_id": { "$ref": "#/definitions/UUID" },
+        "certification_type": { 
+          "type": "string",
+          "enum": ["ISO9001", "ISO14001", "IATF16949", "REACH", "ROHS", "UL"]
+        },
+        "certification_number": { "type": ["string", "null"] },
+        "issued_by": { "type": ["string", "null"] },
+        "issued_date": { "type": ["string", "null"], "format": "date" },
+        "expiry_date": { "type": ["string", "null"], "format": "date" },
+        "certificate_url": { "type": ["string", "null"], "format": "uri" },
+        "created_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "Location": {
+      "type": "object",
+      "required": ["id", "supplier_id", "country"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "supplier_id": { "$ref": "#/definitions/UUID" },
+        "country": { "type": "string" },
+        "city": { "type": ["string", "null"] },
+        "address": { "type": ["string", "null"] },
+        "is_primary": { "type": "boolean", "default": false },
+        "coordinates": { 
+          "type": ["object", "null"],
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "created_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "Review": {
+      "type": "object",
+      "required": ["id", "supplier_id", "author", "rating", "content"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "supplier_id": { "$ref": "#/definitions/UUID" },
+        "user_id": { "$ref": "#/definitions/UUID" },
+        "author": { "type": "string" },
+        "company": { "type": ["string", "null"] },
+        "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "content": { "type": "string" },
+        "verified_purchase": { "type": "boolean", "default": false },
+        "helpful_count": { "type": "integer", "default": 0 },
+        "created_at": { "$ref": "#/definitions/Timestamp" },
+        "updated_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "ActivityLog": {
+      "type": "object",
+      "required": ["id", "user_id", "action", "resource_type"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "user_id": { "$ref": "#/definitions/UUID" },
+        "action": { "type": "string" },
+        "resource_type": { "type": "string" },
+        "resource_id": { "type": ["string", "null"], "format": "uuid" },
+        "details": { "type": "object", "default": {} },
+        "timestamp": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "Notification": {
+      "type": "object",
+      "description": "PLANNED - Not yet implemented",
+      "required": ["id", "user_id", "type", "title"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "user_id": { "$ref": "#/definitions/UUID" },
+        "type": { 
+          "type": "string",
+          "enum": ["bid_received", "order_update", "session_reminder", "quote_response", "system"]
+        },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "read": { "type": "boolean", "default": false },
+        "action_url": { "type": ["string", "null"] },
+        "created_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    },
+
+    "Deal": {
+      "type": "object",
+      "description": "PLANNED - Not yet implemented",
+      "required": ["id", "buyer_id", "supplier_id", "status"],
+      "properties": {
+        "id": { "$ref": "#/definitions/UUID" },
+        "buyer_id": { "$ref": "#/definitions/UUID" },
+        "supplier_id": { "$ref": "#/definitions/UUID" },
+        "rfq_id": { "type": ["string", "null"], "format": "uuid" },
+        "auction_id": { "type": ["string", "null"], "format": "uuid" },
+        "status": {
+          "type": "string",
+          "enum": ["negotiating", "agreed", "contract_pending", "closed", "cancelled"]
+        },
+        "terms": { "type": "object", "default": {} },
+        "total_value": { "type": ["number", "null"], "minimum": 0 },
+        "currency": { "$ref": "#/definitions/Currency" },
+        "created_at": { "$ref": "#/definitions/Timestamp" },
+        "updated_at": { "$ref": "#/definitions/Timestamp" }
+      }
+    }
+  }
+}
