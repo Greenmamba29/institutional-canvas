@@ -1,4 +1,3 @@
-Initialising login role...
 export type Json =
   | string
   | number
@@ -300,6 +299,163 @@ export type Database = {
         }
         Relationships: []
       }
+      auction_bids: {
+        Row: {
+          amount: number
+          auction_id: string
+          created_at: string
+          created_by: string
+          currency: string
+          id: string
+          org_id: string
+        }
+        Insert: {
+          amount: number
+          auction_id: string
+          created_at?: string
+          created_by: string
+          currency?: string
+          id?: string
+          org_id: string
+        }
+        Update: {
+          amount?: number
+          auction_id?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auctions: {
+        Row: {
+          created_at: string
+          created_by: string
+          currency: string
+          description: string | null
+          ends_at: string | null
+          id: string
+          org_id: string
+          product_id: string | null
+          reserve_price: number | null
+          starts_at: string | null
+          status: Database["public"]["Enums"]["auction_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          currency?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          org_id: string
+          product_id?: string | null
+          reserve_price?: number | null
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["auction_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          currency?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          org_id?: string
+          product_id?: string | null
+          reserve_price?: number | null
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["auction_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auctions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bids: {
+        Row: {
+          created_at: string
+          created_by: string
+          currency: string
+          id: string
+          is_withdrawn: boolean
+          lead_time_days: number | null
+          notes: string | null
+          org_id: string
+          price: number
+          quantity: number | null
+          rfq_id: string
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          currency?: string
+          id?: string
+          is_withdrawn?: boolean
+          lead_time_days?: number | null
+          notes?: string | null
+          org_id: string
+          price: number
+          quantity?: number | null
+          rfq_id: string
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          currency?: string
+          id?: string
+          is_withdrawn?: boolean
+          lead_time_days?: number | null
+          notes?: string | null
+          org_id?: string
+          price?: number
+          quantity?: number | null
+          rfq_id?: string
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bids_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bids_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
       certifications: {
         Row: {
           certificate_url: string | null
@@ -334,15 +490,7 @@ export type Database = {
           issued_date?: string | null
           supplier_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "certifications_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       chat_documents: {
         Row: {
@@ -446,6 +594,66 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      deals: {
+        Row: {
+          buyer_user_id: string
+          created_at: string
+          id: string
+          offer_decision: Database["public"]["Enums"]["offer_decision"] | null
+          offer_decision_at: string | null
+          offer_note: string | null
+          org_id: string
+          rfq_id: string | null
+          status: Database["public"]["Enums"]["deal_status"]
+          supplier_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          buyer_user_id: string
+          created_at?: string
+          id?: string
+          offer_decision?: Database["public"]["Enums"]["offer_decision"] | null
+          offer_decision_at?: string | null
+          offer_note?: string | null
+          org_id: string
+          rfq_id?: string | null
+          status?: Database["public"]["Enums"]["deal_status"]
+          supplier_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          buyer_user_id?: string
+          created_at?: string
+          id?: string
+          offer_decision?: Database["public"]["Enums"]["offer_decision"] | null
+          offer_decision_at?: string | null
+          offer_note?: string | null
+          org_id?: string
+          rfq_id?: string | null
+          status?: Database["public"]["Enums"]["deal_status"]
+          supplier_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -911,15 +1119,7 @@ export type Database = {
           is_primary?: boolean | null
           supplier_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "locations_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       messages: {
         Row: {
@@ -955,6 +1155,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_read: boolean
+          org_id: string
+          read_at: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          org_id: string
+          read_at?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          org_id?: string
+          read_at?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string | null
+        }
+        Relationships: []
       }
       orders: {
         Row: {
@@ -1001,14 +1243,63 @@ export type Database = {
             referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      org_members: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "orders_supplier_id_fkey"
-            columns: ["supplier_id"]
+            foreignKeyName: "org_members_org_id_fkey"
+            columns: ["org_id"]
             isOneToOne: false
-            referencedRelation: "suppliers"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          org_type: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          org_type: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          org_type?: string
+          status?: string
+        }
+        Relationships: []
       }
       password_reset_tokens: {
         Row: {
@@ -1112,6 +1403,42 @@ export type Database = {
         }
         Relationships: []
       }
+      price_indicators: {
+        Row: {
+          currency: string
+          id: string
+          metadata: Json
+          observed_at: string
+          price: number
+          region: string
+          source: string | null
+          symbol: string
+          unit: string
+        }
+        Insert: {
+          currency?: string
+          id?: string
+          metadata?: Json
+          observed_at?: string
+          price: number
+          region: string
+          source?: string | null
+          symbol: string
+          unit: string
+        }
+        Update: {
+          currency?: string
+          id?: string
+          metadata?: Json
+          observed_at?: string
+          price?: number
+          region?: string
+          source?: string | null
+          symbol?: string
+          unit?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           availability: string
@@ -1164,15 +1491,7 @@ export type Database = {
           unit?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "products_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -1228,38 +1547,85 @@ export type Database = {
         }
         Relationships: []
       }
-      purchases: {
+      purchase_events: {
         Row: {
-          created_at: string | null
-          github_username: string | null
-          id: number
-          payload: Json | null
-          provider: string | null
-          purchase_id: string | null
-          type: string | null
-          user_email: string | null
+          created_at: string
+          created_by: string | null
+          event_payload: Json | null
+          event_type: string
+          id: string
+          purchase_id: string
         }
         Insert: {
-          created_at?: string | null
-          github_username?: string | null
-          id?: number
-          payload?: Json | null
-          provider?: string | null
-          purchase_id?: string | null
-          type?: string | null
-          user_email?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_payload?: Json | null
+          event_type: string
+          id?: string
+          purchase_id: string
         }
         Update: {
-          created_at?: string | null
-          github_username?: string | null
-          id?: number
-          payload?: Json | null
-          provider?: string | null
-          purchase_id?: string | null
-          type?: string | null
-          user_email?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_payload?: Json | null
+          event_type?: string
+          id?: string
+          purchase_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "purchase_events_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchases: {
+        Row: {
+          buyer_org_id: string | null
+          created_at: string
+          id: string
+          payload: Json | null
+          purchase_id: string | null
+          status: string | null
+          supplier_org_id: string | null
+        }
+        Insert: {
+          buyer_org_id?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          purchase_id?: string | null
+          status?: string | null
+          supplier_org_id?: string | null
+        }
+        Update: {
+          buyer_org_id?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          purchase_id?: string | null
+          status?: string | null
+          supplier_org_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_buyer_org_id_fkey"
+            columns: ["buyer_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_supplier_org_id_fkey"
+            columns: ["supplier_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quotes: {
         Row: {
@@ -1307,13 +1673,6 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quotes_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -1390,15 +1749,55 @@ export type Database = {
           user_id?: string | null
           verified_purchase?: boolean | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "reviews_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      rfqs: {
+        Row: {
+          created_at: string
+          created_by: string
+          delivery_location: string | null
+          description: string | null
+          id: string
+          incoterms: string | null
+          org_id: string
+          product_id: string | null
+          status: Database["public"]["Enums"]["rfq_status"]
+          target_quantity: number | null
+          target_unit: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          delivery_location?: string | null
+          description?: string | null
+          id?: string
+          incoterms?: string | null
+          org_id: string
+          product_id?: string | null
+          status?: Database["public"]["Enums"]["rfq_status"]
+          target_quantity?: number | null
+          target_unit?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          delivery_location?: string | null
+          description?: string | null
+          id?: string
+          incoterms?: string | null
+          org_id?: string
+          product_id?: string | null
+          status?: Database["public"]["Enums"]["rfq_status"]
+          target_quantity?: number | null
+          target_unit?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       smart_folders: {
         Row: {
@@ -1560,57 +1959,48 @@ export type Database = {
           updated_at?: string | null
           website?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_profiles_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: true
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       suppliers: {
         Row: {
-          created_at: string | null
-          id: string
-          logo_url: string | null
-          name: string
-          rating: number | null
-          response_time: string | null
-          review_count: number | null
-          transaction_count: number | null
-          updated_at: string | null
-          verification_tier: string
-          years_in_business: number | null
+          capabilities: Json | null
+          claim_status: string | null
+          claim_token_hash: string | null
+          display_name: string | null
+          invited_email: string | null
+          org_id: string
+          public_profile: Json | null
+          verification_tier: string | null
         }
         Insert: {
-          created_at?: string | null
-          id?: string
-          logo_url?: string | null
-          name: string
-          rating?: number | null
-          response_time?: string | null
-          review_count?: number | null
-          transaction_count?: number | null
-          updated_at?: string | null
-          verification_tier: string
-          years_in_business?: number | null
+          capabilities?: Json | null
+          claim_status?: string | null
+          claim_token_hash?: string | null
+          display_name?: string | null
+          invited_email?: string | null
+          org_id: string
+          public_profile?: Json | null
+          verification_tier?: string | null
         }
         Update: {
-          created_at?: string | null
-          id?: string
-          logo_url?: string | null
-          name?: string
-          rating?: number | null
-          response_time?: string | null
-          review_count?: number | null
-          transaction_count?: number | null
-          updated_at?: string | null
-          verification_tier?: string
-          years_in_business?: number | null
+          capabilities?: Json | null
+          claim_status?: string | null
+          claim_token_hash?: string | null
+          display_name?: string | null
+          invited_email?: string | null
+          org_id?: string
+          public_profile?: Json | null
+          verification_tier?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       telebuy_documents: {
         Row: {
@@ -1708,15 +2098,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "telebuy_sessions_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       transcripts: {
         Row: {
@@ -1870,6 +2252,84 @@ export type Database = {
         Args: { p_tier?: string; p_user_id: string }
         Returns: Json
       }
+      create_deal: {
+        Args: { p_rfq_id: string; p_supplier_id: string; p_title: string }
+        Returns: {
+          buyer_user_id: string
+          created_at: string
+          id: string
+          offer_decision: Database["public"]["Enums"]["offer_decision"] | null
+          offer_decision_at: string | null
+          offer_note: string | null
+          org_id: string
+          rfq_id: string | null
+          status: Database["public"]["Enums"]["deal_status"]
+          supplier_id: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_purchase: {
+        Args: {
+          p_buyer_org_id: string
+          p_payload?: Json
+          p_supplier_org_id: string
+        }
+        Returns: {
+          buyer_org_id: string | null
+          created_at: string
+          id: string
+          payload: Json | null
+          purchase_id: string | null
+          status: string | null
+          supplier_org_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "purchases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_rfq: {
+        Args: {
+          p_delivery_location: string
+          p_description: string
+          p_incoterms: string
+          p_product_id: string
+          p_target_quantity: number
+          p_target_unit: string
+          p_title: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string
+          delivery_location: string | null
+          description: string | null
+          id: string
+          incoterms: string | null
+          org_id: string
+          product_id: string | null
+          status: Database["public"]["Enums"]["rfq_status"]
+          target_quantity: number | null
+          target_unit: string | null
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rfqs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      current_sub: { Args: never; Returns: string }
       ensure_folder_path: {
         Args: { p_path: string; p_user: string }
         Returns: string
@@ -1922,6 +2382,77 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_listing: {
+        Args: { p_product_id: string }
+        Returns: {
+          availability: string
+          bulk_discount_percentage: number | null
+          bulk_discount_threshold: number | null
+          created_at: string | null
+          currency: string
+          has_bulk_discount: boolean | null
+          id: string
+          min_order_quantity: number | null
+          name: string
+          price_per_unit: number
+          product_type: string
+          purity_level: string
+          supplier_id: string
+          unit: string
+          updated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "products"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_notifications: {
+        Args: never
+        Returns: {
+          body: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_read: boolean
+          org_id: string
+          read_at: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "notifications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_price_indicators: {
+        Args: { p_limit?: number; p_region: string; p_symbol: string }
+        Returns: Json
+      }
+      get_purchase_by_id: {
+        Args: { p_po: string }
+        Returns: {
+          buyer_org_id: string | null
+          created_at: string
+          id: string
+          payload: Json | null
+          purchase_id: string | null
+          status: string | null
+          supplier_org_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "purchases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_user_org_ids: { Args: never; Returns: string[] }
       increment_usage_counters: {
         Args: {
           p_cost?: number
@@ -1946,7 +2477,106 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      jwt_claim: { Args: { claim: string }; Returns: string }
+      jwt_org_id: { Args: never; Returns: string }
+      jwt_user_id: { Args: never; Returns: string }
+      list_auctions: {
+        Args: never
+        Returns: {
+          created_at: string
+          created_by: string
+          currency: string
+          description: string | null
+          ends_at: string | null
+          id: string
+          org_id: string
+          product_id: string | null
+          reserve_price: number | null
+          starts_at: string | null
+          status: Database["public"]["Enums"]["auction_status"]
+          title: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "auctions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      list_listings: {
+        Args: never
+        Returns: {
+          availability: string
+          bulk_discount_percentage: number | null
+          bulk_discount_threshold: number | null
+          created_at: string | null
+          currency: string
+          has_bulk_discount: boolean | null
+          id: string
+          min_order_quantity: number | null
+          name: string
+          price_per_unit: number
+          product_type: string
+          purity_level: string
+          supplier_id: string
+          unit: string
+          updated_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "products"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      list_purchases: {
+        Args: never
+        Returns: {
+          buyer_org_id: string | null
+          created_at: string
+          id: string
+          payload: Json | null
+          purchase_id: string | null
+          status: string | null
+          supplier_org_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "purchases"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      list_rfqs: {
+        Args: never
+        Returns: {
+          created_at: string
+          created_by: string
+          delivery_location: string | null
+          description: string | null
+          id: string
+          incoterms: string | null
+          org_id: string
+          product_id: string | null
+          status: Database["public"]["Enums"]["rfq_status"]
+          target_quantity: number | null
+          target_unit: string | null
+          title: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "rfqs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       log_job_metrics: { Args: { p_job: string }; Returns: Json }
+      mark_notification_read: {
+        Args: { p_notification_id: string }
+        Returns: boolean
+      }
       match_documents: {
         Args: { filter?: Json; match_count?: number; query_embedding: string }
         Returns: {
@@ -1957,8 +2587,111 @@ export type Database = {
           similarity: number
         }[]
       }
+      place_auction_bid: {
+        Args: { p_amount: number; p_auction_id: string; p_currency: string }
+        Returns: {
+          amount: number
+          auction_id: string
+          created_at: string
+          created_by: string
+          currency: string
+          id: string
+          org_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "auction_bids"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      respond_to_offer: {
+        Args: {
+          p_deal_id: string
+          p_decision: Database["public"]["Enums"]["offer_decision"]
+          p_note: string
+        }
+        Returns: {
+          buyer_user_id: string
+          created_at: string
+          id: string
+          offer_decision: Database["public"]["Enums"]["offer_decision"] | null
+          offer_decision_at: string | null
+          offer_note: string | null
+          org_id: string
+          rfq_id: string | null
+          status: Database["public"]["Enums"]["deal_status"]
+          supplier_id: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      submit_bid: {
+        Args: {
+          p_currency: string
+          p_lead_time_days: number
+          p_notes: string
+          p_price: number
+          p_quantity: number
+          p_rfq_id: string
+          p_supplier_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string
+          currency: string
+          id: string
+          is_withdrawn: boolean
+          lead_time_days: number | null
+          notes: string | null
+          org_id: string
+          price: number
+          quantity: number | null
+          rfq_id: string
+          supplier_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bids"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_deal_status: {
+        Args: {
+          p_deal_id: string
+          p_status: Database["public"]["Enums"]["deal_status"]
+        }
+        Returns: {
+          buyer_user_id: string
+          created_at: string
+          id: string
+          offer_decision: Database["public"]["Enums"]["offer_decision"] | null
+          offer_decision_at: string | null
+          offer_note: string | null
+          org_id: string
+          rfq_id: string | null
+          status: Database["public"]["Enums"]["deal_status"]
+          supplier_id: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_file_metadata: {
         Args: {
           p_ai_summary?: string
@@ -1968,9 +2701,45 @@ export type Database = {
         }
         Returns: Json
       }
+      update_purchase_status: {
+        Args: { p_purchase_po: string; p_status: string }
+        Returns: {
+          buyer_org_id: string | null
+          created_at: string
+          id: string
+          payload: Json | null
+          purchase_id: string | null
+          status: string | null
+          supplier_org_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "purchases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      withdraw_bid: { Args: { p_bid_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      auction_status: "scheduled" | "live" | "ended" | "cancelled"
+      deal_status:
+        | "pending"
+        | "active"
+        | "rejected"
+        | "expired"
+        | "completed"
+        | "cancelled"
+      notification_type:
+        | "rfq_submitted"
+        | "rfq_awarded"
+        | "deal_created"
+        | "deal_offer_response"
+        | "auction_bid_placed"
+        | "auction_won"
+        | "system"
+      offer_decision: "accepted" | "rejected"
+      rfq_status: "draft" | "submitted" | "closed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2100,8 +2869,27 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: {
+      auction_status: ["scheduled", "live", "ended", "cancelled"],
+      deal_status: [
+        "pending",
+        "active",
+        "rejected",
+        "expired",
+        "completed",
+        "cancelled",
+      ],
+      notification_type: [
+        "rfq_submitted",
+        "rfq_awarded",
+        "deal_created",
+        "deal_offer_response",
+        "auction_bid_placed",
+        "auction_won",
+        "system",
+      ],
+      offer_decision: ["accepted", "rejected"],
+      rfq_status: ["draft", "submitted", "closed", "cancelled"],
+    },
   },
 } as const
-A new version of Supabase CLI is available: v2.67.1 (currently installed v2.65.2)
-We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
