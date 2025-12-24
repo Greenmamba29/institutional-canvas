@@ -429,6 +429,13 @@ export type Database = {
             referencedRelation: "suppliers"
             referencedColumns: ["org_id"]
           },
+          {
+            foreignKeyName: "bids_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers_public"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       certifications: {
@@ -628,6 +635,13 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "deals_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers_public"
             referencedColumns: ["org_id"]
           },
         ]
@@ -2225,6 +2239,38 @@ export type Database = {
       }
     }
     Views: {
+      suppliers_public: {
+        Row: {
+          capabilities: Json | null
+          display_name: string | null
+          org_id: string | null
+          public_profile: Json | null
+          verification_tier: string | null
+        }
+        Insert: {
+          capabilities?: Json | null
+          display_name?: string | null
+          org_id?: string | null
+          public_profile?: Json | null
+          verification_tier?: string | null
+        }
+        Update: {
+          capabilities?: Json | null
+          display_name?: string | null
+          org_id?: string | null
+          public_profile?: Json | null
+          verification_tier?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_job_ops: {
         Row: {
           completed_stages: number | null

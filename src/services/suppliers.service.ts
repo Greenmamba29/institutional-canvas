@@ -26,10 +26,10 @@ export async function getSuppliers(options?: {
   verificationTier?: string;
   limit?: number;
 }) {
+  // Use public view for marketplace directory (safe columns only)
   let query = supabase
-    .from('suppliers')
-    .select('*')
-    .order('rating', { ascending: false });
+    .from('suppliers_public')
+    .select('*');
   
   if (options?.verificationTier) {
     query = query.eq('verification_tier', options.verificationTier);
@@ -114,11 +114,11 @@ export async function getSupplierReviews(supplierId: string) {
  * Search suppliers by name
  */
 export async function searchSuppliers(query: string) {
+  // Use public view for marketplace search (safe columns only)
   const { data, error } = await supabase
-    .from('suppliers')
+    .from('suppliers_public')
     .select('*')
-    .ilike('name', `%${query}%`)
-    .order('rating', { ascending: false });
+    .ilike('display_name', `%${query}%`);
   
   return { data, error };
 }
