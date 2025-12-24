@@ -41,10 +41,10 @@ const queryClient = new QueryClient({
   },
 });
 
-// Auth0 configuration
-const auth0Domain = import.meta.env.VITE_AUTH0_DOMAIN || 'demo.auth0.com';
-const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID || 'demo-client-id';
-const auth0Audience = import.meta.env.VITE_AUTH0_AUDIENCE || 'https://lithiumbuy.com/api';
+// Auth0 configuration - using provided credentials
+const auth0Domain = 'dev-vbox82zyf82ityy0.us.auth0.com';
+const auth0ClientId = 'YnXqFAVjFUcmqeJUZgvbyFzK35A4mBzW';
+const auth0Audience = 'https://lithiumbuy.com/api';
 
 const App = () => (
   <Auth0Provider
