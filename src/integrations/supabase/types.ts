@@ -2299,6 +2299,26 @@ export type Database = {
         Args: { p_tier?: string; p_user_id: string }
         Returns: Json
       }
+      claim_org_membership: {
+        Args: { p_invite_token?: string; p_org_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          joined_at: string | null
+          org_id: string
+          role: string
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "org_members"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_deal: {
         Args: { p_rfq_id: string; p_supplier_id: string; p_title: string }
         Returns: {
@@ -2322,34 +2342,88 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      create_purchase: {
+      create_organization: {
         Args: {
-          p_buyer_org_id: string
-          p_payload?: Json
-          p_supplier_org_id: string
+          p_email?: string
+          p_name: string
+          p_org_type: string
+          p_phone?: string
         }
         Returns: {
-          buyer_org_id: string | null
           created_at: string
-          created_by: string
-          currency: string | null
-          deal_id: string | null
           id: string
-          notes: string | null
-          payload: Json | null
-          purchase_id: string | null
-          status: string | null
-          supplier_org_id: string | null
-          total_amount: number | null
-          updated_at: string
+          name: string
+          org_type: string
+          status: string
         }
         SetofOptions: {
           from: "*"
-          to: "purchases"
+          to: "organizations"
           isOneToOne: true
           isSetofReturn: false
         }
       }
+      create_purchase:
+        | {
+            Args: {
+              p_buyer_org_id: string
+              p_currency?: string
+              p_deal_id?: string
+              p_notes?: string
+              p_payload?: Json
+              p_supplier_org_id: string
+              p_total_amount?: number
+            }
+            Returns: {
+              buyer_org_id: string | null
+              created_at: string
+              created_by: string
+              currency: string | null
+              deal_id: string | null
+              id: string
+              notes: string | null
+              payload: Json | null
+              purchase_id: string | null
+              status: string | null
+              supplier_org_id: string | null
+              total_amount: number | null
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "purchases"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_buyer_org_id: string
+              p_payload?: Json
+              p_supplier_org_id: string
+            }
+            Returns: {
+              buyer_org_id: string | null
+              created_at: string
+              created_by: string
+              currency: string | null
+              deal_id: string | null
+              id: string
+              notes: string | null
+              payload: Json | null
+              purchase_id: string | null
+              status: string | null
+              supplier_org_id: string | null
+              total_amount: number | null
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "purchases"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       create_rfq: {
         Args: {
           p_delivery_location: string
@@ -2461,6 +2535,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_my_organizations: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          org_type: string
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "organizations"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_notifications: {
         Args: never
         Returns: {
@@ -2483,9 +2573,53 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_org_members: {
+        Args: { p_org_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          joined_at: string | null
+          org_id: string
+          role: string
+          status: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "org_members"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_price_indicators: {
         Args: { p_limit?: number; p_region: string; p_symbol: string }
         Returns: Json
+      }
+      get_purchase: {
+        Args: { p_purchase_id: string }
+        Returns: {
+          buyer_org_id: string | null
+          created_at: string
+          created_by: string
+          currency: string | null
+          deal_id: string | null
+          id: string
+          notes: string | null
+          payload: Json | null
+          purchase_id: string | null
+          status: string | null
+          supplier_org_id: string | null
+          total_amount: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "purchases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_purchase_by_id: {
         Args: { p_po: string }
@@ -2535,6 +2669,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      invite_org_member: {
+        Args: { p_org_id: string; p_role?: string; p_user_email: string }
+        Returns: Json
       }
       jwt_claim: { Args: { claim: string }; Returns: string }
       jwt_org_id: { Args: never; Returns: string }
@@ -2767,7 +2905,7 @@ export type Database = {
         Returns: Json
       }
       update_purchase_status: {
-        Args: { p_purchase_po: string; p_status: string }
+        Args: { p_purchase_id: string; p_status: string }
         Returns: {
           buyer_org_id: string | null
           created_at: string
