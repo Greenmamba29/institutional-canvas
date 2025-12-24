@@ -3,21 +3,63 @@ import { LayoutShell } from "@/components/layout/LayoutShell";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Gavel,
   Clock,
   Users,
   DollarSign,
-  Package,
   ArrowUpRight,
-  TrendingUp,
-  Timer
+  Timer,
+  AlertCircle
 } from "lucide-react";
-import { auctions, formatCurrency, formatVolume } from "@/data/mockData";
+import { useAuctions } from "@/hooks/useAuctions";
+import type { Auction } from "@/services/auctions.service";
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
 
 export default function Auctions() {
+  const { data: auctions = [], isLoading, error } = useAuctions();
+
   const liveAuctions = auctions.filter(a => a.status === 'live');
-  const upcomingAuctions = auctions.filter(a => a.status === 'upcoming');
+  const scheduledAuctions = auctions.filter(a => a.status === 'scheduled');
+  const endedAuctions = auctions.filter(a => a.status === 'ended');
+
+  if (error) {
+    return (
+      <LayoutShell>
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+          <AlertCircle className="h-12 w-12 text-destructive" />
+          <h2 className="text-xl font-semibold">Failed to load Auctions</h2>
+          <p className="text-muted-foreground">{error.message}</p>
+        </div>
+      </LayoutShell>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <LayoutShell>
+        <PageHeader
+          title="Auctions"
+          description="Weekly spot auctions for lithium and battery metals"
+          icon={Gavel}
+        />
+        <div className="space-y-4 mt-6">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full rounded-xl" />
+          ))}
+        </div>
+      </LayoutShell>
+    );
+  }
 
   return (
     <LayoutShell>
@@ -36,148 +78,50 @@ export default function Auctions() {
               Live Auctions
             </h2>
             {liveAuctions.map((auction) => (
-              <div
-                key={auction.id}
-                className="card-premium p-6 border border-destructive/20 animate-pulse-glow"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <StatusPill status="live" />
-                      <span className="text-sm text-muted-foreground font-mono">{auction.id}</span>
-                    </div>
-                    <h3 className="text-xl font-bold">{auction.title}</h3>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Ends In</p>
-                      <p className="text-2xl font-bold font-mono tabular-nums text-destructive">01:45:32</p>
-                    </div>
-                    <Link to={`/auctions/${auction.id}`}>
-                      <Button className="bg-gradient-primary text-primary-foreground">
-                        Enter Auction <ArrowUpRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                  <div className="glass-panel rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Package className="h-4 w-4" />
-                      <span className="text-xs">Lots</span>
-                    </div>
-                    <p className="text-xl font-bold font-mono">{auction.lots.length}</p>
-                  </div>
-                  <div className="glass-panel rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <DollarSign className="h-4 w-4" />
-                      <span className="text-xs">Total Value</span>
-                    </div>
-                    <p className="text-xl font-bold font-mono text-gradient-primary">{formatCurrency(auction.totalValue)}</p>
-                  </div>
-                  <div className="glass-panel rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <TrendingUp className="h-4 w-4" />
-                      <span className="text-xs">Volume</span>
-                    </div>
-                    <p className="text-xl font-bold font-mono">{formatVolume(auction.totalVolume, 'MT')}</p>
-                  </div>
-                  <div className="glass-panel rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Users className="h-4 w-4" />
-                      <span className="text-xs">Participants</span>
-                    </div>
-                    <p className="text-xl font-bold font-mono">{auction.participantsCount}</p>
-                  </div>
-                </div>
-
-                {/* Lots */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Active Lots</h4>
-                  <div className="grid lg:grid-cols-3 gap-4">
-                    {auction.lots.map((lot) => (
-                      <div
-                        key={lot.id}
-                        className="glass-panel rounded-lg p-4 hover:border-primary/30 transition-colors"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-medium px-2 py-0.5 rounded bg-primary/10 text-primary">
-                            Lot #{lot.lotNumber}
-                          </span>
-                          <span className="text-xs text-muted-foreground">{lot.bidsCount} bids</span>
-                        </div>
-                        <h5 className="font-semibold mb-1">{lot.commodity}</h5>
-                        <p className="text-sm text-muted-foreground mb-3">{lot.grade} • {lot.origin}</p>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs text-muted-foreground">Current Bid</p>
-                            <p className="font-mono font-bold text-lg text-gradient-gold">{formatCurrency(lot.currentBid)}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">Volume</p>
-                            <p className="font-mono font-bold">{formatVolume(lot.volume, lot.unit)}</p>
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Leading: <span className="text-foreground">{lot.leadingBidder}</span>
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <AuctionCard key={auction.id} auction={auction} isLive />
             ))}
           </div>
         )}
 
-        {/* Upcoming Auctions */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Timer className="h-5 w-5 text-primary" />
-            Upcoming Auctions
-          </h2>
-          <div className="grid lg:grid-cols-2 gap-4">
-            {upcomingAuctions.map((auction) => (
-              <div key={auction.id} className="card-premium p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <StatusPill status="upcoming" />
-                      <span className="text-xs font-mono text-muted-foreground">{auction.id}</span>
-                    </div>
-                    <h3 className="font-semibold">{auction.title}</h3>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Starts</p>
-                    <p className="font-mono text-sm">{new Date(auction.startTime).toLocaleDateString()}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Lots</p>
-                    <p className="font-mono font-bold">{auction.lots.length}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Volume</p>
-                    <p className="font-mono font-bold">{formatVolume(auction.totalVolume, 'MT')}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Est. Value</p>
-                    <p className="font-mono font-bold">{formatCurrency(auction.totalValue)}</p>
-                  </div>
-                </div>
-                <Button variant="outline" className="w-full">
-                  <Clock className="h-4 w-4 mr-2" />
-                  Set Reminder
-                </Button>
-              </div>
-            ))}
+        {/* Scheduled Auctions */}
+        {scheduledAuctions.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Timer className="h-5 w-5 text-primary" />
+              Scheduled Auctions
+            </h2>
+            <div className="grid lg:grid-cols-2 gap-4">
+              {scheduledAuctions.map((auction) => (
+                <AuctionCard key={auction.id} auction={auction} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* TODO Stub */}
+        {/* Ended Auctions */}
+        {endedAuctions.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              Ended Auctions
+            </h2>
+            <div className="grid lg:grid-cols-2 gap-4">
+              {endedAuctions.map((auction) => (
+                <AuctionCard key={auction.id} auction={auction} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {auctions.length === 0 && (
+          <div className="glass-panel rounded-xl p-8 text-center">
+            <Gavel className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No auctions available</h3>
+            <p className="text-muted-foreground">Check back later for new auctions</p>
+          </div>
+        )}
+
+        {/* Phase 2 Stub */}
         <div className="glass-panel rounded-xl p-6 border-dashed border-2 border-border">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 rounded-lg bg-warning/10">
@@ -191,5 +135,62 @@ export default function Auctions() {
         </div>
       </div>
     </LayoutShell>
+  );
+}
+
+function AuctionCard({ auction, isLive = false }: { auction: Auction; isLive?: boolean }) {
+  return (
+    <div
+      className={`card-premium p-5 ${isLive ? 'border border-destructive/20 animate-pulse-glow' : ''}`}
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <StatusPill status={auction.status === 'scheduled' ? 'upcoming' : auction.status === 'live' ? 'live' : 'ended'} />
+            <span className="text-xs font-mono text-muted-foreground">{auction.id.slice(0, 8)}</span>
+          </div>
+          <h3 className="font-semibold">{auction.title}</h3>
+          {auction.description && (
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{auction.description}</p>
+          )}
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-muted-foreground">
+            {auction.status === 'live' ? 'Ends' : auction.status === 'scheduled' ? 'Starts' : 'Ended'}
+          </p>
+          <p className="font-mono text-sm">
+            {new Date(auction.ends_at || auction.starts_at || auction.created_at).toLocaleDateString()}
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <div>
+          <p className="text-xs text-muted-foreground">Currency</p>
+          <p className="font-mono font-bold">{auction.currency}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Reserve</p>
+          <p className="font-mono font-bold">
+            {auction.reserve_price ? formatCurrency(auction.reserve_price) : '-'}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Status</p>
+          <p className="font-mono font-bold capitalize">{auction.status}</p>
+        </div>
+      </div>
+      {isLive ? (
+        <Link to={`/auctions/${auction.id}`}>
+          <Button className="w-full bg-gradient-primary text-primary-foreground">
+            Enter Auction <ArrowUpRight className="h-4 w-4 ml-2" />
+          </Button>
+        </Link>
+      ) : (
+        <Button variant="outline" className="w-full">
+          <Clock className="h-4 w-4 mr-2" />
+          {auction.status === 'scheduled' ? 'Set Reminder' : 'View Results'}
+        </Button>
+      )}
+    </div>
   );
 }

@@ -45,22 +45,31 @@ export async function getSuppliers(options?: {
 
 /**
  * Get supplier by ID with full profile
+ * Split into separate queries to avoid TS2589 deep type recursion
  */
 export async function getSupplierById(supplierId: string) {
-  const { data, error } = await supabase
-    .from('suppliers')
-    .select(`
-      *,
-      supplier_profiles (*),
-      products (*),
-      certifications (*),
-      locations (*),
-      reviews (*)
-    `)
-    .eq('id', supplierId)
-    .single();
+  const [supplierResult, productsResult, certificationsResult, reviewsResult] = await Promise.all([
+    supabase.from('suppliers').select('*').eq('org_id', supplierId).single(),
+    supabase.from('products').select('*').eq('supplier_id', supplierId),
+    supabase.from('certifications').select('*').eq('supplier_id', supplierId),
+    supabase.from('reviews').select('*').eq('supplier_id', supplierId),
+  ]);
+
+  const error = supplierResult.error || productsResult.error || certificationsResult.error || reviewsResult.error;
   
-  return { data, error };
+  if (error || !supplierResult.data) {
+    return { data: null, error };
+  }
+
+  return {
+    data: {
+      ...supplierResult.data,
+      products: productsResult.data || [],
+      certifications: certificationsResult.data || [],
+      reviews: reviewsResult.data || [],
+    },
+    error: null,
+  };
 }
 
 /**
