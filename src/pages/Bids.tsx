@@ -6,25 +6,39 @@ import { StatusPill } from "@/components/shared/StatusPill";
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Activity,
   Search,
-  Filter,
   TrendingUp,
-  TrendingDown,
-  Building2
+  Building2,
+  AlertCircle
 } from "lucide-react";
-import { bids, formatCurrency, formatVolume, type Bid } from "@/data/mockData";
+import { useBids } from "@/hooks/useBids";
+import type { Bid } from "@/services/bids.service";
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
 
 export default function Bids() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'won' | 'lost'>('all');
+  const [filterWithdrawn, setFilterWithdrawn] = useState<'all' | 'active' | 'withdrawn'>('all');
+
+  const { data: bids = [], isLoading, error } = useBids();
 
   const filteredBids = bids.filter(bid => {
-    const matchesSearch = bid.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bid.rfqId.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || bid.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const matchesSearch = bid.rfq_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      bid.supplier_id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterWithdrawn === 'all' || 
+      (filterWithdrawn === 'withdrawn' && bid.is_withdrawn) ||
+      (filterWithdrawn === 'active' && !bid.is_withdrawn);
+    return matchesSearch && matchesFilter;
   });
 
   const columns = [
@@ -32,76 +46,81 @@ export default function Bids() {
       key: 'id',
       header: 'Bid ID',
       render: (bid: Bid) => (
-        <span className="font-mono text-primary">{bid.id}</span>
+        <span className="font-mono text-primary">{bid.id.slice(0, 8)}</span>
       )
     },
     {
-      key: 'rfqId',
+      key: 'rfq_id',
       header: 'RFQ',
       render: (bid: Bid) => (
-        <Link to={`/rfqs/${bid.rfqId}`} className="font-mono hover:text-primary transition-colors">
-          {bid.rfqId}
+        <Link to={`/rfqs/${bid.rfq_id}`} className="font-mono hover:text-primary transition-colors">
+          {bid.rfq_id.slice(0, 8)}
         </Link>
       )
     },
     {
-      key: 'supplierName',
+      key: 'supplier_id',
       header: 'Supplier',
       render: (bid: Bid) => (
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{bid.supplierName}</span>
+          <span className="font-medium">{bid.supplier_id.slice(0, 8)}</span>
         </div>
       )
     },
     {
-      key: 'volume',
-      header: 'Volume',
+      key: 'quantity',
+      header: 'Quantity',
       className: 'text-right',
       render: (bid: Bid) => (
-        <span className="font-mono">{formatVolume(bid.volume, bid.unit)}</span>
+        <span className="font-mono">{bid.quantity?.toLocaleString() || '-'}</span>
       )
     },
     {
-      key: 'pricePerUnit',
-      header: 'Price/Unit',
+      key: 'price',
+      header: 'Price',
       className: 'text-right',
       render: (bid: Bid) => (
-        <span className="font-mono font-medium">{formatCurrency(bid.pricePerUnit)}</span>
+        <span className="font-mono font-medium">{formatCurrency(bid.price)}</span>
       )
     },
     {
-      key: 'totalValue',
-      header: 'Total Value',
+      key: 'lead_time_days',
+      header: 'Lead Time',
       className: 'text-right',
-      render: (bid: Bid) => (
-        <span className="font-mono font-bold text-lg">{formatCurrency(bid.totalValue)}</span>
-      )
-    },
-    {
-      key: 'deliveryDate',
-      header: 'Delivery',
       render: (bid: Bid) => (
         <span className="text-sm text-muted-foreground">
-          {new Date(bid.deliveryDate).toLocaleDateString()}
+          {bid.lead_time_days ? `${bid.lead_time_days} days` : '-'}
         </span>
       )
     },
     {
-      key: 'status',
+      key: 'is_withdrawn',
       header: 'Status',
       className: 'text-right',
-      render: (bid: Bid) => <StatusPill status={bid.status} />
+      render: (bid: Bid) => <StatusPill status={bid.is_withdrawn ? 'withdrawn' : 'active'} />
     }
   ];
 
   // Stats
   const stats = {
     totalBids: bids.length,
-    activeBids: bids.filter(b => b.status === 'active').length,
-    totalValue: bids.reduce((acc, b) => acc + b.totalValue, 0),
-    wonValue: bids.filter(b => b.status === 'won').reduce((acc, b) => acc + b.totalValue, 0),
+    activeBids: bids.filter(b => !b.is_withdrawn).length,
+    withdrawnBids: bids.filter(b => b.is_withdrawn).length,
+    totalValue: bids.reduce((acc, b) => acc + b.price, 0),
   };
+
+  if (error) {
+    return (
+      <LayoutShell>
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+          <AlertCircle className="h-12 w-12 text-destructive" />
+          <h2 className="text-xl font-semibold">Failed to load Bids</h2>
+          <p className="text-muted-foreground">{error.message}</p>
+        </div>
+      </LayoutShell>
+    );
+  }
 
   return (
     <LayoutShell>
@@ -129,12 +148,12 @@ export default function Bids() {
             <p className="text-2xl font-bold font-mono tabular-nums text-primary">{stats.activeBids}</p>
           </div>
           <div className="glass-panel rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Total Bid Value</p>
-            <p className="text-2xl font-bold font-mono tabular-nums">{formatCurrency(stats.totalValue)}</p>
+            <p className="text-sm text-muted-foreground">Withdrawn</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-muted-foreground">{stats.withdrawnBids}</p>
           </div>
           <div className="glass-panel rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Won Value</p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-success">{formatCurrency(stats.wonValue)}</p>
+            <p className="text-sm text-muted-foreground">Total Value</p>
+            <p className="text-2xl font-bold font-mono tabular-nums">{formatCurrency(stats.totalValue)}</p>
           </div>
         </div>
 
@@ -152,12 +171,12 @@ export default function Bids() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {(['all', 'active', 'won', 'lost'] as const).map((status) => (
+            {(['all', 'active', 'withdrawn'] as const).map((status) => (
               <Button
                 key={status}
-                variant={filterStatus === status ? 'secondary' : 'ghost'}
+                variant={filterWithdrawn === status ? 'secondary' : 'ghost'}
                 size="sm"
-                onClick={() => setFilterStatus(status)}
+                onClick={() => setFilterWithdrawn(status)}
                 className="capitalize"
               >
                 {status}
@@ -167,7 +186,19 @@ export default function Bids() {
         </div>
 
         {/* Table */}
-        <DataTable columns={columns} data={filteredBids} />
+        {isLoading ? (
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-lg" />
+            ))}
+          </div>
+        ) : filteredBids.length === 0 ? (
+          <div className="glass-panel rounded-xl p-8 text-center">
+            <p className="text-muted-foreground">No bids found</p>
+          </div>
+        ) : (
+          <DataTable columns={columns} data={filteredBids} />
+        )}
       </div>
     </LayoutShell>
   );

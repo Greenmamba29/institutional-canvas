@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { useRole } from "@/context/RoleContext";
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
@@ -11,18 +10,35 @@ import { SupplierProfileSidebar } from "@/components/rfq/SupplierProfileSidebar"
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FileText, Search, Plus, Building2, Truck, Flag } from "lucide-react";
-import { rfqs, formatCurrency, formatVolume, type RFQ } from "@/data/mockData";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search, Plus, Truck, Flag, AlertCircle } from "lucide-react";
+import { useRFQs } from "@/hooks/useRFQs";
+import type { RFQ } from "@/services/rfqs.service";
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatVolume(volume: number, unit: string): string {
+  return `${volume.toLocaleString()} ${unit}`;
+}
 
 export default function RFQs() {
   const { role } = useRole();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<'all' | 'open' | 'closed' | 'awarded'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'submitted' | 'closed' | 'awarded'>('all');
   const [activeTab, setActiveTab] = useState('live');
+  
+  const { data: rfqs = [], isLoading, error } = useRFQs();
 
   const filteredRfqs = rfqs.filter(rfq => {
-    const matchesSearch = rfq.commodity.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rfq.buyerCompany.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = rfq.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (rfq.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
     const matchesStatus = filterStatus === 'all' || rfq.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -35,46 +51,57 @@ export default function RFQs() {
 
   const columns = [
     {
-      key: 'buyerCompany',
-      header: 'COMPANY',
+      key: 'title',
+      header: 'TITLE',
       render: (rfq: RFQ) => (
         <div className="flex items-center gap-2">
-          <span className="text-lg">🇺🇸</span>
-          <span className="font-medium text-sm">{rfq.buyerCompany}</span>
+          <span className="font-medium text-sm">{rfq.title}</span>
         </div>
       )
     },
     {
-      key: 'commodity',
-      header: 'PRODUCT',
-      render: (rfq: RFQ) => <span className="text-sm">{rfq.commodity}</span>
+      key: 'description',
+      header: 'DESCRIPTION',
+      render: (rfq: RFQ) => <span className="text-sm text-muted-foreground line-clamp-1">{rfq.description || '-'}</span>
     },
     {
-      key: 'volume',
+      key: 'target_quantity',
       header: 'QUANTITY',
-      render: (rfq: RFQ) => <span className="font-mono text-sm">{formatVolume(rfq.volume, rfq.unit)}</span>
+      render: (rfq: RFQ) => <span className="font-mono text-sm">{formatVolume(rfq.target_quantity || 0, rfq.target_unit || 'MT')}</span>
     },
     {
-      key: 'expiresAt',
-      header: 'REMAINING',
-      render: (rfq: RFQ) => <CountdownTimer expiresAt={rfq.expiresAt} />
+      key: 'delivery_location',
+      header: 'DELIVERY',
+      render: (rfq: RFQ) => <span className="text-sm">{rfq.delivery_location || '-'}</span>
     },
     {
-      key: 'match',
-      header: 'MATCH',
-      render: () => <MatchProgressBar percentage={Math.floor(Math.random() * 60) + 30} className="w-24" />
+      key: 'incoterms',
+      header: 'INCOTERMS',
+      render: (rfq: RFQ) => <span className="text-sm font-mono">{rfq.incoterms || '-'}</span>
     },
     {
-      key: 'targetPrice',
-      header: 'VALUE',
-      render: (rfq: RFQ) => <span className="font-mono font-bold">{formatCurrency(rfq.targetPrice * rfq.volume)}</span>
+      key: 'status',
+      header: 'STATUS',
+      render: (rfq: RFQ) => <StatusPill status={rfq.status === 'submitted' ? 'open' : rfq.status === 'draft' ? 'pending' : rfq.status === 'closed' ? 'closed' : 'pending'} />
     },
     {
-      key: 'escrow',
-      header: 'ESCROW',
-      render: () => <span className="text-xs text-muted-foreground">@{Math.floor(Math.random() * 5) + 1}H {Math.floor(Math.random() * 59)}M</span>
+      key: 'created_at',
+      header: 'CREATED',
+      render: (rfq: RFQ) => <span className="text-xs text-muted-foreground">{new Date(rfq.created_at).toLocaleDateString()}</span>
     },
   ];
+
+  if (error) {
+    return (
+      <LayoutShell>
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+          <AlertCircle className="h-12 w-12 text-destructive" />
+          <h2 className="text-xl font-semibold">Failed to load RFQs</h2>
+          <p className="text-muted-foreground">{error.message}</p>
+        </div>
+      </LayoutShell>
+    );
+  }
 
   return (
     <LayoutShell>
@@ -105,7 +132,7 @@ export default function RFQs() {
                 />
               </div>
               <div className="flex items-center gap-2">
-                {(['all', 'open', 'awarded', 'closed'] as const).map((status) => (
+                {(['all', 'submitted', 'awarded', 'closed'] as const).map((status) => (
                   <Button
                     key={status}
                     variant={filterStatus === status ? 'secondary' : 'ghost'}
@@ -119,7 +146,19 @@ export default function RFQs() {
               </div>
             </div>
 
-            <DataTable columns={columns} data={filteredRfqs} />
+            {isLoading ? (
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : filteredRfqs.length === 0 ? (
+              <div className="glass-panel rounded-xl p-8 text-center">
+                <p className="text-muted-foreground">No RFQs found</p>
+              </div>
+            ) : (
+              <DataTable columns={columns} data={filteredRfqs} />
+            )}
 
             {/* Bottom Status Cards */}
             <div className="grid md:grid-cols-2 gap-4">
