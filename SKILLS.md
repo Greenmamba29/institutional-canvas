@@ -216,6 +216,62 @@ list_listings(): products[]
 get_listing(p_product_id: uuid): products
 ```
 
+### Organizations
+```typescript
+// Create organization (auto-adds creator as owner)
+create_organization(
+  p_org_type: 'buyer' | 'supplier' | 'admin' | 'partner',
+  p_name: string,
+  p_email: string | null,
+  p_phone: string | null
+): organizations
+
+// Get user's organizations
+get_my_organizations(): organizations[]
+
+// Invite member to org (returns invite token)
+invite_org_member(
+  p_org_id: uuid,
+  p_user_email: string,
+  p_role: 'owner' | 'admin' | 'member' | 'viewer'
+): jsonb
+
+// Claim org membership (supplier onboarding)
+claim_org_membership(
+  p_org_id: uuid,
+  p_invite_token: string | null
+): org_members
+
+// Get org members
+get_org_members(p_org_id: uuid): org_members[]
+```
+
+### Purchases (Purchase Orders)
+```typescript
+// Create purchase order (generates PO-YYYY-NNNNNN)
+create_purchase(
+  p_buyer_org_id: uuid,
+  p_supplier_org_id: uuid,
+  p_deal_id: uuid | null,
+  p_total_amount: number | null,
+  p_currency: string = 'USD',
+  p_payload: jsonb = '{}',
+  p_notes: string | null
+): purchases
+
+// Update purchase status
+update_purchase_status(
+  p_purchase_id: string, // PO number
+  p_status: 'pending' | 'accepted' | 'rejected' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
+): purchases
+
+// List user's org purchases
+list_purchases(): purchases[]
+
+// Get single purchase by PO number
+get_purchase(p_purchase_id: string): purchases
+```
+
 ---
 
 ## Enums
