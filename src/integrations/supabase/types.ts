@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       activity_log: {
@@ -1224,22 +1249,34 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          invited_at: string | null
+          invited_by: string | null
+          joined_at: string | null
           org_id: string
           role: string
+          status: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
           org_id: string
           role?: string
+          status?: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
           org_id?: string
           role?: string
+          status?: string
           user_id?: string
         }
         Relationships: [
@@ -1561,29 +1598,47 @@ export type Database = {
         Row: {
           buyer_org_id: string | null
           created_at: string
+          created_by: string
+          currency: string | null
+          deal_id: string | null
           id: string
+          notes: string | null
           payload: Json | null
           purchase_id: string | null
           status: string | null
           supplier_org_id: string | null
+          total_amount: number | null
+          updated_at: string
         }
         Insert: {
           buyer_org_id?: string | null
           created_at?: string
+          created_by?: string
+          currency?: string | null
+          deal_id?: string | null
           id?: string
+          notes?: string | null
           payload?: Json | null
           purchase_id?: string | null
           status?: string | null
           supplier_org_id?: string | null
+          total_amount?: number | null
+          updated_at?: string
         }
         Update: {
           buyer_org_id?: string | null
           created_at?: string
+          created_by?: string
+          currency?: string | null
+          deal_id?: string | null
           id?: string
+          notes?: string | null
           payload?: Json | null
           purchase_id?: string | null
           status?: string | null
           supplier_org_id?: string | null
+          total_amount?: number | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1591,6 +1646,13 @@ export type Database = {
             columns: ["buyer_org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
             referencedColumns: ["id"]
           },
           {
@@ -1944,6 +2006,7 @@ export type Database = {
           display_name: string | null
           invited_email: string | null
           org_id: string
+          organization_id: string | null
           public_profile: Json | null
           verification_tier: string | null
         }
@@ -1954,6 +2017,7 @@ export type Database = {
           display_name?: string | null
           invited_email?: string | null
           org_id: string
+          organization_id?: string | null
           public_profile?: Json | null
           verification_tier?: string | null
         }
@@ -1964,6 +2028,7 @@ export type Database = {
           display_name?: string | null
           invited_email?: string | null
           org_id?: string
+          organization_id?: string | null
           public_profile?: Json | null
           verification_tier?: string | null
         }
@@ -1972,6 +2037,13 @@ export type Database = {
             foreignKeyName: "suppliers_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suppliers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -2259,11 +2331,17 @@ export type Database = {
         Returns: {
           buyer_org_id: string | null
           created_at: string
+          created_by: string
+          currency: string | null
+          deal_id: string | null
           id: string
+          notes: string | null
           payload: Json | null
           purchase_id: string | null
           status: string | null
           supplier_org_id: string | null
+          total_amount: number | null
+          updated_at: string
         }
         SetofOptions: {
           from: "*"
@@ -2414,11 +2492,17 @@ export type Database = {
         Returns: {
           buyer_org_id: string | null
           created_at: string
+          created_by: string
+          currency: string | null
+          deal_id: string | null
           id: string
+          notes: string | null
           payload: Json | null
           purchase_id: string | null
           status: string | null
           supplier_org_id: string | null
+          total_amount: number | null
+          updated_at: string
         }
         SetofOptions: {
           from: "*"
@@ -2510,11 +2594,17 @@ export type Database = {
         Returns: {
           buyer_org_id: string | null
           created_at: string
+          created_by: string
+          currency: string | null
+          deal_id: string | null
           id: string
+          notes: string | null
           payload: Json | null
           purchase_id: string | null
           status: string | null
           supplier_org_id: string | null
+          total_amount: number | null
+          updated_at: string
         }[]
         SetofOptions: {
           from: "*"
@@ -2681,11 +2771,17 @@ export type Database = {
         Returns: {
           buyer_org_id: string | null
           created_at: string
+          created_by: string
+          currency: string | null
+          deal_id: string | null
           id: string
+          notes: string | null
           payload: Json | null
           purchase_id: string | null
           status: string | null
           supplier_org_id: string | null
+          total_amount: number | null
+          updated_at: string
         }
         SetofOptions: {
           from: "*"
@@ -2840,6 +2936,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       auction_status: ["scheduled", "live", "ended", "cancelled"],
