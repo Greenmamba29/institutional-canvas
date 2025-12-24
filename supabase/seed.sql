@@ -2,8 +2,24 @@
 -- Lithium Buy MVP - Seed Data for Testing
 -- =========================================
 
--- Note: Replace Auth0 sub values with real ones from your Auth0 users
--- For testing, you can use placeholder subs like 'auth0|buyer_user_123'
+-- =========================================
+-- IMPORTANT: Auth0 Configuration Required
+-- =========================================
+-- Before running this script:
+-- 1. Create 2 Auth0 users in your tenant
+-- 2. Get their 'sub' values from Auth0 dashboard > Users > {user} > Details
+-- 3. Replace 'auth0|buyer_test_user' and 'auth0|supplier_test_user' below
+-- 4. Configure Auth0 Action to inject org_id claim (see SKILLS.md)
+
+-- Example Auth0 Action to add org_id claim:
+--
+-- exports.onExecutePostLogin = async (event, api) => {
+--   const orgId = event.user.app_metadata?.org_id; // Set via Auth0 Management API
+--   if (orgId) {
+--     api.idToken.setCustomClaim('org_id', orgId);
+--     api.accessToken.setCustomClaim('org_id', orgId);
+--   }
+-- };
 
 -- =========================================
 -- 1) Organizations
