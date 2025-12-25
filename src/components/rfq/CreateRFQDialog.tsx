@@ -34,25 +34,48 @@ export function CreateRFQDialog() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.target_quantity || !formData.delivery_location) {
+    // Validate required fields
+    if (!formData.title.trim()) {
       toast({
-        title: "Missing required fields",
-        description: "Please fill in all required fields",
+        title: "Title required",
+        description: "Please provide an RFQ title",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.target_quantity || parseFloat(formData.target_quantity) <= 0) {
+      toast({
+        title: "Invalid quantity",
+        description: "Please provide a valid quantity greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.delivery_location.trim()) {
+      toast({
+        title: "Delivery location required",
+        description: "Please provide a delivery location",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      await createRFQ.mutateAsync({
-        p_title: formData.title,
-        p_description: formData.description,
+      console.log('[CreateRFQ] Submitting:', formData);
+      
+      const result = await createRFQ.mutateAsync({
+        p_title: formData.title.trim(),
+        p_description: formData.description.trim(),
         p_product_id: formData.product_id || "00000000-0000-0000-0000-000000000000", // Temporary fallback
         p_target_quantity: parseFloat(formData.target_quantity),
         p_target_unit: formData.target_unit,
         p_incoterms: formData.incoterms,
-        p_delivery_location: formData.delivery_location,
+        p_delivery_location: formData.delivery_location.trim(),
       });
+      
+      console.log('[CreateRFQ] Success:', result);
 
       toast({
         title: "RFQ Created",
@@ -142,6 +165,7 @@ export function CreateRFQDialog() {
                 <Label htmlFor="unit">Unit</Label>
                 <select
                   id="unit"
+                  name="unit"
                   value={formData.target_unit}
                   onChange={(e) => setFormData({ ...formData, target_unit: e.target.value })}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -157,6 +181,7 @@ export function CreateRFQDialog() {
               <Label htmlFor="incoterms">Incoterms</Label>
               <select
                 id="incoterms"
+                name="incoterms"
                 value={formData.incoterms}
                 onChange={(e) => setFormData({ ...formData, incoterms: e.target.value })}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
