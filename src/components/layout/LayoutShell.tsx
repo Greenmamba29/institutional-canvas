@@ -6,6 +6,7 @@ import { RoleSwitcher } from "./RoleSwitcher";
 import { GMVSummaryPanel } from "./GMVSummaryPanel";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { CountBadge } from "@/components/shared/CountBadge";
+import { OrgSwitcher } from "@/components/org/OrgSwitcher";
 import { VerificationBadge } from "@/components/shared/VerificationBadge";
 import {
   Store,
@@ -310,6 +311,9 @@ export function LayoutShell({ children }: LayoutShellProps) {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Organization Switcher */}
+              <OrgSwitcher />
+
               {/* Role Switcher */}
               <RoleSwitcher />
 

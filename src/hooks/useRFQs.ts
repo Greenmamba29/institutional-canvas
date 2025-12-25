@@ -1,23 +1,30 @@
 /**
  * RFQs React Query Hooks
+ * 
+ * Org-aware: Query keys include currentOrgId for proper cache isolation.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCurrentOrg } from '@/hooks/useCurrentOrg';
 import { listRfqs, createRfq, getRfqById } from '@/services/rfqs.service';
 
 export const rfqKeys = {
   all: ['rfqs'] as const,
+  list: (orgId: string | null) => ['rfqs', 'list', orgId] as const,
   detail: (id: string) => ['rfqs', id] as const,
 };
 
 export function useRFQs() {
+  const { currentOrgId } = useCurrentOrg();
+  
   return useQuery({
-    queryKey: rfqKeys.all,
+    queryKey: rfqKeys.list(currentOrgId),
     queryFn: async () => {
       const { data, error } = await listRfqs();
       if (error) throw error;
       return data ?? [];
     },
+    enabled: !!currentOrgId,
   });
 }
 
@@ -35,11 +42,12 @@ export function useRFQ(rfqId: string) {
 
 export function useCreateRFQ() {
   const queryClient = useQueryClient();
+  const { currentOrgId } = useCurrentOrg();
   
   return useMutation({
     mutationFn: createRfq,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: rfqKeys.all });
+      queryClient.invalidateQueries({ queryKey: rfqKeys.list(currentOrgId) });
     },
   });
 }

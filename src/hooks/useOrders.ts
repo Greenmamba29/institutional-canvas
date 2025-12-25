@@ -1,9 +1,12 @@
 /**
  * React Query hooks for Orders and Quotes
  * Mutations will invalidate queries automatically
+ * 
+ * Org-aware: Query keys include currentOrgId for proper cache isolation.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCurrentOrg } from '@/hooks/useCurrentOrg';
 import {
   getOrders,
   getOrderById,
@@ -35,13 +38,16 @@ export const quoteKeys = {
 // ============================================
 
 export function useOrders(options?: { status?: string; limit?: number }) {
+  const { currentOrgId } = useCurrentOrg();
+  
   return useQuery({
-    queryKey: orderKeys.list(options ?? {}),
+    queryKey: orderKeys.list({ ...options, orgId: currentOrgId }),
     queryFn: async () => {
       const { data, error } = await getOrders(options);
       if (error) throw error;
       return data;
     },
+    enabled: !!currentOrgId,
   });
 }
 
@@ -98,13 +104,16 @@ export function useUpdateOrderStatus() {
 // ============================================
 
 export function useQuotes(options?: { status?: string; limit?: number }) {
+  const { currentOrgId } = useCurrentOrg();
+  
   return useQuery({
-    queryKey: quoteKeys.list(options ?? {}),
+    queryKey: quoteKeys.list({ ...options, orgId: currentOrgId }),
     queryFn: async () => {
       const { data, error } = await getQuotes(options);
       if (error) throw error;
       return data;
     },
+    enabled: !!currentOrgId,
   });
 }
 

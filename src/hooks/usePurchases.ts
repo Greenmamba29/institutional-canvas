@@ -2,10 +2,12 @@
  * Purchases Hooks
  * 
  * React Query hooks for purchase order management.
+ * Org-aware: includes org_id in all relevant operations.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
+import { useCurrentOrg } from '@/hooks/useCurrentOrg';
 import { createAuthenticatedClient } from '@/lib/supabase/authenticated-client';
 import {
   listPurchases,
@@ -21,9 +23,10 @@ import {
  */
 export function usePurchases() {
   const { getAccessToken, isAuthenticated } = useAuth();
+  const { currentOrgId } = useCurrentOrg();
 
   return useQuery({
-    queryKey: ['purchases'],
+    queryKey: ['purchases', currentOrgId],
     queryFn: async () => {
       const token = await getAccessToken();
       const client = createAuthenticatedClient(token);
@@ -31,7 +34,7 @@ export function usePurchases() {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !!currentOrgId,
     staleTime: 30 * 1000, // 30 seconds
   });
 }
