@@ -28,21 +28,21 @@
 
 ## 🚧 IN PROGRESS
 
-### Stream 1: Core Auth & Infrastructure (Lovable) - NEXT
+### Stream 1: Core Auth & Infrastructure (Lovable) - ✅ COMPLETE
 **Duration**: ~1 hour  
 **Owner**: Lovable Agent  
-**Blocker**: Frontend cannot proceed without this
 
 #### Tasks:
-- [ ] Install `@auth0/auth0-react`
-- [ ] Create `src/context/AuthContext.tsx`
-- [ ] Create `src/lib/supabase/authenticated-client.ts`
-- [ ] Update `src/lib/supabase/rpc.ts` to use authenticated client
-- [ ] Wrap `App.tsx` with AuthProvider
-- [ ] Add login/logout to TopNav
+- [x] Use **Supabase Auth** (not Auth0) - confirmed with team
+- [x] Create `src/context/AuthContext.tsx`
+- [x] Create authenticated Supabase client
+- [x] Update `src/lib/supabase/rpc.ts` to use authenticated client
+- [x] Wrap `App.tsx` with AuthProvider
+- [x] Add login/logout to TopNav
+- [x] Create onboarding flow with org creation/joining
+- [x] Multi-tenancy with OrganizationContext
 
-**Start Condition**: Backend verified (DONE)  
-**End Condition**: User can login via Auth0, JWT injected into Supabase
+**Status**: ✅ Auth working with Supabase, RLS enforced
 
 ---
 

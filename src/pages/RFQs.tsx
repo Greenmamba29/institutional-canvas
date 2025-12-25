@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Plus, Truck, Flag, AlertCircle } from "lucide-react";
 import { useRFQs } from "@/hooks/useRFQs";
 import type { RFQ } from "@/services/rfqs.service";
+import { CreateRFQDialog } from "@/components/rfq/CreateRFQDialog";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -110,10 +111,7 @@ export default function RFQs() {
         
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">Live RFQs</h1>
-          <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            <Plus className="h-4 w-4 mr-2" />
-            Create RFQ
-          </Button>
+          <CreateRFQDialog />
         </div>
 
         <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />

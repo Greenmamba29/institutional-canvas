@@ -7,6 +7,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCurrentOrg } from '@/hooks/useCurrentOrg';
 import { listRfqs, createRfq, getRfqById } from '@/services/rfqs.service';
+import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 export const rfqKeys = {
   all: ['rfqs'] as const,
@@ -17,6 +18,14 @@ export const rfqKeys = {
 export function useRFQs() {
   const { currentOrgId } = useCurrentOrg();
   
+  // Subscribe to realtime changes
+  useRealtimeSubscription({
+    table: 'rfqs',
+    event: '*',
+    queryKey: rfqKeys.list(currentOrgId),
+    enabled: !!currentOrgId,
+  });
+
   return useQuery({
     queryKey: rfqKeys.list(currentOrgId),
     queryFn: async () => {

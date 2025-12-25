@@ -7,6 +7,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCurrentOrg } from '@/hooks/useCurrentOrg';
 import { listBids, getBidsByRfq, submitBid, withdrawBid } from '@/services/bids.service';
+import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 export const bidKeys = {
   all: ['bids'] as const,
@@ -17,6 +18,14 @@ export const bidKeys = {
 export function useBids() {
   const { currentOrgId } = useCurrentOrg();
   
+  // Subscribe to realtime changes
+  useRealtimeSubscription({
+    table: 'bids',
+    event: '*',
+    queryKey: bidKeys.list(currentOrgId),
+    enabled: !!currentOrgId,
+  });
+
   return useQuery({
     queryKey: bidKeys.list(currentOrgId),
     queryFn: async () => {

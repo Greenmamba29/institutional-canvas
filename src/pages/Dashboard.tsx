@@ -13,6 +13,8 @@ import { BottomKPIs } from "@/components/dashboard/BottomKPIs";
 import { WeeklyAuctionSnapshot } from "@/components/supplier/WeeklyAuctionSnapshot";
 import { UpcomingAuctions } from "@/components/supplier/UpcomingAuctions";
 import { TrendingUp, DollarSign, Activity, Lock } from "lucide-react";
+import { useDashboardStats, usePriceTicker } from "@/hooks/useDashboardStats";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const chartData = [
   { date: 'Oct 1', value: 42000 },
@@ -50,6 +52,8 @@ const escrowedAssets = [
 export default function Dashboard() {
   const { viewMode } = useRole();
   const [activeTab, setActiveTab] = useState(viewMode === 'supplier' ? 'overview' : 'dashboard');
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: priceData } = usePriceTicker();
 
   const tabs = viewMode === 'supplier' 
     ? [{ id: 'overview', label: 'OVERVIEW' }, { id: 'listings', label: 'MY LISTINGS' }, { id: 'financials', label: 'FINANCIALS' }]
@@ -107,38 +111,57 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="glass-panel rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] text-muted-foreground tracking-wider">GROSS MARKET VALUE</span>
-              <span className="text-[10px] font-bold text-success bg-success/20 px-1.5 py-0.5 rounded">+8.2%</span>
+              <span className="text-[10px] text-muted-foreground tracking-wider">ACTIVE RFQs</span>
+              <span className="text-[10px] font-bold text-accent bg-accent/20 px-1.5 py-0.5 rounded">LIVE</span>
             </div>
-            <p className="text-2xl font-bold font-mono">$4MV</p>
-            <p className="text-[10px] text-muted-foreground">YTD #237</p>
+            {statsLoading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <p className="text-2xl font-bold font-mono">{stats?.activeRfqs || 0}</p>
+            )}
+            <p className="text-[10px] text-muted-foreground">Total: {stats?.totalRfqs || 0}</p>
           </div>
 
           <div className="glass-panel rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] text-muted-foreground tracking-wider">TODAY'S GMV</span>
-              <span className="text-[10px] font-bold text-success bg-success/20 px-1.5 py-0.5 rounded">+6.1%</span>
+              <span className="text-[10px] text-muted-foreground tracking-wider">ACTIVE BIDS</span>
+              <span className="text-[10px] font-bold text-success bg-success/20 px-1.5 py-0.5 rounded">OPEN</span>
             </div>
-            <p className="text-2xl font-bold font-mono">$4,270</p>
+            {statsLoading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <p className="text-2xl font-bold font-mono">{stats?.activeBids || 0}</p>
+            )}
+            <p className="text-[10px] text-muted-foreground">Total: {stats?.totalBids || 0}</p>
           </div>
 
           <div className="glass-panel rounded-xl p-4 lg:col-span-2">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold text-accent bg-accent/20 px-1.5 py-0.5 rounded">4% +1 FEE RATE</span>
+              <span className="text-[10px] font-bold text-green-600 bg-green-600/20 px-1.5 py-0.5 rounded">DEALS</span>
             </div>
-            <p className="text-[10px] text-muted-foreground tracking-wider">TOTAL MARKETPLACE VALUE</p>
-            <p className="text-xl font-bold font-mono mb-2">$16,207,430</p>
+            <p className="text-[10px] text-muted-foreground tracking-wider">ACCEPTED / PENDING</p>
+            {statsLoading ? (
+              <Skeleton className="h-6 w-32 mb-2" />
+            ) : (
+              <p className="text-xl font-bold font-mono mb-2">{stats?.acceptedDeals || 0} / {stats?.pendingDeals || 0}</p>
+            )}
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">AUCTION FEES: <span className="text-foreground font-mono">$608,297</span></span>
-              <span className="text-success">+2.4% GROWTH INDEX</span>
+              <span className="text-muted-foreground">TOTAL DEALS: <span className="text-foreground font-mono">{stats?.totalDeals || 0}</span></span>
+              {priceData && (
+                <span className="text-accent">{priceData.symbol}: ${priceData.price.toLocaleString()}/{priceData.unit}</span>
+              )}
             </div>
           </div>
 
           <div className="glass-panel rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-muted-foreground tracking-wider">TOTAL TRANSACTIONS</p>
-                <p className="text-2xl font-bold font-mono">526</p>
+                <p className="text-[10px] text-muted-foreground tracking-wider">RECENT ACTIVITY</p>
+                {statsLoading ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  <p className="text-2xl font-bold font-mono">{stats?.recentActivity.length || 0}</p>
+                )}
               </div>
               <SparklineChart data={[10, 15, 12, 18, 22, 19, 25]} color="primary" height={32} className="w-16" />
             </div>
@@ -146,10 +169,19 @@ export default function Dashboard() {
 
           <div className="glass-panel rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] text-muted-foreground tracking-wider">ESCROW CONTRACTS</span>
-              <span className="text-[10px] font-bold text-accent bg-accent/20 px-1.5 py-0.5 rounded">+14</span>
+              <span className="text-[10px] text-muted-foreground tracking-wider">PRICE TICKER</span>
+              {priceData && (
+                <span className="text-[10px] font-bold text-accent bg-accent/20 px-1.5 py-0.5 rounded">{priceData.region}</span>
+              )}
             </div>
-            <p className="text-2xl font-bold font-mono">263</p>
+            {priceData ? (
+              <>
+                <p className="text-2xl font-bold font-mono">${priceData.price.toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">{priceData.symbol} per {priceData.unit}</p>
+              </>
+            ) : (
+              <Skeleton className="h-8 w-24" />
+            )}
           </div>
         </div>
 

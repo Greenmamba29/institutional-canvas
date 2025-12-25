@@ -7,6 +7,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCurrentOrg } from '@/hooks/useCurrentOrg';
 import { listDeals, getDealById, createDeal, updateDealStatus, respondToOffer } from '@/services/deals.service';
+import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 export const dealKeys = {
   all: ['deals'] as const,
@@ -17,6 +18,14 @@ export const dealKeys = {
 export function useDeals() {
   const { currentOrgId } = useCurrentOrg();
   
+  // Subscribe to realtime changes
+  useRealtimeSubscription({
+    table: 'deals',
+    event: '*',
+    queryKey: dealKeys.list(currentOrgId),
+    enabled: !!currentOrgId,
+  });
+
   return useQuery({
     queryKey: dealKeys.list(currentOrgId),
     queryFn: async () => {

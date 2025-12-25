@@ -12,6 +12,7 @@ import {
   getSupplierReviews,
   searchSuppliers,
 } from '@/services/suppliers.service';
+import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 export const supplierKeys = {
   all: ['suppliers'] as const,
@@ -26,6 +27,13 @@ export const supplierKeys = {
 };
 
 export function useSuppliers(options?: { verificationTier?: string; limit?: number }) {
+  // Subscribe to realtime changes
+  useRealtimeSubscription({
+    table: 'suppliers',
+    event: '*',
+    queryKey: supplierKeys.all,
+  });
+
   return useQuery({
     queryKey: supplierKeys.list(options ?? {}),
     queryFn: async () => {
