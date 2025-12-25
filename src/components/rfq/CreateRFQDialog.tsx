@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCreateRFQ } from "@/hooks/useRFQs";
+import { useCurrentOrg } from "@/hooks/useCurrentOrg";
 import {
   Dialog,
   DialogContent,
@@ -13,13 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 export function CreateRFQDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const createRFQ = useCreateRFQ();
+  const { currentOrgId, hasOrganization, isLoading: orgLoading } = useCurrentOrg();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -62,8 +65,24 @@ export function CreateRFQDialog() {
       return;
     }
 
+    // Check if user has an organization
+    if (!currentOrgId) {
+      console.error('[CreateRFQ] No organization selected');
+      toast({
+        title: "Organization Required",
+        description: "Please complete onboarding and join an organization first",
+        variant: "destructive",
+        action: (
+          <Link to="/onboarding" className="text-sm underline">
+            Go to Onboarding
+          </Link>
+        ),
+      });
+      return;
+    }
+
     try {
-      console.log('[CreateRFQ] Submitting:', formData);
+      console.log('[CreateRFQ] Submitting with org:', currentOrgId, formData);
       
       const result = await createRFQ.mutateAsync({
         p_title: formData.title.trim(),
@@ -77,9 +96,13 @@ export function CreateRFQDialog() {
       
       console.log('[CreateRFQ] Success:', result);
 
+      if (!result || !result.data) {
+        throw new Error('RFQ was not saved. Please try again.');
+      }
+
       toast({
         title: "RFQ Created",
-        description: "Your request for quote has been published to suppliers",
+        description: `RFQ "${formData.title}" has been published to suppliers`,
       });
 
       // Reset form and close dialog
@@ -94,6 +117,7 @@ export function CreateRFQDialog() {
       });
       setOpen(false);
     } catch (error) {
+      console.error('[CreateRFQ] Error:', error);
       toast({
         title: "Failed to create RFQ",
         description: error instanceof Error ? error.message : "Unknown error occurred",
@@ -102,10 +126,25 @@ export function CreateRFQDialog() {
     }
   };
 
+  // Show warning if no organization
+  if (!hasOrganization && !orgLoading) {
+    return (
+      <Link to="/onboarding">
+        <Button className="bg-yellow-600 hover:bg-yellow-700 text-white">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          Complete Onboarding First
+        </Button>
+      </Link>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
+        <Button 
+          className="bg-accent hover:bg-accent/90 text-accent-foreground"
+          disabled={!currentOrgId || orgLoading}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create RFQ
         </Button>
