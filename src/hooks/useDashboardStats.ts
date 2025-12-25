@@ -56,8 +56,8 @@ export function useDashboardStats() {
     
     // Deal Stats
     totalDeals: deals.length,
-    acceptedDeals: deals.filter(d => d.status === 'accepted').length,
-    pendingDeals: deals.filter(d => d.status === 'pending' || d.status === 'awarded').length,
+    acceptedDeals: deals.filter(d => d.offer_decision === 'accepted').length,
+    pendingDeals: deals.filter(d => d.status === 'pending' || d.status === 'active').length,
     totalDealValue: 0, // Would need to calculate from bid prices
     
     // Recent Activity (last 10 items across all types)
