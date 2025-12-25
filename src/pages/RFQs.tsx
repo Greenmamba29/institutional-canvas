@@ -29,7 +29,7 @@ function formatVolume(volume: number, unit: string): string {
 }
 
 export default function RFQs() {
-  const { role } = useRole();
+  const { viewMode } = useRole();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<'all' | 'submitted' | 'closed' | 'awarded'>('all');
   const [activeTab, setActiveTab] = useState('live');
@@ -184,7 +184,7 @@ export default function RFQs() {
           </div>
 
           {/* Supplier Profile Sidebar */}
-          {role === 'supplier' && (
+          {viewMode === 'supplier' && (
             <div className="lg:col-span-1">
               <SupplierProfileSidebar
                 name="Diego Santos"
