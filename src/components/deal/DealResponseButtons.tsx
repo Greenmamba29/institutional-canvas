@@ -34,7 +34,7 @@ export function DealResponseButtons({ dealId, currentStatus }: DealResponseButto
     try {
       await respondToOffer.mutateAsync({
         p_deal_id: dealId,
-        p_decision: "accept",
+        p_decision: "accepted",
         p_note: "",
       });
 
@@ -64,7 +64,7 @@ export function DealResponseButtons({ dealId, currentStatus }: DealResponseButto
     try {
       await respondToOffer.mutateAsync({
         p_deal_id: dealId,
-        p_decision: "reject",
+        p_decision: "rejected",
         p_note: rejectNote,
       });
 
