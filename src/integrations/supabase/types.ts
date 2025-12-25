@@ -546,6 +546,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          org_id: string | null
           title: string | null
           updated_at: string
           user_id: string
@@ -553,6 +554,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          org_id?: string | null
           title?: string | null
           updated_at?: string
           user_id: string
@@ -560,11 +562,19 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          org_id?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chats_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chats_user_id_fkey"
             columns: ["user_id"]
@@ -580,6 +590,7 @@ export type Database = {
           created_at: string | null
           id: string
           model_used: string
+          org_id: string | null
           title: string | null
           type: string | null
           updated_at: string | null
@@ -590,6 +601,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           model_used: string
+          org_id?: string | null
           title?: string | null
           type?: string | null
           updated_at?: string | null
@@ -600,12 +612,20 @@ export type Database = {
           created_at?: string | null
           id?: string
           model_used?: string
+          org_id?: string | null
           title?: string | null
           type?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_user_id_fkey"
             columns: ["user_id"]
@@ -914,6 +934,7 @@ export type Database = {
           metadata: Json | null
           mime_type: string
           name: string
+          org_id: string | null
           path: string | null
           processing_status: string | null
           quarantined: boolean
@@ -940,6 +961,7 @@ export type Database = {
           metadata?: Json | null
           mime_type: string
           name: string
+          org_id?: string | null
           path?: string | null
           processing_status?: string | null
           quarantined?: boolean
@@ -966,6 +988,7 @@ export type Database = {
           metadata?: Json | null
           mime_type?: string
           name?: string
+          org_id?: string | null
           path?: string | null
           processing_status?: string | null
           quarantined?: boolean
@@ -983,6 +1006,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "files_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "files_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -997,6 +1027,7 @@ export type Database = {
           id: string
           metadata: Json | null
           name: string
+          org_id: string | null
           parent_id: string | null
           path: string
           updated_at: string | null
@@ -1007,6 +1038,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           name: string
+          org_id?: string | null
           parent_id?: string | null
           path: string
           updated_at?: string | null
@@ -1017,12 +1049,20 @@ export type Database = {
           id?: string
           metadata?: Json | null
           name?: string
+          org_id?: string | null
           parent_id?: string | null
           path?: string
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "folders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "folders_parent_id_fkey"
             columns: ["parent_id"]
@@ -1152,6 +1192,7 @@ export type Database = {
           content: Json
           created_at: string
           id: string
+          org_id: string | null
           role: string
           updated_at: string
         }
@@ -1160,6 +1201,7 @@ export type Database = {
           content: Json
           created_at?: string
           id?: string
+          org_id?: string | null
           role: string
           updated_at?: string
         }
@@ -1168,6 +1210,7 @@ export type Database = {
           content?: Json
           created_at?: string
           id?: string
+          org_id?: string | null
           role?: string
           updated_at?: string
         }
@@ -1177,6 +1220,13 @@ export type Database = {
             columns: ["chat_id"]
             isOneToOne: false
             referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1228,6 +1278,7 @@ export type Database = {
           created_at: string | null
           currency: string
           id: string
+          org_id: string | null
           payment_status: string
           quote_id: string | null
           status: string
@@ -1240,6 +1291,7 @@ export type Database = {
           created_at?: string | null
           currency?: string
           id?: string
+          org_id?: string | null
           payment_status?: string
           quote_id?: string | null
           status?: string
@@ -1252,6 +1304,7 @@ export type Database = {
           created_at?: string | null
           currency?: string
           id?: string
+          org_id?: string | null
           payment_status?: string
           quote_id?: string | null
           status?: string
@@ -1261,6 +1314,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_quote_id_fkey"
             columns: ["quote_id"]
@@ -1487,6 +1547,7 @@ export type Database = {
           id: string
           min_order_quantity: number | null
           name: string
+          org_id: string | null
           price_per_unit: number
           product_type: string
           purity_level: string
@@ -1504,6 +1565,7 @@ export type Database = {
           id?: string
           min_order_quantity?: number | null
           name: string
+          org_id?: string | null
           price_per_unit: number
           product_type: string
           purity_level: string
@@ -1521,6 +1583,7 @@ export type Database = {
           id?: string
           min_order_quantity?: number | null
           name?: string
+          org_id?: string | null
           price_per_unit?: number
           product_type?: string
           purity_level?: string
@@ -1528,7 +1591,15 @@ export type Database = {
           unit?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1695,6 +1766,7 @@ export type Database = {
           expires_at: string | null
           id: string
           notes: string | null
+          org_id: string | null
           product_id: string | null
           quantity: number
           requested_price: number | null
@@ -1708,6 +1780,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           notes?: string | null
+          org_id?: string | null
           product_id?: string | null
           quantity: number
           requested_price?: number | null
@@ -1721,6 +1794,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           notes?: string | null
+          org_id?: string | null
           product_id?: string | null
           quantity?: number
           requested_price?: number | null
@@ -1730,6 +1804,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "quotes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotes_product_id_fkey"
             columns: ["product_id"]
@@ -2129,6 +2210,7 @@ export type Database = {
           meeting_id: string | null
           meeting_url: string
           notes: string | null
+          org_id: string | null
           recording_url: string | null
           scheduled_at: string
           started_at: string | null
@@ -2145,6 +2227,7 @@ export type Database = {
           meeting_id?: string | null
           meeting_url: string
           notes?: string | null
+          org_id?: string | null
           recording_url?: string | null
           scheduled_at: string
           started_at?: string | null
@@ -2161,6 +2244,7 @@ export type Database = {
           meeting_id?: string | null
           meeting_url?: string
           notes?: string | null
+          org_id?: string | null
           recording_url?: string | null
           scheduled_at?: string
           started_at?: string | null
@@ -2170,7 +2254,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "telebuy_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transcripts: {
         Row: {
@@ -2598,6 +2690,7 @@ export type Database = {
           id: string
           min_order_quantity: number | null
           name: string
+          org_id: string | null
           price_per_unit: number
           product_type: string
           purity_level: string
@@ -2723,6 +2816,10 @@ export type Database = {
         }
       }
       get_user_org_ids: { Args: never; Returns: string[] }
+      has_org_role: {
+        Args: { p_org_id: string; p_role: string }
+        Returns: boolean
+      }
       increment_usage_counters: {
         Args: {
           p_cost?: number
@@ -2751,6 +2848,7 @@ export type Database = {
         Args: { p_org_id: string; p_role?: string; p_user_email: string }
         Returns: Json
       }
+      is_org_member: { Args: { p_org_id: string }; Returns: boolean }
       jwt_claim: { Args: { claim: string }; Returns: string }
       jwt_org_id: { Args: never; Returns: string }
       jwt_user_id: { Args: never; Returns: string }
@@ -2790,6 +2888,7 @@ export type Database = {
           id: string
           min_order_quantity: number | null
           name: string
+          org_id: string | null
           price_per_unit: number
           product_type: string
           purity_level: string
