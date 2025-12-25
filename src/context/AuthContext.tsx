@@ -1,11 +1,19 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useAuth0, User } from '@auth0/auth0-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface LoginOptions {
+  connection?: 'google-oauth2' | 'email' | string;
+}
 
 interface AuthContextType {
   user: User | undefined;
   isAuthenticated: boolean;
   isLoading: boolean;
-  loginWithRedirect: () => void;
+  error: Error | undefined;
+  loginWithRedirect: (options?: LoginOptions) => void;
+  loginWithGoogle: () => void;
+  loginWithMagicLink: () => void;
   logout: () => void;
   getAccessToken: () => Promise<string>;
 }
@@ -17,10 +25,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     isAuthenticated,
     isLoading,
-    loginWithRedirect,
+    error,
+    loginWithRedirect: auth0Login,
     logout: auth0Logout,
     getAccessTokenSilently,
   } = useAuth0();
+  const { toast } = useToast();
+
+  // Handle Auth0 errors
+  useEffect(() => {
+    if (error) {
+      console.error('Auth0 error:', error);
+      toast({
+        title: 'Authentication Error',
+        description: error.message || 'Failed to authenticate. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [error, toast]);
+
+  // Check for error in URL params (Auth0 returns errors via URL)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const errorParam = params.get('error');
+    const errorDescription = params.get('error_description');
+
+    if (errorParam) {
+      console.error('Auth0 URL error:', errorParam, errorDescription);
+      toast({
+        title: 'Authentication Failed',
+        description: errorDescription || `Error: ${errorParam}`,
+        variant: 'destructive',
+      });
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast]);
+
+  const loginWithRedirect = (options?: LoginOptions) => {
+    const redirectUri = window.location.origin;
+    
+    auth0Login({
+      authorizationParams: {
+        redirect_uri: redirectUri,
+        ...(options?.connection && { connection: options.connection }),
+      },
+    }).catch((err) => {
+      console.error('Login redirect error:', err);
+      toast({
+        title: 'Login Failed',
+        description: 'Unable to initiate login. Please check your connection and try again.',
+        variant: 'destructive',
+      });
+    });
+  };
+
+  const loginWithGoogle = () => {
+    loginWithRedirect({ connection: 'google-oauth2' });
+  };
+
+  const loginWithMagicLink = () => {
+    loginWithRedirect({ connection: 'email' });
+  };
 
   const logout = () => {
     auth0Logout({
@@ -34,9 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = await getAccessTokenSilently();
       return token;
-    } catch (error) {
-      console.error('Failed to get access token:', error);
-      throw error;
+    } catch (err) {
+      console.error('Failed to get access token:', err);
+      throw err;
     }
   };
 
@@ -46,7 +112,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isAuthenticated,
         isLoading,
+        error,
         loginWithRedirect,
+        loginWithGoogle,
+        loginWithMagicLink,
         logout,
         getAccessToken,
       }}

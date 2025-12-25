@@ -2,10 +2,11 @@ import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ArrowRight, Shield, Zap, Globe } from 'lucide-react';
+import { Sparkles, ArrowRight, Shield, Zap, Globe, Mail, Chrome } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 export default function Auth() {
-  const { isAuthenticated, isLoading, loginWithRedirect } = useAuth();
+  const { isAuthenticated, isLoading, loginWithRedirect, loginWithGoogle, loginWithMagicLink } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -17,8 +18,16 @@ export default function Auth() {
     }
   }, [isAuthenticated, isLoading, navigate, location]);
 
-  const handleLogin = () => {
+  const handleSSO = () => {
     loginWithRedirect();
+  };
+
+  const handleGoogle = () => {
+    loginWithGoogle();
+  };
+
+  const handleMagicLink = () => {
+    loginWithMagicLink();
   };
 
   const features = [
@@ -114,7 +123,7 @@ export default function Auth() {
             </div>
           </div>
 
-          <div className="glass-panel rounded-2xl p-8 space-y-8">
+          <div className="glass-panel rounded-2xl p-8 space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold">Welcome Back</h2>
               <p className="text-muted-foreground">
@@ -122,8 +131,9 @@ export default function Auth() {
               </p>
             </div>
 
+            {/* Primary SSO Button */}
             <Button
-              onClick={handleLogin}
+              onClick={handleSSO}
               disabled={isLoading}
               className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
             >
@@ -140,18 +150,45 @@ export default function Auth() {
               )}
             </Button>
 
+            {/* Divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
+                <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Secure Authentication</span>
+                <span className="bg-card px-3 text-muted-foreground">or continue with</span>
               </div>
             </div>
 
-            <div className="text-center space-y-4">
+            {/* Alternative Login Methods */}
+            <div className="space-y-3">
+              {/* Google OAuth Button */}
+              <Button
+                onClick={handleGoogle}
+                disabled={isLoading}
+                variant="outline"
+                className="w-full h-11 text-sm font-medium gap-3 border-border hover:bg-accent hover:text-accent-foreground"
+              >
+                <Chrome className="h-5 w-5" />
+                Continue with Google
+              </Button>
+
+              {/* Magic Link Button */}
+              <Button
+                onClick={handleMagicLink}
+                disabled={isLoading}
+                variant="outline"
+                className="w-full h-11 text-sm font-medium gap-3 border-border hover:bg-accent hover:text-accent-foreground"
+              >
+                <Mail className="h-5 w-5" />
+                Continue with Email Link
+              </Button>
+            </div>
+
+            {/* Security Info */}
+            <div className="text-center space-y-4 pt-2">
               <p className="text-sm text-muted-foreground">
-                Enterprise single sign-on powered by Auth0
+                Enterprise authentication powered by Auth0
               </p>
               <div className="flex items-center justify-center gap-6 text-muted-foreground">
                 <div className="flex items-center gap-2 text-xs">
