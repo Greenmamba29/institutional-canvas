@@ -1,139 +1,78 @@
-import React, { createContext, useContext, ReactNode, useEffect } from 'react';
-import { useAuth0, User } from '@auth0/auth0-react';
+import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 
-interface LoginOptions {
-  connection?: 'google-oauth2' | 'email' | string;
-}
-
 interface AuthContextType {
-  user: User | undefined;
+  user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  error: Error | undefined;
-  loginWithRedirect: (options?: LoginOptions) => void;
-  loginWithGoogle: () => void;
-  loginWithMagicLink: () => void;
-  logout: () => void;
+  signOut: () => Promise<void>;
+  logout: () => Promise<void>; // Alias for backward compatibility
   getAccessToken: () => Promise<string>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const {
-    user,
-    isAuthenticated,
-    isLoading,
-    error,
-    loginWithRedirect: auth0Login,
-    logout: auth0Logout,
-    getAccessTokenSilently,
-  } = useAuth0();
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Handle Auth0 errors
   useEffect(() => {
-    if (error) {
-      console.error('Auth0 error:', error);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
       toast({
-        title: 'Authentication Error',
-        description: error.message || 'Failed to authenticate. Please try again.',
+        title: 'Signed out',
+        description: 'You have been signed out successfully.',
+      });
+    } catch (error: any) {
+      console.error('Sign out error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to sign out. Please try again.',
         variant: 'destructive',
       });
     }
-  }, [error, toast]);
-
-  // Check for error in URL params (Auth0 returns errors via URL)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const errorParam = params.get('error');
-    const errorDescription = params.get('error_description');
-
-    if (errorParam) {
-      console.error('Auth0 URL error:', errorParam, errorDescription);
-      toast({
-        title: 'Authentication Failed',
-        description: errorDescription || `Error: ${errorParam}`,
-        variant: 'destructive',
-      });
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [toast]);
-
-  const loginWithRedirect = (options?: LoginOptions) => {
-    // Smart redirect detection - use production only when on production
-    const origin = window.location.origin;
-    const redirectUri = origin.includes('lithiumbuy.com') 
-      ? 'https://lithiumbuy.com' 
-      : origin;
-    
-    console.log('[Auth] Initiating login with redirect:', redirectUri, 'connection:', options?.connection);
-    
-    auth0Login({
-      authorizationParams: {
-        redirect_uri: redirectUri,
-        ...(options?.connection && { connection: options.connection }),
-      },
-    }).catch((err) => {
-      console.error('Login redirect error:', err);
-      
-      // Check for specific Auth0 errors
-      const errorMessage = err?.message?.toLowerCase() || '';
-      if (errorMessage.includes('callback') || errorMessage.includes('redirect')) {
-        toast({
-          title: 'Configuration Error',
-          description: 'Redirect URL mismatch. Please contact support.',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Login Failed',
-          description: 'Unable to initiate login. Please check your connection and try again.',
-          variant: 'destructive',
-        });
-      }
-    });
-  };
-
-  const loginWithGoogle = () => {
-    loginWithRedirect({ connection: 'google-oauth2' });
-  };
-
-  const loginWithMagicLink = () => {
-    loginWithRedirect({ connection: 'email' });
-  };
-
-  const logout = () => {
-    auth0Logout({
-      logoutParams: {
-        returnTo: window.location.origin,
-      },
-    });
   };
 
   const getAccessToken = async (): Promise<string> => {
-    try {
-      const token = await getAccessTokenSilently();
-      return token;
-    } catch (err) {
-      console.error('Failed to get access token:', err);
-      throw err;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error('No access token available');
     }
+    return session.access_token;
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated,
+        session,
+        isAuthenticated: !!session,
         isLoading,
-        error,
-        loginWithRedirect,
-        loginWithGoogle,
-        loginWithMagicLink,
-        logout,
+        signOut,
+        logout: signOut, // Alias for backward compatibility
         getAccessToken,
       }}
     >

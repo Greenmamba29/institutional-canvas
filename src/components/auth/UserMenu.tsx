@@ -26,7 +26,7 @@ export function UserMenu() {
     );
   }
 
-  const displayName = user?.name || user?.email?.split('@')[0] || 'User';
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
