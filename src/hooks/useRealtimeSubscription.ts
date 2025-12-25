@@ -59,15 +59,11 @@ export function useRealtimeSubscription({
             filter,
           } as unknown as { event: '*'; schema: 'public'; table: string; filter?: string },
           (payload) => {
-            console.log(`[Realtime] ${table} changed:`, payload);
-
             // Invalidate the related query to trigger a refetch
             queryClient.invalidateQueries({ queryKey });
           }
         )
-        .subscribe((status) => {
-          console.log(`[Realtime] ${channelName} subscription status:`, status);
-        });
+        .subscribe();
     };
 
     setupSubscription();

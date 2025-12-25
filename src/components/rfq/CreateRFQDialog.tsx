@@ -82,8 +82,6 @@ export function CreateRFQDialog() {
     }
 
     try {
-      console.log('[CreateRFQ] Submitting with org:', currentOrgId, formData);
-      
       const result = await createRFQ.mutateAsync({
         p_title: formData.title.trim(),
         p_description: formData.description.trim(),
@@ -93,8 +91,6 @@ export function CreateRFQDialog() {
         p_incoterms: formData.incoterms,
         p_delivery_location: formData.delivery_location.trim(),
       });
-      
-      console.log('[CreateRFQ] Success:', result);
 
       if (!result || !result.data) {
         throw new Error('RFQ was not saved. Please try again.');
@@ -117,7 +113,6 @@ export function CreateRFQDialog() {
       });
       setOpen(false);
     } catch (error) {
-      console.error('[CreateRFQ] Error:', error);
       toast({
         title: "Failed to create RFQ",
         description: error instanceof Error ? error.message : "Unknown error occurred",
