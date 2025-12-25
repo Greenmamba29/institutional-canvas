@@ -7,6 +7,7 @@ type Organization = Database['public']['Tables']['organizations']['Row'];
 
 interface OrganizationContextType {
   currentOrg: Organization | null;
+  currentOrgId: string | null;
   organizations: Organization[];
   isLoading: boolean;
   hasOrganization: boolean;
@@ -48,11 +49,13 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
   const isLoading = authLoading || (isAuthenticated && orgsLoading);
   const hasOrganization = organizations.length > 0;
+  const currentOrgId = currentOrg?.id ?? null;
 
   return (
     <OrganizationContext.Provider
       value={{
         currentOrg,
+        currentOrgId,
         organizations,
         isLoading,
         hasOrganization,
