@@ -1,33 +1,86 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ArrowRight, Shield, Zap, Globe, Mail, Chrome } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Sparkles, Shield, Zap, Globe, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Auth() {
-  const { isAuthenticated, isLoading, loginWithRedirect, loginWithGoogle, loginWithMagicLink } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [session, setSession] = useState<any>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
-  // Redirect to dashboard if already authenticated
+  // Check for existing session
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, location]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+          },
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: 'Account created!',
+          description: 'Check your email to confirm your account, or sign in if email confirmation is disabled.',
+        });
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: 'Welcome back!',
+          description: 'You have successfully signed in.',
+        });
+      }
+    } catch (error: any) {
+      console.error('Auth error:', error);
+      toast({
+        title: isSignUp ? 'Sign up failed' : 'Sign in failed',
+        description: error.message || 'Please check your credentials and try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }, [isAuthenticated, isLoading, navigate, location]);
-
-  const handleSSO = () => {
-    loginWithRedirect();
-  };
-
-  const handleGoogle = () => {
-    loginWithGoogle();
-  };
-
-  const handleMagicLink = () => {
-    loginWithMagicLink();
   };
 
   const features = [
@@ -110,7 +163,7 @@ export default function Auth() {
         </div>
       </div>
 
-      {/* Right Panel - Login */}
+      {/* Right Panel - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center justify-center gap-3 mb-12">
@@ -125,79 +178,85 @@ export default function Auth() {
 
           <div className="glass-panel rounded-2xl p-8 space-y-6">
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">Welcome Back</h2>
+              <h2 className="text-2xl font-bold">
+                {isSignUp ? 'Create Account' : 'Welcome Back'}
+              </h2>
               <p className="text-muted-foreground">
-                Sign in to access your trading dashboard
+                {isSignUp 
+                  ? 'Enter your details to get started' 
+                  : 'Sign in to access your trading dashboard'}
               </p>
             </div>
 
-            {/* Primary SSO Button */}
-            <Button
-              onClick={handleSSO}
-              disabled={isLoading}
-              className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                <>
-                  Continue with SSO
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </Button>
-
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className="h-11"
+                />
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-3 text-muted-foreground">or continue with</span>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  minLength={6}
+                  className="h-11"
+                />
               </div>
-            </div>
 
-            {/* Alternative Login Methods */}
-            <div className="space-y-3">
-              {/* Google OAuth Button */}
               <Button
-                onClick={handleGoogle}
+                type="submit"
                 disabled={isLoading}
-                variant="outline"
-                className="w-full h-11 text-sm font-medium gap-3 border-border hover:bg-accent hover:text-accent-foreground"
+                className="w-full h-12 text-base font-semibold"
               >
-                <Chrome className="h-5 w-5" />
-                Continue with Google
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {isSignUp ? 'Creating account...' : 'Signing in...'}
+                  </>
+                ) : (
+                  isSignUp ? 'Create Account' : 'Sign In'
+                )}
               </Button>
+            </form>
 
-              {/* Magic Link Button */}
-              <Button
-                onClick={handleMagicLink}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-sm text-primary hover:underline"
                 disabled={isLoading}
-                variant="outline"
-                className="w-full h-11 text-sm font-medium gap-3 border-border hover:bg-accent hover:text-accent-foreground"
               >
-                <Mail className="h-5 w-5" />
-                Continue with Email Link
-              </Button>
+                {isSignUp 
+                  ? 'Already have an account? Sign in' 
+                  : "Don't have an account? Sign up"}
+              </button>
             </div>
 
             {/* Security Info */}
-            <div className="text-center space-y-4 pt-2">
-              <p className="text-sm text-muted-foreground">
-                Enterprise authentication powered by Auth0
-              </p>
+            <div className="text-center pt-2">
               <div className="flex items-center justify-center gap-6 text-muted-foreground">
                 <div className="flex items-center gap-2 text-xs">
                   <Shield className="h-3.5 w-3.5" />
-                  <span>SOC 2 Compliant</span>
+                  <span>Secure</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <Zap className="h-3.5 w-3.5" />
-                  <span>MFA Enabled</span>
+                  <span>Fast</span>
                 </div>
               </div>
             </div>

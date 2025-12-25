@@ -1,12 +1,6 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useOrganization } from '@/context/OrganizationContext';
 import { Loader2, Sparkles } from 'lucide-react';
-
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requireOrg?: boolean;
-}
 
 function LoadingScreen() {
   return (
@@ -24,13 +18,12 @@ function LoadingScreen() {
   );
 }
 
-export function ProtectedRoute({ children, requireOrg = true }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { hasOrganization, isLoading: orgLoading } = useOrganization();
+export function ProtectedRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  // Show loading while checking auth/org status
-  if (authLoading || (isAuthenticated && orgLoading)) {
+  // Show loading while checking auth status
+  if (isLoading) {
     return <LoadingScreen />;
   }
 
@@ -39,10 +32,7 @@ export function ProtectedRoute({ children, requireOrg = true }: ProtectedRoutePr
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // Redirect to onboarding if no organization and org is required
-  if (requireOrg && !hasOrganization) {
-    return <Navigate to="/onboarding" replace />;
-  }
-
-  return <>{children}</>;
+  return <Outlet />;
 }
+
+export default ProtectedRoute;
