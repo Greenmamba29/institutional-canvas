@@ -48,22 +48,22 @@ const escrowedAssets = [
 ];
 
 export default function Dashboard() {
-  const { role } = useRole();
-  const [activeTab, setActiveTab] = useState(role === 'supplier' ? 'overview' : 'dashboard');
+  const { viewMode } = useRole();
+  const [activeTab, setActiveTab] = useState(viewMode === 'supplier' ? 'overview' : 'dashboard');
 
-  const tabs = role === 'supplier' 
+  const tabs = viewMode === 'supplier' 
     ? [{ id: 'overview', label: 'OVERVIEW' }, { id: 'listings', label: 'MY LISTINGS' }, { id: 'financials', label: 'FINANCIALS' }]
     : [{ id: 'dashboard', label: 'DASHBOARD' }, { id: 'auctions', label: 'AUCTION LISTINGS' }, { id: 'performance', label: 'PERFORMANCE' }];
 
-  const breadcrumbs = role === 'supplier'
+  const breadcrumbs = viewMode === 'supplier'
     ? [{ label: 'PLATFORM' }, { label: 'SUPPLIER DESK' }, { label: 'DASHBOARD' }]
     : [{ label: 'PLATFORM' }, { label: 'TRADING DESK' }, { label: 'OVERVIEW' }];
 
-  const title = role === 'supplier' ? 'Supplier Performance Terminal' : 'Institutional Trading Console';
+  const title = viewMode === 'supplier' ? 'Supplier Performance Terminal' : 'Institutional Trading Console';
 
   const renderTabContent = () => {
     // Supplier tabs
-    if (role === 'supplier') {
+    if (viewMode === 'supplier') {
       if (activeTab === 'listings') {
         return (
           <div className="glass-panel rounded-xl p-8 text-center">
@@ -158,7 +158,7 @@ export default function Dashboard() {
           <div className="lg:col-span-2 space-y-6">
             <GMVChart data={chartData} />
             
-            {role === 'supplier' ? (
+            {viewMode === 'supplier' ? (
               <WeeklyAuctionSnapshot
                 totalBids={475000}
                 changePercent={12.4}
@@ -181,7 +181,7 @@ export default function Dashboard() {
               escrowedAssets={escrowedAssets}
             />
             
-            {role === 'supplier' ? (
+            {viewMode === 'supplier' ? (
               <UpcomingAuctions auctions={upcomingAuctions} />
             ) : (
               <AuditLog entries={auditEntries} />

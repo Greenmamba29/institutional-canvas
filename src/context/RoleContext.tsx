@@ -3,24 +3,36 @@ import { useOrganization } from '@/context/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth0 } from '@auth0/auth0-react';
 
-// UI view mode - only used for UI display preferences, NOT for authorization
+/**
+ * UI view mode - ONLY for UI display preferences, NOT for authorization.
+ * This is stored in localStorage and can be manipulated by users.
+ * 
+ * @warning DO NOT use this type for authorization decisions.
+ * Use serverRole (fetched from database) for any security-related logic.
+ */
 export type ViewMode = 'admin' | 'supplier' | 'buyer';
 
-// Server-validated role from org_members table
+/**
+ * Server-validated role from org_members table.
+ * This is the ONLY role that should be used for authorization decisions.
+ * It is fetched from the database and enforced by RLS policies.
+ */
 export type ServerRole = 'owner' | 'admin' | 'member' | null;
 
 interface RoleContextType {
-  // UI view mode (can be switched by user for different views, NOT for security)
+  /**
+   * UI view mode - for switching between different UI views.
+   * @warning NOT for security/authorization. Use serverRole instead.
+   */
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
   
-  // Server-validated role from org_members (used for actual authorization display)
+  /**
+   * Server-validated role from org_members table.
+   * Use this for all authorization-related UI decisions.
+   */
   serverRole: ServerRole;
   isLoadingRole: boolean;
-  
-  // Legacy alias for backward compatibility - maps to viewMode
-  role: ViewMode;
-  setRole: (role: ViewMode) => void;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
@@ -30,12 +42,16 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const { currentOrg } = useOrganization();
   
   // UI view mode - stored in localStorage for UI preference only
+  // WARNING: This is user-controlled and should NEVER be used for authorization
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const stored = localStorage.getItem('lithium-lux-view-mode');
-    return (stored as ViewMode) || 'buyer';
+    if (stored === 'admin' || stored === 'supplier' || stored === 'buyer') {
+      return stored;
+    }
+    return 'buyer';
   });
   
-  // Server-validated role from org_members table
+  // Server-validated role from org_members table - USE THIS FOR AUTHORIZATION
   const [serverRole, setServerRole] = useState<ServerRole>(null);
   const [isLoadingRole, setIsLoadingRole] = useState(true);
 
@@ -94,9 +110,6 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       setViewMode,
       serverRole,
       isLoadingRole,
-      // Legacy aliases for backward compatibility
-      role: viewMode,
-      setRole: setViewMode,
     }}>
       {children}
     </RoleContext.Provider>
@@ -111,14 +124,20 @@ export function useRole() {
   return context;
 }
 
-// Helper to check if user has admin-level access (owner or admin role)
+/**
+ * Helper to check if user has admin-level access (owner or admin role).
+ * Uses server-validated role - safe for authorization decisions.
+ */
 export function useIsAdmin(): boolean {
   const { serverRole, isLoadingRole } = useRole();
   if (isLoadingRole) return false;
   return serverRole === 'owner' || serverRole === 'admin';
 }
 
-// Helper to check if user is organization owner
+/**
+ * Helper to check if user is organization owner.
+ * Uses server-validated role - safe for authorization decisions.
+ */
 export function useIsOwner(): boolean {
   const { serverRole, isLoadingRole } = useRole();
   if (isLoadingRole) return false;
