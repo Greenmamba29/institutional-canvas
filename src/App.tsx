@@ -49,16 +49,8 @@ const auth0Audience = import.meta.env.VITE_AUTH0_AUDIENCE;
 // Validate Auth0 configuration at runtime
 const isAuth0Configured = auth0Domain && auth0ClientId && auth0Audience;
 
-// Smart redirect URL detection for Auth0
-const getRedirectUri = () => {
-  const origin = window.location.origin;
-  // Production domain
-  if (origin.includes('lithiumbuy.com')) {
-    return 'https://lithiumbuy.com';
-  }
-  // Lovable preview or localhost - use current origin
-  return origin;
-};
+// Always redirect to production domain for Auth0
+const getRedirectUri = () => 'https://lithiumbuy.com';
 
 const redirectUri = getRedirectUri();
 

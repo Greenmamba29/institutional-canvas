@@ -63,11 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   const loginWithRedirect = (options?: LoginOptions) => {
-    // Use smart redirect detection matching Auth0Provider config
-    const origin = window.location.origin;
-    const redirectUri = origin.includes('lithiumbuy.com') 
-      ? 'https://lithiumbuy.com' 
-      : origin;
+    // Always redirect to production domain
+    const redirectUri = 'https://lithiumbuy.com';
     
     console.log('[Auth] Initiating login with redirect:', redirectUri, 'connection:', options?.connection);
     
