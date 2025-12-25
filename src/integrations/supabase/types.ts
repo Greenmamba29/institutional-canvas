@@ -368,6 +368,42 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+          org_id: string | null
+          outcome: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          org_id?: string | null
+          outcome: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          org_id?: string | null
+          outcome?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bids: {
         Row: {
           created_at: string
@@ -2482,6 +2518,26 @@ export type Database = {
         Args: { p_path: string; p_user: string }
         Returns: string
       }
+      get_audit_logs: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+          org_id: string | null
+          outcome: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "audit_log"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_chat_document_latest_version: {
         Args: { doc_id: string }
         Returns: string
@@ -2795,6 +2851,16 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      log_audit_event: {
+        Args: {
+          p_action: string
+          p_entity_id: string
+          p_entity_type: string
+          p_metadata?: Json
+          p_outcome: string
+        }
+        Returns: string
       }
       log_job_metrics: { Args: { p_job: string }; Returns: Json }
       mark_notification_read: {
