@@ -1,10 +1,11 @@
 /**
  * Auctions Service - Lithium & Lux RPC Layer
  * 
- * Uses list_auctions and place_auction_bid RPCs
+ * Uses list_auctions and place_auction_bid RPCs with input validation
  */
 
 import { callRpc, supabase } from '@/lib/supabase/rpc';
+import { placeAuctionBidSchema, validateInput, type PlaceAuctionBidInput } from '@/lib/validation/schemas';
 import type { Tables } from '@/integrations/supabase/types';
 
 export type Auction = Tables<'auctions'>;
@@ -44,12 +45,10 @@ export async function getAuctionBids(auctionId: string) {
 }
 
 /**
- * Place a bid on an auction
+ * Place a bid on an auction with validated input
  */
-export async function placeAuctionBid(params: {
-  p_auction_id: string;
-  p_amount: number;
-  p_currency: string;
-}) {
-  return callRpc<AuctionBid>('place_auction_bid', params);
+export async function placeAuctionBid(params: PlaceAuctionBidInput) {
+  // Validate input before sending to RPC
+  const validated = validateInput(placeAuctionBidSchema, params);
+  return callRpc<AuctionBid>('place_auction_bid', validated);
 }

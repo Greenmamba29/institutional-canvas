@@ -1,10 +1,18 @@
 /**
  * Deals Service - Lithium & Lux RPC Layer
  * 
- * Uses create_deal, update_deal_status, respond_to_offer RPCs
+ * Uses create_deal, update_deal_status, respond_to_offer RPCs with input validation
  */
 
 import { callRpc, supabase } from '@/lib/supabase/rpc';
+import { 
+  createDealSchema, 
+  respondToOfferSchema, 
+  uuidSchema, 
+  validateInput, 
+  type CreateDealInput,
+  type RespondToOfferInput
+} from '@/lib/validation/schemas';
 import type { Tables, Enums } from '@/integrations/supabase/types';
 
 export type Deal = Tables<'deals'>;
@@ -37,14 +45,12 @@ export async function getDealById(dealId: string) {
 }
 
 /**
- * Create a new deal
+ * Create a new deal with validated input
  */
-export async function createDeal(params: {
-  p_supplier_id: string;
-  p_rfq_id: string;
-  p_title: string;
-}) {
-  return callRpc<Deal>('create_deal', params);
+export async function createDeal(params: CreateDealInput) {
+  // Validate input before sending to RPC
+  const validated = validateInput(createDealSchema, params);
+  return callRpc<Deal>('create_deal', validated);
 }
 
 /**
@@ -54,16 +60,16 @@ export async function updateDealStatus(params: {
   p_deal_id: string;
   p_status: DealStatus;
 }) {
+  // Validate UUID
+  validateInput(uuidSchema, params.p_deal_id);
   return callRpc<Deal>('update_deal_status', params);
 }
 
 /**
- * Respond to an offer (accept/reject/counter)
+ * Respond to an offer (accept/reject/counter) with validated input
  */
-export async function respondToOffer(params: {
-  p_deal_id: string;
-  p_decision: OfferDecision;
-  p_note: string;
-}) {
-  return callRpc<Deal>('respond_to_offer', params);
+export async function respondToOffer(params: RespondToOfferInput) {
+  // Validate input before sending to RPC
+  const validated = validateInput(respondToOfferSchema, params);
+  return callRpc<Deal>('respond_to_offer', validated);
 }

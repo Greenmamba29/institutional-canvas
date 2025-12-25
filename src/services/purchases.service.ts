@@ -1,45 +1,62 @@
 /**
  * Purchases Service
  * 
- * Wraps all purchase order (PO) RPC calls.
+ * Wraps all purchase order (PO) RPC calls with input validation.
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 import { Database } from '@/integrations/supabase/types';
 import { callAuthenticatedRpc } from '@/lib/supabase/authenticated-client';
+import { 
+  uuidSchema, 
+  currencySchema, 
+  notesSchema, 
+  nonNegativeNumberSchema,
+  validateInput 
+} from '@/lib/validation/schemas';
 
 type Purchase = Database['public']['Tables']['purchases']['Row'];
 
-export interface CreatePurchaseParams {
-  buyerOrgId: string;
-  supplierOrgId: string;
-  dealId?: string;
-  totalAmount?: number;
-  currency?: string;
-  notes?: string;
-  payload?: Record<string, unknown>;
-}
+// Validation schemas for purchase operations
+const createPurchaseParamsSchema = z.object({
+  buyerOrgId: uuidSchema,
+  supplierOrgId: uuidSchema,
+  dealId: uuidSchema.optional(),
+  totalAmount: nonNegativeNumberSchema.optional(),
+  currency: currencySchema.optional().default('USD'),
+  notes: notesSchema.optional(),
+  payload: z.record(z.unknown()).optional(),
+});
 
-export interface UpdatePurchaseStatusParams {
-  purchaseId: string;
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
-}
+const updatePurchaseStatusSchema = z.object({
+  purchaseId: z.string().trim().min(1, 'Purchase ID is required').max(50, 'Purchase ID too long'),
+  status: z.enum(['pending', 'confirmed', 'shipped', 'delivered', 'completed', 'cancelled']),
+});
+
+const poNumberSchema = z.string().trim().min(1, 'PO number is required').max(50, 'PO number too long');
+
+export type CreatePurchaseParams = z.infer<typeof createPurchaseParamsSchema>;
+export type UpdatePurchaseStatusParams = z.infer<typeof updatePurchaseStatusSchema>;
 
 /**
- * Create a new purchase order
+ * Create a new purchase order with validated input
  */
 export async function createPurchase(
   client: SupabaseClient<Database>,
   params: CreatePurchaseParams
 ): Promise<{ data: Purchase | null; error: Error | null }> {
+  // Validate input before sending to RPC
+  const validated = validateInput(createPurchaseParamsSchema, params);
+  
   return callAuthenticatedRpc<Purchase>(client, 'create_purchase', {
-    p_buyer_org_id: params.buyerOrgId,
-    p_supplier_org_id: params.supplierOrgId,
-    p_deal_id: params.dealId,
-    p_total_amount: params.totalAmount,
-    p_currency: params.currency || 'USD',
-    p_notes: params.notes,
-    p_payload: params.payload,
+    p_buyer_org_id: validated.buyerOrgId,
+    p_supplier_org_id: validated.supplierOrgId,
+    p_deal_id: validated.dealId,
+    p_total_amount: validated.totalAmount,
+    p_currency: validated.currency || 'USD',
+    p_notes: validated.notes,
+    p_payload: validated.payload,
   });
 }
 
@@ -53,26 +70,32 @@ export async function listPurchases(
 }
 
 /**
- * Get a single purchase by PO number
+ * Get a single purchase by PO number with validated input
  */
 export async function getPurchaseById(
   client: SupabaseClient<Database>,
   poNumber: string
 ): Promise<{ data: Purchase | null; error: Error | null }> {
+  // Validate PO number
+  const validated = validateInput(poNumberSchema, poNumber);
+  
   return callAuthenticatedRpc<Purchase>(client, 'get_purchase_by_id', {
-    p_po: poNumber,
+    p_po: validated,
   });
 }
 
 /**
- * Update purchase status
+ * Update purchase status with validated input
  */
 export async function updatePurchaseStatus(
   client: SupabaseClient<Database>,
   params: UpdatePurchaseStatusParams
 ): Promise<{ data: Purchase | null; error: Error | null }> {
+  // Validate input before sending to RPC
+  const validated = validateInput(updatePurchaseStatusSchema, params);
+  
   return callAuthenticatedRpc<Purchase>(client, 'update_purchase_status', {
-    p_purchase_po: params.purchaseId,
-    p_status: params.status,
+    p_purchase_po: validated.purchaseId,
+    p_status: validated.status,
   });
 }

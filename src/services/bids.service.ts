@@ -1,10 +1,11 @@
 /**
  * Bids Service - Lithium & Lux RPC Layer
  * 
- * Uses submit_bid and withdraw_bid RPCs
+ * Uses submit_bid and withdraw_bid RPCs with input validation
  */
 
 import { callRpc, supabase } from '@/lib/supabase/rpc';
+import { submitBidSchema, uuidSchema, validateInput, type SubmitBidInput } from '@/lib/validation/schemas';
 import type { Tables } from '@/integrations/supabase/types';
 
 export type Bid = Tables<'bids'>;
@@ -35,23 +36,19 @@ export async function getBidsByRfq(rfqId: string) {
 }
 
 /**
- * Submit a new bid
+ * Submit a new bid with validated input
  */
-export async function submitBid(params: {
-  p_rfq_id: string;
-  p_supplier_id: string;
-  p_price: number;
-  p_currency: string;
-  p_quantity: number;
-  p_lead_time_days: number;
-  p_notes: string;
-}) {
-  return callRpc<Bid>('submit_bid', params);
+export async function submitBid(params: SubmitBidInput) {
+  // Validate input before sending to RPC
+  const validated = validateInput(submitBidSchema, params);
+  return callRpc<Bid>('submit_bid', validated);
 }
 
 /**
  * Withdraw a bid
  */
 export async function withdrawBid(bidId: string) {
+  // Validate UUID format
+  validateInput(uuidSchema, bidId);
   return callRpc<boolean>('withdraw_bid', { p_bid_id: bidId });
 }

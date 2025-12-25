@@ -41,12 +41,41 @@ const queryClient = new QueryClient({
   },
 });
 
-// Auth0 configuration - using environment variables for security
-const auth0Domain = import.meta.env.VITE_AUTH0_DOMAIN || '';
-const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID || '';
-const auth0Audience = import.meta.env.VITE_AUTH0_AUDIENCE || '';
+// Auth0 configuration - using environment variables with runtime validation
+const auth0Domain = import.meta.env.VITE_AUTH0_DOMAIN;
+const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
+const auth0Audience = import.meta.env.VITE_AUTH0_AUDIENCE;
 
-const App = () => (
+// Validate Auth0 configuration at runtime
+const isAuth0Configured = auth0Domain && auth0ClientId && auth0Audience;
+
+const App = () => {
+  // Show configuration error if Auth0 is not properly configured
+  if (!isAuth0Configured) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center max-w-md p-6">
+          <h1 className="text-2xl font-bold text-destructive mb-4">
+            Configuration Error
+          </h1>
+          <p className="text-muted-foreground mb-4">
+            Authentication is not properly configured. Please ensure the following
+            environment variables are set:
+          </p>
+          <ul className="text-left text-sm text-muted-foreground space-y-1 mb-4">
+            <li>• VITE_AUTH0_DOMAIN</li>
+            <li>• VITE_AUTH0_CLIENT_ID</li>
+            <li>• VITE_AUTH0_AUDIENCE</li>
+          </ul>
+          <p className="text-xs text-muted-foreground">
+            Contact your administrator if this issue persists.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
   <Auth0Provider
     domain={auth0Domain}
     clientId={auth0ClientId}
@@ -116,6 +145,7 @@ const App = () => (
       </AuthProvider>
     </QueryClientProvider>
   </Auth0Provider>
-);
+  );
+};
 
 export default App;
