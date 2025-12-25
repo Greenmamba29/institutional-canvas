@@ -63,7 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   const loginWithRedirect = (options?: LoginOptions) => {
-    const redirectUri = window.location.origin;
+    // Use smart redirect detection matching Auth0Provider config
+    const origin = window.location.origin;
+    const redirectUri = origin.includes('lithiumbuy.com') 
+      ? 'https://lithiumbuy.com' 
+      : origin;
+    
+    console.log('[Auth] Initiating login with redirect:', redirectUri, 'connection:', options?.connection);
     
     auth0Login({
       authorizationParams: {
@@ -72,11 +78,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     }).catch((err) => {
       console.error('Login redirect error:', err);
-      toast({
-        title: 'Login Failed',
-        description: 'Unable to initiate login. Please check your connection and try again.',
-        variant: 'destructive',
-      });
+      
+      // Check for specific Auth0 errors
+      const errorMessage = err?.message?.toLowerCase() || '';
+      if (errorMessage.includes('callback') || errorMessage.includes('redirect')) {
+        toast({
+          title: 'Configuration Error',
+          description: 'Redirect URL mismatch. Please contact support.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Login Failed',
+          description: 'Unable to initiate login. Please check your connection and try again.',
+          variant: 'destructive',
+        });
+      }
     });
   };
 
