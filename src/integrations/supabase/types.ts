@@ -2501,6 +2501,33 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_profiles_public: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string | null
+          specialties: string[] | null
+          supplier_id: string | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          specialties?: string[] | null
+          supplier_id?: string | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          specialties?: string[] | null
+          supplier_id?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       suppliers_public: {
         Row: {
           capabilities: Json | null
