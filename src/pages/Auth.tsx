@@ -268,10 +268,9 @@ export default function Auth() {
 
           <div className="glass-panel rounded-2xl p-8 space-y-6">
             {isUpdatePasswordMode ? (
-              // Update Password Form (shown after clicking reset link)
               <>
                 <div className="text-center space-y-2">
-                  <div className="flex justify-center mb-4">
+                  <div className="flex items-center justify-center mb-4">
                     <div className="p-3 rounded-xl bg-primary/10">
                       <KeyRound className="h-6 w-6 text-primary" />
                     </div>
@@ -345,7 +344,6 @@ export default function Auth() {
                 </div>
               </>
             ) : (
-              // Regular Sign In / Sign Up / Reset Mode forms
               <>
                 <div className="text-center space-y-2">
                   <h2 className="text-2xl font-bold">
