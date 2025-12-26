@@ -576,6 +576,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "chats_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "chats_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -624,6 +631,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
           },
           {
@@ -1013,6 +1027,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "files_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "files_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -1061,6 +1082,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
           },
           {
@@ -1229,6 +1257,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "messages_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notifications: {
@@ -1322,6 +1357,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_quote_id_fkey"
             columns: ["quote_id"]
             isOneToOne: false
@@ -1361,6 +1403,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
           },
         ]
@@ -1599,6 +1648,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "products_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -1745,6 +1801,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchases_buyer_org_id_fkey"
+            columns: ["buyer_org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "purchases_deal_id_fkey"
             columns: ["deal_id"]
             isOneToOne: false
@@ -1756,6 +1819,13 @@ export type Database = {
             columns: ["supplier_org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_supplier_org_id_fkey"
+            columns: ["supplier_org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
           },
         ]
@@ -1809,6 +1879,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
           },
           {
@@ -1946,6 +2023,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfqs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
           },
         ]
@@ -2155,10 +2239,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "suppliers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "suppliers_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suppliers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
           },
         ]
@@ -2270,6 +2368,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "telebuy_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
         ]
       }
       transcripts: {
@@ -2375,6 +2480,27 @@ export type Database = {
       }
     }
     Views: {
+      supplier_directory: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          name: string | null
+          org_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          org_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          org_type?: string | null
+        }
+        Relationships: []
+      }
       suppliers_public: {
         Row: {
           capabilities: Json | null
@@ -2403,6 +2529,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: true
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suppliers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
           },
         ]
