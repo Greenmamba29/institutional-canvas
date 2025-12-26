@@ -28,11 +28,12 @@ gh pr list --repo "${REPO}" --state closed --limit 100 --json number,title,state
 echo "Fetching merged PRs..."
 gh pr list --repo "${REPO}" --state merged --limit 100 --json number,title,state,author,createdAt,updatedAt,url,isDraft,labels,reviewDecision,mergeable --jq '.[]' > "${TEMP_FILE}.merged.json" 2>/dev/null || echo "[]" > "${TEMP_FILE}.merged.json"
 
-# Generate report
-cat > "${OUTPUT_FILE}" << 'EOF'
+# Generate report header with current date
+CURRENT_DATE=$(date)
+cat > "${OUTPUT_FILE}" << EOF
 # PR Triage Report
 
-Generated: $(date)
+Generated: ${CURRENT_DATE}
 
 ## Summary
 
