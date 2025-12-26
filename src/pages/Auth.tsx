@@ -23,15 +23,23 @@ export default function Auth() {
 
   // Check for existing session and detect PASSWORD_RECOVERY event
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      // Don't redirect if we're in update password mode
-      if (session && !isUpdatePasswordMode) {
-        const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
-        navigate(from, { replace: true });
-      }
-    });
+    // Helper function to check if URL contains recovery token
+    const checkRecoveryToken = (): boolean => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      return hashParams.get('type') === 'recovery';
+    };
 
+    // Check URL hash for password recovery token BEFORE checking session
+    // Supabase includes recovery tokens in the hash: #access_token=...&type=recovery
+    const isRecoveryFlow = checkRecoveryToken();
+    
+    if (isRecoveryFlow) {
+      // Set password update mode immediately to prevent redirect
+      setIsUpdatePasswordMode(true);
+    }
+
+    // Set up auth state listener FIRST to catch PASSWORD_RECOVERY event
+    // This must be registered before getSession() to catch the event
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       
@@ -42,8 +50,22 @@ export default function Auth() {
         return;
       }
       
-      // Only redirect if not in update password mode
-      if (session && !isUpdatePasswordMode) {
+      // Only redirect if not in update password mode and not a recovery flow
+      // Check URL hash directly to avoid race conditions with state updates
+      if (session && !isUpdatePasswordMode && !checkRecoveryToken()) {
+        const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
+      }
+    });
+
+    // Check for existing session AFTER setting up the listener
+    // This ensures PASSWORD_RECOVERY event is handled before redirect
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      // Don't redirect if we're in a recovery flow
+      // Check URL hash directly (not state) to avoid race conditions with async state updates
+      // The state variable in closure might be stale, but URL hash is always current
+      if (session && !checkRecoveryToken()) {
         const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       }
