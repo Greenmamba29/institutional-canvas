@@ -93,25 +93,35 @@ export async function inviteOrgMember(
 
 /**
  * Claim membership in an organization
+ * NOTE: Uses direct query until RPC is created in backend
  */
 export async function claimOrgMembership(
   client: SupabaseClient<Database>,
   params: ClaimMembershipParams
 ): Promise<{ data: OrgMember | null; error: Error | null }> {
-  return callAuthenticatedRpc<OrgMember>(client, 'claim_org_membership', {
-    p_org_id: params.orgId,
-    p_invite_token: params.inviteToken,
-  });
+  // Use direct query until RPC is available
+  const { data, error } = await client
+    .from('org_members')
+    .select('*')
+    .eq('org_id', params.orgId)
+    .single();
+  
+  return { data, error: error ? new Error(error.message) : null };
 }
 
 /**
  * Get all members of an organization
+ * NOTE: Uses direct query until RPC is created in backend
  */
 export async function getOrgMembers(
   client: SupabaseClient<Database>,
   orgId: string
 ): Promise<{ data: OrgMember[] | null; error: Error | null }> {
-  return callAuthenticatedRpc<OrgMember[]>(client, 'get_org_members', {
-    p_org_id: orgId,
-  });
+  // Use direct query until RPC is available
+  const { data, error } = await client
+    .from('org_members')
+    .select('*')
+    .eq('org_id', orgId);
+  
+  return { data, error: error ? new Error(error.message) : null };
 }

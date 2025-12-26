@@ -76,7 +76,6 @@ export function RoleProvider({ children }: { children: ReactNode }) {
           .select('role')
           .eq('org_id', currentOrg.id)
           .eq('user_id', user.id)
-          .eq('status', 'active')
           .maybeSingle();
 
         if (error) {

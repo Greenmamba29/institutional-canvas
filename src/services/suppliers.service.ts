@@ -112,13 +112,29 @@ export async function getSupplierReviews(supplierId: string) {
 
 /**
  * Search suppliers by name
+ * Sanitizes input to prevent SQL injection in LIKE patterns
  */
 export async function searchSuppliers(query: string) {
+  // Validate input
+  if (!query || typeof query !== 'string') {
+    return { data: [], error: null };
+  }
+  
+  // Sanitize: remove SQL special characters and limit length
+  const sanitized = query
+    .replace(/[%;'"\\]/g, '') // Remove SQL special chars
+    .trim()
+    .slice(0, 100); // Limit length
+  
+  if (sanitized.length < 2) {
+    return { data: [], error: null };
+  }
+  
   // Use public view for marketplace search (safe columns only)
   const { data, error } = await supabase
     .from('suppliers_public')
     .select('*')
-    .ilike('display_name', `%${query}%`);
+    .ilike('display_name', `%${sanitized}%`);
   
   return { data, error };
 }
