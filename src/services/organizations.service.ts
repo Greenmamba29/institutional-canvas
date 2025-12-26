@@ -46,8 +46,8 @@ export async function createOrganization(
   params: CreateOrganizationParams
 ): Promise<{ data: Organization | null; error: Error | null }> {
   return callAuthenticatedRpc<Organization>(client, 'create_organization', {
-    p_name: params.name,
     p_org_type: params.orgType,
+    p_name: params.name,
     p_email: params.email,
     p_phone: params.phone,
   });
