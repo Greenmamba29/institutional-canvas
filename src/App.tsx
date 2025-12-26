@@ -8,6 +8,7 @@ import { OrganizationProvider } from "@/context/OrganizationContext";
 import { RoleProvider } from "@/context/RoleContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -30,6 +31,7 @@ import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Purchases from "./pages/Purchases";
 import Team from "./pages/Team";
+import PasswordReset from "./pages/PasswordReset";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,18 +44,20 @@ const queryClient = new QueryClient({
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <OrganizationProvider>
-          <RoleProvider>
-            <NotificationProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <OrganizationProvider>
+            <RoleProvider>
+              <NotificationProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
                   <Routes>
                     {/* Public routes */}
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/password-reset" element={<PasswordReset />} />
                     
                     {/* Protected routes - using Outlet pattern */}
                     <Route element={<ProtectedRoute />}>
@@ -86,13 +90,14 @@ const App = () => {
                     
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </BrowserRouter>
-              </TooltipProvider>
-            </NotificationProvider>
-          </RoleProvider>
-        </OrganizationProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+                  </BrowserRouter>
+                </TooltipProvider>
+              </NotificationProvider>
+            </RoleProvider>
+          </OrganizationProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

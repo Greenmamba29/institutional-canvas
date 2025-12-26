@@ -17,6 +17,8 @@ import {
   Package,
   ShoppingCart,
   Loader2,
+  CheckCircle2,
+  Info,
 } from 'lucide-react';
 
 type Step = 'choice' | 'create' | 'join';
@@ -34,6 +36,7 @@ export default function Onboarding() {
   const [orgName, setOrgName] = useState('');
   const [orgId, setOrgId] = useState('');
   const [inviteToken, setInviteToken] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleCreateOrg = async () => {
     if (!orgName.trim()) {
@@ -48,9 +51,15 @@ export default function Onboarding() {
         email: user?.email,
       });
       
+      // Show success animation
+      setShowSuccess(true);
       toast.success('Organization created successfully!');
       refetch();
-      navigate('/dashboard');
+      
+      // Auto-redirect after 2 seconds
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
     } catch (error) {
       toast.error('Failed to create organization. Please try again.');
       console.error('Create org error:', error);
@@ -78,6 +87,36 @@ export default function Onboarding() {
     }
   };
 
+  // Success Modal
+  if (showSuccess) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="glass-panel rounded-2xl p-8 text-center space-y-6 animate-in fade-in zoom-in duration-500">
+            <div className="flex justify-center">
+              <div className="p-4 rounded-2xl bg-success/10 animate-bounce">
+                <CheckCircle2 className="h-16 w-16 text-success" />
+              </div>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Welcome aboard!</h2>
+              <p className="text-muted-foreground">
+                Your organization is ready. Redirecting to your dashboard...
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <div className="flex gap-1">
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '0ms' }} />
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '150ms' }} />
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
@@ -95,7 +134,16 @@ export default function Onboarding() {
 
         {step === 'choice' && (
           <div className="glass-panel rounded-2xl p-8 space-y-6">
+            {/* Progress Indicator */}
+            <div className="flex justify-center gap-2 mb-6">
+              <div className="h-1.5 w-12 rounded-full bg-primary" />
+              <div className="h-1.5 w-12 rounded-full bg-secondary" />
+            </div>
+
             <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-3">
+                STEP 1 OF 2
+              </div>
               <h2 className="text-xl font-semibold mb-2">Get Started</h2>
               <p className="text-muted-foreground">
                 Create a new organization or join an existing one
@@ -151,7 +199,16 @@ export default function Onboarding() {
               Back
             </button>
 
-            <div>
+            {/* Progress Indicator */}
+            <div className="flex justify-center gap-2">
+              <div className="h-1.5 w-12 rounded-full bg-primary" />
+              <div className="h-1.5 w-12 rounded-full bg-primary" />
+            </div>
+
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-3">
+                STEP 2 OF 2
+              </div>
               <h2 className="text-xl font-semibold mb-2">Create Your Organization</h2>
               <p className="text-muted-foreground">
                 Set up your company to start trading on the platform
@@ -163,15 +220,30 @@ export default function Onboarding() {
                 <Label htmlFor="orgName">Organization Name</Label>
                 <Input
                   id="orgName"
-                  placeholder="Enter your company name"
+                  placeholder="e.g., Acme Battery Corp"
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
                   className="h-12"
                 />
+                <p className="text-xs text-muted-foreground flex items-start gap-1">
+                  <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                  This will be visible to other traders on the platform
+                </p>
               </div>
 
               <div className="space-y-3">
-                <Label>Organization Type</Label>
+                <div className="flex items-center gap-2">
+                  <Label>Organization Type</Label>
+                  <div className="group relative">
+                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10">
+                      <div className="glass-panel rounded-lg p-3 w-64 text-xs text-muted-foreground">
+                        <strong className="text-foreground">Buyer:</strong> Purchase materials, create RFQs, bid on auctions<br/>
+                        <strong className="text-foreground mt-2 block">Supplier:</strong> List materials, respond to RFQs, create auctions
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <RadioGroup
                   value={orgType}
                   onValueChange={(v) => setOrgType(v as OrgType)}

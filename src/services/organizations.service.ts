@@ -45,12 +45,36 @@ export async function createOrganization(
   client: SupabaseClient<Database>,
   params: CreateOrganizationParams
 ): Promise<{ data: Organization | null; error: Error | null }> {
-  return callAuthenticatedRpc<Organization>(client, 'create_organization', {
-    p_org_type: params.orgType,
-    p_name: params.name,
-    p_email: params.email,
-    p_phone: params.phone,
+  console.log('[Organization Service] Creating organization:', {
+    name: params.name,
+    orgType: params.orgType,
+    hasEmail: !!params.email,
+    hasPhone: !!params.phone,
   });
+
+  // Use correct parameter order from SQL function signature
+  const rpcParams = {
+    p_org_type: params.orgType,  // First param
+    p_name: params.name,          // Second param
+    p_email: params.email || null,
+    p_phone: params.phone || null,
+  };
+
+  console.log('[Organization Service] RPC params:', rpcParams);
+
+  const result = await callAuthenticatedRpc<Organization>(client, 'create_organization', rpcParams);
+
+  if (result.error) {
+    console.error('[Organization Service] Create organization failed:', {
+      error: result.error,
+      message: result.error.message,
+      params: rpcParams,
+    });
+  } else {
+    console.log('[Organization Service] Organization created successfully:', result.data?.id);
+  }
+
+  return result;
 }
 
 /**

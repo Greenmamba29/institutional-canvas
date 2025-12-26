@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { useAuth } from './AuthContext';
 import { useMyOrganizations } from '@/hooks/useOrganizations';
 import { Database } from '@/integrations/supabase/types';
+import { toast } from 'sonner';
 
 type Organization = Database['public']['Tables']['organizations']['Row'];
 
@@ -42,10 +43,18 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const switchOrg = useCallback((orgId: string) => {
     const org = organizations.find(o => o.id === orgId);
     if (org) {
+      const previousOrg = currentOrg?.name;
       setCurrentOrg(org);
       localStorage.setItem(ORG_STORAGE_KEY, orgId);
+      
+      // Show toast notification
+      if (previousOrg && previousOrg !== org.name) {
+        toast.success(`Switched to ${org.name}`, {
+          description: `Now viewing as ${org.org_type}`,
+        });
+      }
     }
-  }, [organizations]);
+  }, [organizations, currentOrg]);
 
   const isLoading = authLoading || (isAuthenticated && orgsLoading);
   const hasOrganization = organizations.length > 0;

@@ -24,27 +24,28 @@ export function ProtectedRoute() {
   const { hasOrganization, isLoading: orgLoading } = useOrganization();
   const location = useLocation();
 
-  // Show loading while checking auth status
-  if (authLoading) {
+  // Show loading while checking auth and org status
+  if (authLoading || orgLoading) {
     return <LoadingScreen />;
   }
 
   // Redirect to auth if not authenticated
+  // Store the intended destination so we can restore it after login
   if (!isAuthenticated) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 
-  // Show loading while checking org status (only after authenticated)
-  if (orgLoading) {
-    return <LoadingScreen />;
+  // Allow access to onboarding without organization
+  if (location.pathname === '/onboarding') {
+    return <Outlet />;
   }
 
-  // If authenticated but no organization, redirect to onboarding
-  // (except if already on the onboarding page)
-  if (!hasOrganization && location.pathname !== '/onboarding') {
+  // Redirect to onboarding if authenticated but no organization
+  if (!hasOrganization) {
     return <Navigate to="/onboarding" replace />;
   }
 
+  // User is authenticated and has organization - allow access
   return <Outlet />;
 }
 
