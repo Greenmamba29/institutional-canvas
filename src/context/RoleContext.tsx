@@ -4,13 +4,14 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * UI view mode - ONLY for UI display preferences, NOT for authorization.
+ * UI layout preference - ONLY for switching between UI layouts/views.
  * This is stored in localStorage and can be manipulated by users.
  * 
- * @warning DO NOT use this type for authorization decisions.
+ * @warning DO NOT use this for authorization decisions.
  * Use serverRole (fetched from database) for any security-related logic.
+ * This is purely cosmetic - determines which dashboard/navigation to show.
  */
-export type ViewMode = 'admin' | 'supplier' | 'buyer';
+export type UILayoutPreference = 'admin' | 'supplier' | 'buyer';
 
 /**
  * Server-validated role from org_members table.
@@ -21,11 +22,12 @@ export type ServerRole = 'owner' | 'admin' | 'member' | null;
 
 interface RoleContextType {
   /**
-   * UI view mode - for switching between different UI views.
+   * UI layout preference - for switching between different UI layouts.
    * @warning NOT for security/authorization. Use serverRole instead.
+   * This is a user-controlled cosmetic preference stored in localStorage.
    */
-  viewMode: ViewMode;
-  setViewMode: (mode: ViewMode) => void;
+  uiLayoutPreference: UILayoutPreference;
+  setUILayoutPreference: (layout: UILayoutPreference) => void;
   
   /**
    * Server-validated role from org_members table.
@@ -41,10 +43,11 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, user } = useAuth();
   const { currentOrg } = useOrganization();
   
-  // UI view mode - stored in localStorage for UI preference only
+  // UI layout preference - stored in localStorage for UI preference only
   // WARNING: This is user-controlled and should NEVER be used for authorization
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    const stored = localStorage.getItem('lithium-lux-view-mode');
+  // It only determines which dashboard layout and navigation to display
+  const [uiLayoutPreference, setUILayoutPreference] = useState<UILayoutPreference>(() => {
+    const stored = localStorage.getItem('lithium-lux-ui-layout');
     if (stored === 'admin' || stored === 'supplier' || stored === 'buyer') {
       return stored;
     }
@@ -55,10 +58,10 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const [serverRole, setServerRole] = useState<ServerRole>(null);
   const [isLoadingRole, setIsLoadingRole] = useState(true);
 
-  // Persist view mode preference to localStorage
+  // Persist UI layout preference to localStorage
   useEffect(() => {
-    localStorage.setItem('lithium-lux-view-mode', viewMode);
-  }, [viewMode]);
+    localStorage.setItem('lithium-lux-ui-layout', uiLayoutPreference);
+  }, [uiLayoutPreference]);
 
   // Fetch server-validated role from org_members when org changes
   useEffect(() => {
@@ -105,8 +108,8 @@ export function RoleProvider({ children }: { children: ReactNode }) {
 
   return (
     <RoleContext.Provider value={{ 
-      viewMode, 
-      setViewMode,
+      uiLayoutPreference, 
+      setUILayoutPreference,
       serverRole,
       isLoadingRole,
     }}>

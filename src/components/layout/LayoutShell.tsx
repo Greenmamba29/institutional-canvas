@@ -80,10 +80,11 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { viewMode } = useRole();
+  const { uiLayoutPreference } = useRole();
 
   const isActive = (path: string) => location.pathname.startsWith(path);
-  const navItems = viewMode === 'supplier' ? supplierNavItems : adminNavItems;
+  // UI layout determines which navigation to show - this is cosmetic, not authorization
+  const navItems = uiLayoutPreference === 'supplier' ? supplierNavItems : adminNavItems;
 
   return (
     <div className="min-h-screen bg-background flex w-full">
@@ -104,7 +105,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
               <div className="flex flex-col">
                 <span className="font-bold text-lg tracking-tight">Lithium & Lux</span>
                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                  {viewMode === 'supplier' ? 'Supplier Terminal' : 'Mission Control'}
+                  {uiLayoutPreference === 'supplier' ? 'Supplier Terminal' : 'Mission Control'}
                 </span>
               </div>
             )}
@@ -119,8 +120,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
           </Button>
         </div>
 
-        {/* Supplier Profile Card */}
-        {viewMode === 'supplier' && sidebarOpen && (
+        {/* Supplier Profile Card - shown when user selects supplier layout */}
+        {uiLayoutPreference === 'supplier' && sidebarOpen && (
           <div className="p-4 border-b border-border/50 space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
@@ -187,8 +188,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
           })}
         </nav>
 
-        {/* GMV Summary for Admin */}
-        {viewMode !== 'supplier' && sidebarOpen && (
+        {/* GMV Summary for Admin layout */}
+        {uiLayoutPreference !== 'supplier' && sidebarOpen && (
           <GMVSummaryPanel
             gmvYTD={15200000}
             changePercent={12.4}
@@ -218,7 +219,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
           {sidebarOpen && (
             <div className="pt-3 mt-3 border-t border-border/30">
               <p className="text-[10px] text-muted-foreground text-center tracking-widest">
-                {viewMode === 'supplier' ? 'SUPPLIER TERMINAL V4.1' : 'MISSION CONTROL CENTER • CONNECTED'}
+                {uiLayoutPreference === 'supplier' ? 'SUPPLIER TERMINAL V4.1' : 'MISSION CONTROL CENTER • CONNECTED'}
               </p>
             </div>
           )}

@@ -50,24 +50,25 @@ const escrowedAssets = [
 ];
 
 export default function Dashboard() {
-  const { viewMode } = useRole();
-  const [activeTab, setActiveTab] = useState(viewMode === 'supplier' ? 'overview' : 'dashboard');
+  const { uiLayoutPreference } = useRole();
+  const [activeTab, setActiveTab] = useState(uiLayoutPreference === 'supplier' ? 'overview' : 'dashboard');
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: priceData } = usePriceTicker();
 
-  const tabs = viewMode === 'supplier' 
+  // UI layout determines which tabs/breadcrumbs to show - this is cosmetic, not authorization
+  const tabs = uiLayoutPreference === 'supplier' 
     ? [{ id: 'overview', label: 'OVERVIEW' }, { id: 'listings', label: 'MY LISTINGS' }, { id: 'financials', label: 'FINANCIALS' }]
     : [{ id: 'dashboard', label: 'DASHBOARD' }, { id: 'auctions', label: 'AUCTION LISTINGS' }, { id: 'performance', label: 'PERFORMANCE' }];
 
-  const breadcrumbs = viewMode === 'supplier'
+  const breadcrumbs = uiLayoutPreference === 'supplier'
     ? [{ label: 'PLATFORM' }, { label: 'SUPPLIER DESK' }, { label: 'DASHBOARD' }]
     : [{ label: 'PLATFORM' }, { label: 'TRADING DESK' }, { label: 'OVERVIEW' }];
 
-  const title = viewMode === 'supplier' ? 'Supplier Performance Terminal' : 'Institutional Trading Console';
+  const title = uiLayoutPreference === 'supplier' ? 'Supplier Performance Terminal' : 'Institutional Trading Console';
 
   const renderTabContent = () => {
-    // Supplier tabs
-    if (viewMode === 'supplier') {
+    // Supplier layout tabs - UI preference only
+    if (uiLayoutPreference === 'supplier') {
       if (activeTab === 'listings') {
         return (
           <div className="glass-panel rounded-xl p-8 text-center">
@@ -190,7 +191,7 @@ export default function Dashboard() {
           <div className="lg:col-span-2 space-y-6">
             <GMVChart data={chartData} />
             
-            {viewMode === 'supplier' ? (
+            {uiLayoutPreference === 'supplier' ? (
               <WeeklyAuctionSnapshot
                 totalBids={475000}
                 changePercent={12.4}
@@ -213,7 +214,7 @@ export default function Dashboard() {
               escrowedAssets={escrowedAssets}
             />
             
-            {viewMode === 'supplier' ? (
+            {uiLayoutPreference === 'supplier' ? (
               <UpcomingAuctions auctions={upcomingAuctions} />
             ) : (
               <AuditLog entries={auditEntries} />
