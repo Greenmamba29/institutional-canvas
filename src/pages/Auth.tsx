@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Shield, Zap, Globe, Loader2 } from 'lucide-react';
+import { Sparkles, Shield, Zap, Globe, Loader2, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Auth() {
@@ -12,32 +12,45 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
+  const [isUpdatePasswordMode, setIsUpdatePasswordMode] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [session, setSession] = useState<any>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
-  // Check for existing session
+  // Check for existing session and detect PASSWORD_RECOVERY event
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) {
+      // Don't redirect if we're in update password mode
+      if (session && !isUpdatePasswordMode) {
         const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      if (session) {
+      
+      // Detect password recovery flow from reset link
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsUpdatePasswordMode(true);
+        // Stay on auth page to update password - don't redirect
+        return;
+      }
+      
+      // Only redirect if not in update password mode
+      if (session && !isUpdatePasswordMode) {
         const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, location]);
+  }, [navigate, location, isUpdatePasswordMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +113,59 @@ export default function Auth() {
       toast({
         title: isResetMode ? 'Reset failed' : isSignUp ? 'Sign up failed' : 'Sign in failed',
         description: error.message || 'Please check your credentials and try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: 'Passwords do not match',
+        description: 'Please ensure both password fields are identical.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      toast({
+        title: 'Password too short',
+        description: 'Password must be at least 6 characters.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Password updated successfully!',
+        description: 'You can now sign in with your new password.',
+      });
+      
+      setIsUpdatePasswordMode(false);
+      setNewPassword('');
+      setConfirmPassword('');
+      
+      // Redirect to dashboard since they're already authenticated
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Password update error:', error);
+      toast({
+        title: 'Password update failed',
+        description: error.message || 'Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -201,102 +267,184 @@ export default function Auth() {
           </div>
 
           <div className="glass-panel rounded-2xl p-8 space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">
-                {isResetMode ? 'Reset Password' : isSignUp ? 'Create Account' : 'Welcome Back'}
-              </h2>
-              <p className="text-muted-foreground">
-                {isResetMode
-                  ? 'Enter your email to receive a reset link'
-                  : isSignUp 
-                    ? 'Enter your details to get started' 
-                    : 'Sign in to access your trading dashboard'}
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="h-11"
-                />
-              </div>
-
-              {!isResetMode && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    {!isSignUp && (
-                      <button
-                        type="button"
-                        onClick={() => setIsResetMode(true)}
-                        className="text-xs text-primary hover:underline"
-                        disabled={isLoading}
-                      >
-                        Forgot password?
-                      </button>
-                    )}
+            {isUpdatePasswordMode ? (
+              // Update Password Form (shown after clicking reset link)
+              <>
+                <div className="text-center space-y-2">
+                  <div className="flex justify-center mb-4">
+                    <div className="p-3 rounded-xl bg-primary/10">
+                      <KeyRound className="h-6 w-6 text-primary" />
+                    </div>
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    minLength={6}
-                    className="h-11"
-                  />
+                  <h2 className="text-2xl font-bold">Set New Password</h2>
+                  <p className="text-muted-foreground">
+                    Enter your new password below
+                  </p>
                 </div>
-              )}
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-12 text-base font-semibold"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {isResetMode ? 'Sending...' : isSignUp ? 'Creating account...' : 'Signing in...'}
-                  </>
-                ) : (
-                  isResetMode ? 'Send Reset Link' : isSignUp ? 'Create Account' : 'Sign In'
-                )}
-              </Button>
-            </form>
+                <form onSubmit={handleUpdatePassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      minLength={6}
+                      className="h-11"
+                    />
+                  </div>
 
-            <div className="text-center space-y-2">
-              {isResetMode ? (
-                <button
-                  type="button"
-                  onClick={() => setIsResetMode(false)}
-                  className="text-sm text-primary hover:underline"
-                  disabled={isLoading}
-                >
-                  Back to sign in
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  className="text-sm text-primary hover:underline"
-                  disabled={isLoading}
-                >
-                  {isSignUp 
-                    ? 'Already have an account? Sign in' 
-                    : "Don't have an account? Sign up"}
-                </button>
-              )}
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      minLength={6}
+                      className="h-11"
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-12 text-base font-semibold"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Updating password...
+                      </>
+                    ) : (
+                      'Update Password'
+                    )}
+                  </Button>
+                </form>
+
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUpdatePasswordMode(false);
+                      setNewPassword('');
+                      setConfirmPassword('');
+                    }}
+                    className="text-sm text-primary hover:underline"
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              // Regular Sign In / Sign Up / Reset Mode forms
+              <>
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-bold">
+                    {isResetMode ? 'Reset Password' : isSignUp ? 'Create Account' : 'Welcome Back'}
+                  </h2>
+                  <p className="text-muted-foreground">
+                    {isResetMode
+                      ? 'Enter your email to receive a reset link'
+                      : isSignUp 
+                        ? 'Enter your details to get started' 
+                        : 'Sign in to access your trading dashboard'}
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@company.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="h-11"
+                    />
+                  </div>
+
+                  {!isResetMode && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password">Password</Label>
+                        {!isSignUp && (
+                          <button
+                            type="button"
+                            onClick={() => setIsResetMode(true)}
+                            className="text-xs text-primary hover:underline"
+                            disabled={isLoading}
+                          >
+                            Forgot password?
+                          </button>
+                        )}
+                      </div>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        minLength={6}
+                        className="h-11"
+                      />
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-12 text-base font-semibold"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        {isResetMode ? 'Sending...' : isSignUp ? 'Creating account...' : 'Signing in...'}
+                      </>
+                    ) : (
+                      isResetMode ? 'Send Reset Link' : isSignUp ? 'Create Account' : 'Sign In'
+                    )}
+                  </Button>
+                </form>
+
+                <div className="text-center space-y-2">
+                  {isResetMode ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsResetMode(false)}
+                      className="text-sm text-primary hover:underline"
+                      disabled={isLoading}
+                    >
+                      Back to sign in
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsSignUp(!isSignUp)}
+                      className="text-sm text-primary hover:underline"
+                      disabled={isLoading}
+                    >
+                      {isSignUp 
+                        ? 'Already have an account? Sign in' 
+                        : "Don't have an account? Sign up"}
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Security Info */}
             <div className="text-center pt-2">
