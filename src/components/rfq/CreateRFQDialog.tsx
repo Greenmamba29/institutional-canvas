@@ -85,7 +85,7 @@ export function CreateRFQDialog() {
       const result = await createRFQ.mutateAsync({
         p_title: formData.title.trim(),
         p_description: formData.description.trim(),
-        p_product_id: formData.product_id || "00000000-0000-0000-0000-000000000000", // Temporary fallback
+        p_product_id: formData.product_id || null,
         p_target_quantity: parseFloat(formData.target_quantity),
         p_target_unit: formData.target_unit,
         p_incoterms: formData.incoterms,
@@ -163,12 +163,14 @@ export function CreateRFQDialog() {
                 placeholder="e.g., Lithium Carbonate Q1 2025"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
+                aria-required="true"
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">
+                Description <span className="text-xs text-muted-foreground">(Optional)</span>
+              </Label>
               <Textarea
                 id="description"
                 placeholder="Provide detailed requirements..."
@@ -187,11 +189,11 @@ export function CreateRFQDialog() {
                   id="quantity"
                   type="number"
                   step="0.01"
-                  min="0"
+                  min="0.01"
                   placeholder="1000"
                   value={formData.target_quantity}
                   onChange={(e) => setFormData({ ...formData, target_quantity: e.target.value })}
-                  required
+                  aria-required="true"
                 />
               </div>
 
@@ -236,7 +238,7 @@ export function CreateRFQDialog() {
                 placeholder="e.g., Shanghai Port, China"
                 value={formData.delivery_location}
                 onChange={(e) => setFormData({ ...formData, delivery_location: e.target.value })}
-                required
+                aria-required="true"
               />
             </div>
           </div>
