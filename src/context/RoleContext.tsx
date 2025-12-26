@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
+import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth0 } from '@auth0/auth0-react';
 
 /**
  * UI view mode - ONLY for UI display preferences, NOT for authorization.
@@ -38,7 +38,7 @@ interface RoleContextType {
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated, user } = useAuth0();
+  const { isAuthenticated, user } = useAuth();
   const { currentOrg } = useOrganization();
   
   // UI view mode - stored in localStorage for UI preference only
@@ -63,7 +63,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   // Fetch server-validated role from org_members when org changes
   useEffect(() => {
     const fetchServerRole = async () => {
-      if (!isAuthenticated || !user?.sub || !currentOrg?.id) {
+      if (!isAuthenticated || !user?.id || !currentOrg?.id) {
         setServerRole(null);
         setIsLoadingRole(false);
         return;
@@ -75,7 +75,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
           .from('org_members')
           .select('role')
           .eq('org_id', currentOrg.id)
-          .eq('user_id', user.sub)
+          .eq('user_id', user.id)
           .eq('status', 'active')
           .maybeSingle();
 
@@ -102,7 +102,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     };
 
     fetchServerRole();
-  }, [isAuthenticated, user?.sub, currentOrg?.id]);
+  }, [isAuthenticated, user?.id, currentOrg?.id]);
 
   return (
     <RoleContext.Provider value={{ 

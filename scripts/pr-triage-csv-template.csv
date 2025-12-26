@@ -1,0 +1,10 @@
+PR Number,Title,Author,Status,Category,Priority,Review Status,CI Passing,Has Conflicts,Last Updated,Notes,Action Required
+# Fill this out for each of the 93 PRs
+# Status options: Open, Draft, Merged, Closed
+# Category options: Bug Fix, Feature, Refactor, Documentation, Security, CI/CD, UI/UX, Dependencies, Tests, Config, Other
+# Priority options: P0-Critical, P1-High, P2-Medium, P3-Low
+# Review Status options: Approved, Needs Review, Changes Requested, Not Reviewed
+# CI Passing options: Yes, No, N/A
+# Has Conflicts options: Yes, No, Unknown
+# Action Required options: Review, Approve, Request Changes, Merge, Close, No Action Needed
+
