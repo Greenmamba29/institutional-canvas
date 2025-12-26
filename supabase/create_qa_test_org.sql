@@ -30,21 +30,20 @@ BEGIN
   END IF;
 
   -- Create test buyer organization
+  -- NOTE: Only insert columns that exist in the actual schema
+  -- The organizations table has: id, org_type, name, status, created_at
+  -- It does NOT have: email, phone, address, metadata, updated_at
   INSERT INTO public.organizations (
     id,
     org_type,
     name,
-    email,
     status,
-    created_at,
-    updated_at
+    created_at
   ) VALUES (
     gen_random_uuid(),
     'buyer',
     'QA Test Buyer Corp',
-    'qa-test-buyer@lithiumbuy.com',
     'active',
-    NOW(),
     NOW()
   )
   RETURNING id INTO v_org_id;
