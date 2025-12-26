@@ -99,7 +99,7 @@ export default function Messages() {
 
   const handleSendMessage = () => {
     if (!newMessage.trim() || !selectedConversation) return;
-    console.log('Sending message:', newMessage);
+    // Send message logic here - do not log message content
     setNewMessage('');
   };
 
