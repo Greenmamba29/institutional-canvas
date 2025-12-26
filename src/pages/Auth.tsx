@@ -11,6 +11,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isResetMode, setIsResetMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [session, setSession] = useState<any>(null);
   const navigate = useNavigate();
@@ -43,7 +44,20 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      if (isSignUp) {
+      if (isResetMode) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: 'Reset link sent',
+          description: 'Check your email for a password reset link.',
+          duration: 8000,
+        });
+        setIsResetMode(false);
+      } else if (isSignUp) {
         const { error, data } = await supabase.auth.signUp({
           email,
           password,
@@ -84,7 +98,7 @@ export default function Auth() {
     } catch (error: any) {
       console.error('Auth error:', error);
       toast({
-        title: isSignUp ? 'Sign up failed' : 'Sign in failed',
+        title: isResetMode ? 'Reset failed' : isSignUp ? 'Sign up failed' : 'Sign in failed',
         description: error.message || 'Please check your credentials and try again.',
         variant: 'destructive',
       });
@@ -189,12 +203,14 @@ export default function Auth() {
           <div className="glass-panel rounded-2xl p-8 space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold">
-                {isSignUp ? 'Create Account' : 'Welcome Back'}
+                {isResetMode ? 'Reset Password' : isSignUp ? 'Create Account' : 'Welcome Back'}
               </h2>
               <p className="text-muted-foreground">
-                {isSignUp 
-                  ? 'Enter your details to get started' 
-                  : 'Sign in to access your trading dashboard'}
+                {isResetMode
+                  ? 'Enter your email to receive a reset link'
+                  : isSignUp 
+                    ? 'Enter your details to get started' 
+                    : 'Sign in to access your trading dashboard'}
               </p>
             </div>
 
@@ -213,20 +229,34 @@ export default function Auth() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  minLength={6}
-                  className="h-11"
-                />
-              </div>
+              {!isResetMode && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    {!isSignUp && (
+                      <button
+                        type="button"
+                        onClick={() => setIsResetMode(true)}
+                        className="text-xs text-primary hover:underline"
+                        disabled={isLoading}
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    minLength={6}
+                    className="h-11"
+                  />
+                </div>
+              )}
 
               <Button
                 type="submit"
@@ -236,25 +266,36 @@ export default function Auth() {
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {isSignUp ? 'Creating account...' : 'Signing in...'}
+                    {isResetMode ? 'Sending...' : isSignUp ? 'Creating account...' : 'Signing in...'}
                   </>
                 ) : (
-                  isSignUp ? 'Create Account' : 'Sign In'
+                  isResetMode ? 'Send Reset Link' : isSignUp ? 'Create Account' : 'Sign In'
                 )}
               </Button>
             </form>
 
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-sm text-primary hover:underline"
-                disabled={isLoading}
-              >
-                {isSignUp 
-                  ? 'Already have an account? Sign in' 
-                  : "Don't have an account? Sign up"}
-              </button>
+            <div className="text-center space-y-2">
+              {isResetMode ? (
+                <button
+                  type="button"
+                  onClick={() => setIsResetMode(false)}
+                  className="text-sm text-primary hover:underline"
+                  disabled={isLoading}
+                >
+                  Back to sign in
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  className="text-sm text-primary hover:underline"
+                  disabled={isLoading}
+                >
+                  {isSignUp 
+                    ? 'Already have an account? Sign in' 
+                    : "Don't have an account? Sign up"}
+                </button>
+              )}
             </div>
 
             {/* Security Info */}
