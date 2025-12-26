@@ -1,5 +1,6 @@
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useOrganization } from '@/context/OrganizationContext';
 import { Loader2, Sparkles } from 'lucide-react';
 
 function LoadingScreen() {
@@ -19,17 +20,29 @@ function LoadingScreen() {
 }
 
 export function ProtectedRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { hasOrganization, isLoading: orgLoading } = useOrganization();
   const location = useLocation();
 
   // Show loading while checking auth status
-  if (isLoading) {
+  if (authLoading) {
     return <LoadingScreen />;
   }
 
   // Redirect to auth if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  // Show loading while checking org status (only after authenticated)
+  if (orgLoading) {
+    return <LoadingScreen />;
+  }
+
+  // If authenticated but no organization, redirect to onboarding
+  // (except if already on the onboarding page)
+  if (!hasOrganization && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <Outlet />;

@@ -44,20 +44,30 @@ export default function Auth() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { error, data } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}/auth`,
           },
         });
 
         if (error) throw error;
 
-        toast({
-          title: 'Account created!',
-          description: 'Check your email to confirm your account, or sign in if email confirmation is disabled.',
-        });
+        // Check if user was auto-confirmed (email confirmation disabled)
+        if (data.session) {
+          toast({
+            title: 'Account created!',
+            description: 'Welcome to LithiumBuy. Redirecting to onboarding...',
+          });
+        } else {
+          // Email confirmation is required
+          toast({
+            title: 'Check your email',
+            description: 'We sent you a confirmation link. Please check your inbox and click the link to activate your account.',
+            duration: 8000,
+          });
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
