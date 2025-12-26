@@ -1332,36 +1332,27 @@ export type Database = {
       }
       org_members: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
-          invited_at: string | null
           invited_by: string | null
-          joined_at: string | null
           org_id: string
           role: string
-          status: string
           user_id: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          invited_at?: string | null
           invited_by?: string | null
-          joined_at?: string | null
           org_id: string
           role?: string
-          status?: string
           user_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          invited_at?: string | null
           invited_by?: string | null
-          joined_at?: string | null
           org_id?: string
           role?: string
-          status?: string
           user_id?: string
         }
         Relationships: [
@@ -1377,24 +1368,33 @@ export type Database = {
       organizations: {
         Row: {
           created_at: string
+          email: string | null
           id: string
           name: string
           org_type: string
+          phone: string | null
           status: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
+          email?: string | null
           id?: string
           name: string
           org_type: string
+          phone?: string | null
           status?: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
           org_type?: string
+          phone?: string | null
           status?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1902,7 +1902,7 @@ export type Database = {
           description: string | null
           id: string
           incoterms: string | null
-          org_id: string
+          organization_id: string
           product_id: string | null
           status: Database["public"]["Enums"]["rfq_status"]
           target_quantity: number | null
@@ -1917,7 +1917,7 @@ export type Database = {
           description?: string | null
           id?: string
           incoterms?: string | null
-          org_id: string
+          organization_id: string
           product_id?: string | null
           status?: Database["public"]["Enums"]["rfq_status"]
           target_quantity?: number | null
@@ -1932,7 +1932,7 @@ export type Database = {
           description?: string | null
           id?: string
           incoterms?: string | null
-          org_id?: string
+          organization_id?: string
           product_id?: string | null
           status?: Database["public"]["Enums"]["rfq_status"]
           target_quantity?: number | null
@@ -1940,7 +1940,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rfqs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       smart_folders: {
         Row: {
@@ -2448,26 +2456,6 @@ export type Database = {
         Args: { p_tier?: string; p_user_id: string }
         Returns: Json
       }
-      claim_org_membership: {
-        Args: { p_invite_token?: string; p_org_id: string }
-        Returns: {
-          created_at: string
-          id: string
-          invited_at: string | null
-          invited_by: string | null
-          joined_at: string | null
-          org_id: string
-          role: string
-          status: string
-          user_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "org_members"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       create_deal: {
         Args: { p_rfq_id: string; p_supplier_id: string; p_title: string }
         Returns: {
@@ -2500,10 +2488,13 @@ export type Database = {
         }
         Returns: {
           created_at: string
+          email: string | null
           id: string
           name: string
           org_type: string
+          phone: string | null
           status: string
+          updated_at: string | null
         }
         SetofOptions: {
           from: "*"
@@ -2590,7 +2581,7 @@ export type Database = {
           description: string | null
           id: string
           incoterms: string | null
-          org_id: string
+          organization_id: string
           product_id: string | null
           status: Database["public"]["Enums"]["rfq_status"]
           target_quantity: number | null
@@ -2709,10 +2700,13 @@ export type Database = {
         Args: never
         Returns: {
           created_at: string
+          email: string | null
           id: string
           name: string
           org_type: string
+          phone: string | null
           status: string
+          updated_at: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -2739,26 +2733,6 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "notifications"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      get_org_members: {
-        Args: { p_org_id: string }
-        Returns: {
-          created_at: string
-          id: string
-          invited_at: string | null
-          invited_by: string | null
-          joined_at: string | null
-          org_id: string
-          role: string
-          status: string
-          user_id: string
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "org_members"
           isOneToOne: false
           isSetofReturn: true
         }
@@ -2936,7 +2910,7 @@ export type Database = {
           description: string | null
           id: string
           incoterms: string | null
-          org_id: string
+          organization_id: string
           product_id: string | null
           status: Database["public"]["Enums"]["rfq_status"]
           target_quantity: number | null
