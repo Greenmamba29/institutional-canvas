@@ -65,11 +65,11 @@ export const currencySchema = z
 export const createRfqSchema = z.object({
   p_title: titleSchema,
   p_description: descriptionSchema.default(''),
-  p_product_id: uuidSchema,
+  p_product_id: uuidSchema.nullish(), // Optional - database allows null
   p_target_quantity: positiveNumberSchema,
   p_target_unit: z.string().trim().min(1, 'Unit is required').max(50, 'Unit too long'),
-  p_incoterms: z.string().trim().max(50, 'Incoterms too long'),
-  p_delivery_location: z.string().trim().max(500, 'Delivery location too long'),
+  p_incoterms: z.string().trim().max(50, 'Incoterms too long').optional().default(''),
+  p_delivery_location: z.string().trim().max(500, 'Delivery location too long').optional().default(''),
 });
 
 export type CreateRfqInput = z.infer<typeof createRfqSchema>;
