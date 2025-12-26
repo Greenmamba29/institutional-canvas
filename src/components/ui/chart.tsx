@@ -9,17 +9,41 @@ const THEMES = { light: "", dark: ".dark" } as const;
 // Sanitize color values to prevent CSS injection
 const sanitizeColor = (color: string | undefined): string | null => {
   if (!color) return null;
+  
   // Allow hex colors (3, 4, 6, or 8 digits)
   if (/^#[0-9A-Fa-f]{3,8}$/.test(color)) return color;
-  // Allow rgb/rgba colors
-  if (/^rgba?\([^)]+\)$/.test(color)) return color;
-  // Allow hsl/hsla colors
-  if (/^hsla?\([^)]+\)$/.test(color)) return color;
+  
+  // RGB/RGBA with strict numeric validation
+  const rgbMatch = color.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*([01]?\.?\d*))?\s*\)$/);
+  if (rgbMatch) {
+    const [, r, g, b, a] = rgbMatch;
+    if (parseInt(r) <= 255 && parseInt(g) <= 255 && parseInt(b) <= 255) {
+      if (!a || (parseFloat(a) >= 0 && parseFloat(a) <= 1)) {
+        return color;
+      }
+    }
+    return null;
+  }
+  
+  // HSL/HSLA with strict validation
+  const hslMatch = color.match(/^hsla?\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\s*(?:,\s*([01]?\.?\d*))?\s*\)$/);
+  if (hslMatch) {
+    const [, h, s, l, a] = hslMatch;
+    if (parseInt(h) <= 360 && parseInt(s) <= 100 && parseInt(l) <= 100) {
+      if (!a || (parseFloat(a) >= 0 && parseFloat(a) <= 1)) {
+        return color;
+      }
+    }
+    return null;
+  }
+  
   // Allow CSS variable references
   if (/^var\(--[a-zA-Z0-9-]+\)$/.test(color)) return color;
+  
   // Allow simple color names (limited set for security)
   const safeColors = ['transparent', 'currentColor', 'inherit'];
   if (safeColors.includes(color)) return color;
+  
   // Reject anything else
   return null;
 };
