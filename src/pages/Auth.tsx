@@ -80,8 +80,13 @@ export default function Auth() {
 
     try {
       if (isResetMode) {
+        // Get the redirect URL - this must match what's configured in Supabase Dashboard
+        // Go to: Supabase Dashboard > Authentication > URL Configuration
+        // Add your domain to "Redirect URLs" (e.g., https://yourdomain.com/auth)
+        const redirectTo = `${window.location.origin}/auth`;
+        
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo,
         });
 
         if (error) throw error;
@@ -93,11 +98,14 @@ export default function Auth() {
         });
         setIsResetMode(false);
       } else if (isSignUp) {
+        // Get the redirect URL - this must match what's configured in Supabase Dashboard
+        const redirectTo = `${window.location.origin}/auth`;
+        
         const { error, data } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth`,
+            emailRedirectTo: redirectTo,
           },
         });
 
