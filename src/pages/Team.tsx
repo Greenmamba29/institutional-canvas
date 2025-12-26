@@ -214,10 +214,8 @@ export default function Team() {
                     <div>
                       <p className="font-medium">{member.user_id}</p>
                       <p className="text-sm text-muted-foreground">
-                        {member.joined_at 
-                          ? `Joined ${format(new Date(member.joined_at), 'MMM d, yyyy')}`
-                          : member.status === 'pending' 
-                            ? 'Invitation pending'
+                        {member.created_at 
+                          ? `Joined ${format(new Date(member.created_at), 'MMM d, yyyy')}`
                             : 'Member'
                         }
                       </p>
