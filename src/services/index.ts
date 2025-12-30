@@ -19,3 +19,4 @@ export { listListings, getListing } from './listings.service';
 export * from './suppliers.service';
 export * from './orders.service';
 export * from './organizations.service';
+export * from './elevenlabs.service';
