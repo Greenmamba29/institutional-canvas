@@ -12,7 +12,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type public.agent_language as enum ('en', 'es', 'pt', 'zh', 'ja', 'ko', 'de', 'fr', 'it');
+  create type public.agent_language as enum ('en', 'es', 'pt', 'zh', 'zh-TW', 'ja', 'ko', 'de', 'fr', 'it', 'ru', 'af');
 exception when duplicate_object then null; end $$;
 
 do $$ begin

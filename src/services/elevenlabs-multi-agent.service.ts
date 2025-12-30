@@ -10,7 +10,7 @@ import { searchKnowledgeBase } from './knowledge-base.service';
 const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
 
 export type AgentRole = 'buyer' | 'supplier' | 'neutral';
-export type AgentLanguage = 'en' | 'es' | 'pt' | 'zh' | 'ja' | 'ko' | 'de' | 'fr' | 'it';
+export type AgentLanguage = 'en' | 'es' | 'pt' | 'zh' | 'zh-TW' | 'ja' | 'ko' | 'de' | 'fr' | 'it' | 'ru' | 'af';
 export type AgentSessionStatus = 'initializing' | 'active' | 'paused' | 'ended' | 'error';
 
 export interface AgentConfig {

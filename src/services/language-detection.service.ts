@@ -18,6 +18,7 @@ const LANGUAGE_MAP: Record<string, AgentLanguage> = {
   'en': 'en',
   'en-US': 'en',
   'en-GB': 'en',
+  'en-ZA': 'en',
   'es': 'es',
   'es-ES': 'es',
   'es-MX': 'es',
@@ -27,32 +28,65 @@ const LANGUAGE_MAP: Record<string, AgentLanguage> = {
   'pt-PT': 'pt',
   'zh': 'zh',
   'zh-CN': 'zh',
-  'zh-TW': 'zh',
+  'zh-TW': 'zh-TW', // Taiwanese Mandarin (Traditional Chinese)
+  'zh-HK': 'zh',
   'ja': 'ja',
   'ja-JP': 'ja',
   'ko': 'ko',
   'ko-KR': 'ko',
   'de': 'de',
   'de-DE': 'de',
+  'de-AT': 'de',
+  'de-CH': 'de',
   'fr': 'fr',
   'fr-FR': 'fr',
+  'fr-CA': 'fr',
+  'fr-BE': 'fr',
   'it': 'it',
   'it-IT': 'it',
+  'ru': 'ru',
+  'ru-RU': 'ru',
+  'af': 'af',
+  'af-ZA': 'af',
 };
 
 /**
  * Language to country mapping for geolocation fallback
  */
 const COUNTRY_TO_LANGUAGE: Record<string, AgentLanguage> = {
-  'US': 'en', 'GB': 'en', 'CA': 'en', 'AU': 'en', 'NZ': 'en', 'IE': 'en',
-  'ES': 'es', 'MX': 'es', 'AR': 'es', 'CO': 'es', 'CL': 'es', 'PE': 'es',
+  // English-speaking countries
+  'US': 'en', 'GB': 'en', 'CA': 'en', 'AU': 'en', 'NZ': 'en', 'IE': 'en', 'ZA': 'en',
+
+  // Spanish-speaking countries (major lithium producers: Chile, Argentina)
+  'ES': 'es', 'MX': 'es', 'AR': 'es', 'CO': 'es', 'CL': 'es', 'PE': 'es', 'BO': 'es',
+
+  // Portuguese-speaking countries (Brazil - major lithium reserves)
   'BR': 'pt', 'PT': 'pt',
-  'CN': 'zh', 'TW': 'zh', 'HK': 'zh', 'SG': 'zh',
+
+  // Chinese-speaking regions (China - world's largest lithium processor)
+  'CN': 'zh', 'HK': 'zh', 'SG': 'zh',
+  'TW': 'zh-TW', // Taiwan uses Traditional Chinese
+
+  // Japanese (major battery manufacturer)
   'JP': 'ja',
+
+  // Korean (major battery/EV market)
   'KR': 'ko',
+
+  // German-speaking countries (major EV market)
   'DE': 'de', 'AT': 'de', 'CH': 'de',
-  'FR': 'fr', 'BE': 'fr',
+
+  // French-speaking countries (lithium mining in Quebec, Africa)
+  'FR': 'fr', 'BE': 'fr', 'CA': 'fr', 'DZ': 'fr', 'MA': 'fr', 'CD': 'fr',
+
+  // Italian
   'IT': 'it',
+
+  // Russian (emerging lithium market)
+  'RU': 'ru', 'BY': 'ru', 'KZ': 'ru',
+
+  // Afrikaans (South Africa - lithium mining)
+  'ZA': 'af',
 };
 
 /**
@@ -181,12 +215,15 @@ export function getLanguageName(language: AgentLanguage): string {
     en: 'English',
     es: 'Español',
     pt: 'Português',
-    zh: '中文',
+    zh: '中文 (Simplified)',
+    'zh-TW': '中文 (Traditional)',
     ja: '日本語',
     ko: '한국어',
     de: 'Deutsch',
     fr: 'Français',
     it: 'Italiano',
+    ru: 'Русский',
+    af: 'Afrikaans',
   };
   return names[language];
 }
@@ -195,7 +232,20 @@ export function getLanguageName(language: AgentLanguage): string {
  * Get supported languages list
  */
 export function getSupportedLanguages(): Array<{ code: AgentLanguage; name: string }> {
-  const languages: AgentLanguage[] = ['en', 'es', 'pt', 'zh', 'ja', 'ko', 'de', 'fr', 'it'];
+  const languages: AgentLanguage[] = [
+    'en',  // English
+    'zh',  // Chinese (Simplified)
+    'zh-TW', // Chinese (Traditional) - Taiwan
+    'ja',  // Japanese
+    'fr',  // French
+    'de',  // German
+    'ru',  // Russian
+    'es',  // Spanish
+    'pt',  // Portuguese
+    'ko',  // Korean
+    'it',  // Italian
+    'af',  // Afrikaans (South Africa)
+  ];
   return languages.map((code) => ({
     code,
     name: getLanguageName(code),
