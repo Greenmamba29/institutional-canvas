@@ -32,6 +32,7 @@ import Onboarding from "./pages/Onboarding";
 import Purchases from "./pages/Purchases";
 import Team from "./pages/Team";
 import PasswordReset from "./pages/PasswordReset";
+import AgentSetup from "./pages/AgentSetup";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -77,6 +78,7 @@ const App = () => {
                       <Route path="/purchases" element={<Purchases />} />
                       <Route path="/telebuy" element={<TeleBuy />} />
                       <Route path="/telebuy/session/:id" element={<TeleBuy />} />
+                      <Route path="/agent-setup" element={<AgentSetup />} />
                       <Route path="/ai-studio" element={<AIStudio />} />
                       <Route path="/data" element={<Data />} />
                       <Route path="/analytics" element={<Analytics />} />
