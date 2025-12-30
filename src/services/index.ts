@@ -20,3 +20,6 @@ export * from './suppliers.service';
 export * from './orders.service';
 export * from './organizations.service';
 export * from './elevenlabs.service';
+export * from './elevenlabs-multi-agent.service';
+export * from './knowledge-base.service';
+export * from './airtable.service';
