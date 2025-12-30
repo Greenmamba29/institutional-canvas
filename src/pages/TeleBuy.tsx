@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Video, Users, Clock, Plus, MessageSquare, FileText, PenTool, ShoppingCart, Package } from "lucide-react";
+import { SterlingAgent } from "@/components/elevenlabs";
 
 const mockSessions = [
   {
@@ -95,21 +96,8 @@ export default function TeleBuy() {
               </Card>
             ))}
 
-            {/* Mediator/AI Controls Tile */}
-            <Card className="border-dashed border-2 bg-muted/20">
-              <CardHeader>
-                <CardTitle className="text-base">Privacy & AI Controls</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Configure recording, transcription, and AI assistance settings for your sessions.
-                </p>
-                <div className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg">
-                  {/* TODO: Realtime publish later: subscribe to session events + notification events */}
-                  AI features require Pro subscription
-                </div>
-              </CardContent>
-            </Card>
+            {/* Sterling AI Agent */}
+            <SterlingAgent />
           </div>
         </div>
       </div>
