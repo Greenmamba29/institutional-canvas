@@ -17,44 +17,85 @@ const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
 
 /**
  * Voice IDs optimized for each language
- * These are ElevenLabs voice IDs that work well for each language
+ * DEFAULT VOICES - Update these with your preferred voices from ElevenLabs
+ *
+ * To find better voices:
+ * 1. Go to https://elevenlabs.io/voice-library
+ * 2. Filter by language
+ * 3. Test voices with sample scripts
+ * 4. Copy voice IDs and update below
  */
 const LANGUAGE_VOICES: Record<AgentLanguage, { buyer: string; supplier: string }> = {
+  // ENGLISH - Global business language
   en: {
-    buyer: 'pqHfZKP75CvOlQylNhV4', // Burt Reynolds-style (Sterling)
-    supplier: 'EXAVITQu4vr4xnSDxMaL', // Professional male (Maxwell)
+    buyer: 'pqHfZKP75CvOlQylNhV4', // Your existing Sterling voice
+    supplier: 'EXAVITQu4vr4xnSDxMaL', // Professional male
   },
-  es: {
-    buyer: 'VR6AewLTigWG4xSOukaG', // Spanish male
-    supplier: 'TX3LPaxmHKxFdv7VOQHJ', // Spanish professional
-  },
-  pt: {
-    buyer: 'yoZ06aMxZJJ28mfd3POQ', // Portuguese male
-    supplier: 'flq6f7yk4E4fJM5XTYuZ', // Portuguese professional
-  },
+
+  // CHINESE (SIMPLIFIED) - China (60% lithium processing)
   zh: {
-    buyer: 'XB0fDUnXU5powFXDhCwa', // Chinese male
-    supplier: 'onwK4e9ZLuTAKqWW03F9', // Chinese professional
+    buyer: 'XB0fDUnXU5powFXDhCwa', // Chinese male - DEFAULT
+    supplier: 'onwK4e9ZLuTAKqWW03F9', // Chinese professional - DEFAULT
   },
+
+  // CHINESE (TRADITIONAL) - Taiwan (advanced batteries)
+  'zh-TW': {
+    buyer: 'XB0fDUnXU5powFXDhCwa', // Same as simplified - UPDATE with Traditional voice
+    supplier: 'onwK4e9ZLuTAKqWW03F9', // Same as simplified - UPDATE with Traditional voice
+  },
+
+  // JAPANESE - Japan (Panasonic, TDK)
   ja: {
-    buyer: 'IKne3meq5aSn9XLyUdCD', // Japanese male
-    supplier: 'bVMeCyTHy58xNoL34h3p', // Japanese professional
+    buyer: 'IKne3meq5aSn9XLyUdCD', // Japanese male - DEFAULT
+    supplier: 'bVMeCyTHy58xNoL34h3p', // Japanese professional - DEFAULT
   },
-  ko: {
-    buyer: 'pFZP5JQG7iQjIQuC4Bku', // Korean male
-    supplier: 'piTKgcLEGmPE4e6mEKli', // Korean professional
-  },
-  de: {
-    buyer: 'TxGEqnHWrfWFTfGW9XjX', // German male
-    supplier: 'pNInz6obpgDQGcFmaJgB', // German professional
-  },
+
+  // FRENCH - France, Quebec, Africa
   fr: {
-    buyer: 'ThT5KcBeYPX3keUQqHPh', // French male
-    supplier: '21m00Tcm4TlvDq8ikWAM', // French professional
+    buyer: 'ThT5KcBeYPX3keUQqHPh', // French male - DEFAULT
+    supplier: '21m00Tcm4TlvDq8ikWAM', // French professional - DEFAULT
   },
+
+  // GERMAN - Germany, Austria (major EV market)
+  de: {
+    buyer: 'TxGEqnHWrfWFTfGW9XjX', // German male - DEFAULT
+    supplier: 'pNInz6obpgDQGcFmaJgB', // German professional - DEFAULT
+  },
+
+  // RUSSIAN - Russia, Kazakhstan (emerging market)
+  ru: {
+    buyer: 'zlb1dXrM653N07WRdFW3', // Russian male - DEFAULT
+    supplier: 'g5CIjZEefAph4nQFvHAz', // Russian professional - DEFAULT
+  },
+
+  // SPANISH - Chile, Argentina (Lithium Triangle)
+  es: {
+    buyer: 'VR6AewLTigWG4xSOukaG', // Spanish male - DEFAULT
+    supplier: 'TX3LPaxmHKxFdv7VOQHJ', // Spanish professional - DEFAULT
+  },
+
+  // PORTUGUESE - Brazil (major reserves)
+  pt: {
+    buyer: 'yoZ06aMxZJJ28mfd3POQ', // Portuguese male - DEFAULT
+    supplier: 'flq6f7yk4E4fJM5XTYuZ', // Portuguese professional - DEFAULT
+  },
+
+  // KOREAN - South Korea (LG, Samsung)
+  ko: {
+    buyer: 'pFZP5JQG7iQjIQuC4Bku', // Korean male - DEFAULT
+    supplier: 'piTKgcLEGmPE4e6mEKli', // Korean professional - DEFAULT
+  },
+
+  // ITALIAN - Italy (EV market)
   it: {
-    buyer: 'XrExE9yKIg1WjnnlVkGX', // Italian male
-    supplier: 'MF3mGyEYCl7XYWbV9V6O', // Italian professional
+    buyer: 'XrExE9yKIg1WjnnlVkGX', // Italian male - DEFAULT
+    supplier: 'MF3mGyEYCl7XYWbV9V6O', // Italian professional - DEFAULT
+  },
+
+  // AFRIKAANS - South Africa (lithium mining)
+  af: {
+    buyer: 'D38z5RcWu1voky8WS1ja', // Afrikaans male - DEFAULT
+    supplier: 'nPczCjzI2devNBz1zQrb', // Afrikaans professional - DEFAULT
   },
 };
 
