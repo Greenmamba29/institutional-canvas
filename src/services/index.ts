@@ -23,3 +23,4 @@ export * from './elevenlabs.service';
 export * from './elevenlabs-multi-agent.service';
 export * from './knowledge-base.service';
 export * from './airtable.service';
+export * from './language-detection.service';
