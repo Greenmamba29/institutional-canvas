@@ -167,12 +167,12 @@ async function createAgent(name, prompt, voiceId, firstMessage, language, role) 
         },
         platform_settings: {
           widget: {
-            variant: 'full_page',
+            variant: 'full',
           },
         },
         tts_config: {
           voice_id: voiceId,
-          model_id: 'eleven_turbo_v2_5',
+          model_id: language === 'en' ? 'eleven_turbo_v2_5' : 'eleven_flash_v2_5',
           agent_settings: {
             stability: 0.75,
             similarity_boost: 0.85,
@@ -219,7 +219,7 @@ async function saveAgentToDatabase(agentId, name, language, role, voiceId) {
 
 // Main deployment function
 async function deploy() {
-  const languages = ['en', 'zh', 'zh-TW', 'ja', 'fr', 'de', 'ru', 'es', 'pt', 'ko', 'it', 'af'];
+  const languages = ['en', 'zh', 'zh-TW', 'ja', 'fr', 'de', 'ru', 'es', 'pt', 'ko', 'it'];
   const roles = ['buyer', 'supplier'];
 
   let created = 0;
