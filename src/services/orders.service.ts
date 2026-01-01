@@ -53,7 +53,6 @@ export async function getOrders(options?: { status?: string; limit?: number }) {
     .from('orders')
     .select(`
       *,
-      suppliers (name, logo_url, verification_tier),
       quotes (*)
     `)
     .order('created_at', { ascending: false });
@@ -78,7 +77,6 @@ export async function getOrderById(orderId: string) {
     .from('orders')
     .select(`
       *,
-      suppliers (*),
       quotes (*, products (*))
     `)
     .eq('id', orderId)
@@ -95,7 +93,6 @@ export async function getQuotes(options?: { status?: string; limit?: number }) {
     .from('quotes')
     .select(`
       *,
-      suppliers (name, logo_url, verification_tier),
       products (name, product_type, purity_level)
     `)
     .order('created_at', { ascending: false });
@@ -120,7 +117,6 @@ export async function getQuoteById(quoteId: string) {
     .from('quotes')
     .select(`
       *,
-      suppliers (*),
       products (*)
     `)
     .eq('id', quoteId)
