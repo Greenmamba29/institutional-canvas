@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -82,10 +83,17 @@ export function QuoteRequestModal({
   const onSubmit = async (data: QuoteFormData) => {
     setIsSubmitting(true);
     try {
-      // TODO: Implement RPC call to create quote
-      // await supabase.rpc('create_quote', { ...data, supplier_id: supplierId });
-      
-      console.log("Quote request:", { ...data, supplier_id: supplierId });
+      const { error } = await supabase.from("quotes").insert({
+        supplier_id: supplierId,
+        product_id: data.product_id,
+        quantity: data.quantity,
+        requested_price: data.requested_price || null,
+        expires_at: data.delivery_date?.toISOString() || null,
+        notes: data.notes || null,
+        status: "pending",
+      });
+
+      if (error) throw error;
       
       toast({
         title: "Quote Requested",
@@ -95,6 +103,7 @@ export function QuoteRequestModal({
       form.reset();
       onOpenChange(false);
     } catch (error) {
+      console.error("Quote error:", error);
       toast({
         title: "Error",
         description: "Failed to submit quote request. Please try again.",

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,16 +60,20 @@ export function CreateSessionModal({
       const scheduledAt = new Date(date);
       scheduledAt.setHours(parseInt(hours), parseInt(minutes));
 
-      // TODO: Call createTelebuySession RPC when backend implements it
-      // For now, show success message
-      console.log('Creating session:', {
-        supplierId,
-        scheduledAt: scheduledAt.toISOString(),
-        notes,
-        timezone,
+      // Generate a placeholder meeting URL (Daily.co room creation would be done server-side)
+      const meetingUrl = `https://lithiumbuy.daily.co/room-${Date.now()}`;
+
+      const { error } = await supabase.from('telebuy_sessions').insert({
+        supplier_id: supplierId,
+        scheduled_at: scheduledAt.toISOString(),
+        meeting_url: meetingUrl,
+        notes: notes || null,
+        status: 'scheduled',
       });
 
-      toast.success('TeleBuy session scheduled! (Demo mode - backend RPC pending)');
+      if (error) throw error;
+
+      toast.success('TeleBuy session scheduled successfully!');
       onSuccess?.();
       onOpenChange(false);
       
@@ -79,7 +84,7 @@ export function CreateSessionModal({
       setNotes('');
     } catch (error) {
       console.error('Failed to create session:', error);
-      toast.error('Failed to schedule session');
+      toast.error('Failed to schedule session. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
