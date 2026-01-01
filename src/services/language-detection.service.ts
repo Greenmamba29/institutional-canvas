@@ -28,7 +28,7 @@ const LANGUAGE_MAP: Record<string, AgentLanguage> = {
   'pt-PT': 'pt',
   'zh': 'zh',
   'zh-CN': 'zh',
-  'zh-TW': 'zh-TW', // Taiwanese Mandarin (Traditional Chinese)
+  'zh-TW': 'zh-TW',
   'zh-HK': 'zh',
   'ja': 'ja',
   'ja-JP': 'ja',
@@ -55,7 +55,7 @@ const LANGUAGE_MAP: Record<string, AgentLanguage> = {
  */
 const COUNTRY_TO_LANGUAGE: Record<string, AgentLanguage> = {
   // English-speaking countries
-  'US': 'en', 'GB': 'en', 'CA': 'en', 'AU': 'en', 'NZ': 'en', 'IE': 'en', 'ZA': 'en',
+  'US': 'en', 'GB': 'en', 'AU': 'en', 'NZ': 'en', 'IE': 'en',
 
   // Spanish-speaking countries (major lithium producers: Chile, Argentina)
   'ES': 'es', 'MX': 'es', 'AR': 'es', 'CO': 'es', 'CL': 'es', 'PE': 'es', 'BO': 'es',
@@ -77,7 +77,7 @@ const COUNTRY_TO_LANGUAGE: Record<string, AgentLanguage> = {
   'DE': 'de', 'AT': 'de', 'CH': 'de',
 
   // French-speaking countries (lithium mining in Quebec, Africa)
-  'FR': 'fr', 'BE': 'fr', 'CA': 'fr', 'DZ': 'fr', 'MA': 'fr', 'CD': 'fr',
+  'FR': 'fr', 'BE': 'fr', 'DZ': 'fr', 'MA': 'fr', 'CD': 'fr',
 
   // Italian
   'IT': 'it',
@@ -85,8 +85,11 @@ const COUNTRY_TO_LANGUAGE: Record<string, AgentLanguage> = {
   // Russian (emerging lithium market)
   'RU': 'ru', 'BY': 'ru', 'KZ': 'ru',
 
-  // Afrikaans (South Africa - lithium mining)
-  'ZA': 'af',
+  // South Africa - can be English or Afrikaans
+  'ZA': 'en',
+
+  // Canada - default to English (also has French speakers)
+  'CA': 'en',
 };
 
 /**
@@ -122,7 +125,7 @@ export function detectBrowserLanguage(): LanguageDetectionResult {
 export async function detectLanguageFromGeolocation(): Promise<LanguageDetectionResult | null> {
   try {
     // Get user's position
-    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+    await new Promise<GeolocationPosition>((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
         timeout: 5000,
         maximumAge: 300000, // Cache for 5 minutes
@@ -130,7 +133,6 @@ export async function detectLanguageFromGeolocation(): Promise<LanguageDetection
     });
 
     // Use a geocoding service to get country code
-    // For now, we'll use a simple IP-based geolocation API
     const response = await fetch('https://ipapi.co/json/');
     if (!response.ok) throw new Error('Geolocation API failed');
 
@@ -159,7 +161,7 @@ export function getStoredLanguagePreference(): LanguageDetectionResult | null {
 
   try {
     const language = stored as AgentLanguage;
-    const supportedLanguages: AgentLanguage[] = ['en', 'es', 'pt', 'zh', 'ja', 'ko', 'de', 'fr', 'it'];
+    const supportedLanguages: AgentLanguage[] = ['en', 'es', 'pt', 'zh', 'zh-TW', 'ja', 'ko', 'de', 'fr', 'it', 'ru', 'af'];
 
     if (supportedLanguages.includes(language)) {
       return {
@@ -233,18 +235,18 @@ export function getLanguageName(language: AgentLanguage): string {
  */
 export function getSupportedLanguages(): Array<{ code: AgentLanguage; name: string }> {
   const languages: AgentLanguage[] = [
-    'en',  // English
-    'zh',  // Chinese (Simplified)
-    'zh-TW', // Chinese (Traditional) - Taiwan
-    'ja',  // Japanese
-    'fr',  // French
-    'de',  // German
-    'ru',  // Russian
-    'es',  // Spanish
-    'pt',  // Portuguese
-    'ko',  // Korean
-    'it',  // Italian
-    'af',  // Afrikaans (South Africa)
+    'en',     // English
+    'zh',     // Chinese (Simplified)
+    'zh-TW',  // Chinese (Traditional) - Taiwan
+    'ja',     // Japanese
+    'fr',     // French
+    'de',     // German
+    'ru',     // Russian
+    'es',     // Spanish
+    'pt',     // Portuguese
+    'ko',     // Korean
+    'it',     // Italian
+    'af',     // Afrikaans (South Africa)
   ];
   return languages.map((code) => ({
     code,
@@ -259,7 +261,7 @@ export function detectLanguageFromText(text: string): AgentLanguage {
   const lowerText = text.toLowerCase();
 
   // Common words/patterns for each language
-  const patterns: Record<AgentLanguage, RegExp[]> = {
+  const patterns: Partial<Record<AgentLanguage, RegExp[]>> = {
     es: [/\b(hola|gracias|por favor|buenos días|cómo|español)\b/i],
     pt: [/\b(olá|obrigado|por favor|bom dia|como|português)\b/i],
     zh: [/[\u4e00-\u9fa5]/], // Chinese characters
@@ -273,9 +275,11 @@ export function detectLanguageFromText(text: string): AgentLanguage {
 
   // Check each language
   for (const [lang, regexes] of Object.entries(patterns)) {
-    for (const regex of regexes) {
-      if (regex.test(lowerText)) {
-        return lang as AgentLanguage;
+    if (regexes) {
+      for (const regex of regexes) {
+        if (regex.test(lowerText)) {
+          return lang as AgentLanguage;
+        }
       }
     }
   }

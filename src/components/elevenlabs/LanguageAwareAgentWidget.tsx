@@ -36,17 +36,9 @@ interface LanguageAwareAgentWidgetProps {
   onAgentStateChange?: (state: 'idle' | 'active' | 'paused') => void;
 }
 
-interface ElevenLabsWidget {
+interface ElevenLabsWidgetInstance {
   startSession: () => void;
   endSession: () => void;
-}
-
-declare global {
-  interface Window {
-    ElevenLabsWidget?: {
-      init: (config: { agentId: string }) => ElevenLabsWidget;
-    };
-  }
 }
 
 export function LanguageAwareAgentWidget({
@@ -63,7 +55,7 @@ export function LanguageAwareAgentWidget({
   const [currentAgentId, setCurrentAgentId] = useState<string | null>(null);
   const [isConfigured, setIsConfigured] = useState(false);
   const [languageDetecting, setLanguageDetecting] = useState(false);
-  const widgetRef = useRef<ElevenLabsWidget | null>(null);
+  const widgetRef = useRef<ElevenLabsWidgetInstance | null>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
 
   // Detect language on mount
@@ -124,7 +116,9 @@ export function LanguageAwareAgentWidget({
     // Get agent configuration for current role and language
     const { data: config } = await getAgentConfig(userRole, language);
 
-    if (!config || !window.ElevenLabsWidget) {
+    const ElevenLabsWidget = (window as unknown as { ElevenLabsWidget?: { init: (cfg: { agentId: string }) => ElevenLabsWidgetInstance } }).ElevenLabsWidget;
+
+    if (!config || !ElevenLabsWidget) {
       throw new Error(`No agent found for ${userRole} role in ${language.toUpperCase()}`);
     }
 
@@ -145,19 +139,19 @@ export function LanguageAwareAgentWidget({
       throw new Error('Failed to create agent session');
     }
 
-    setAgentSessionId(session.id);
+    setAgentSessionId(session.id || null);
 
     // Initialize ElevenLabs widget
-    widgetRef.current = window.ElevenLabsWidget.init({
+    widgetRef.current = ElevenLabsWidget.init({
       agentId: config.elevenlabs_agent_id,
     });
 
     // Start session
-    await startAgentSession(session.id, 'widget-' + session.id);
+    await startAgentSession(session.id || '', 'widget-' + session.id);
 
     // Log initial message
     await logAgentMessage({
-      agent_session_id: session.id,
+      agent_session_id: session.id || '',
       message_type: 'system_event',
       speaker_role: 'system',
       content: `Agent session started with ${userRole} role in ${getLanguageName(language)}`,

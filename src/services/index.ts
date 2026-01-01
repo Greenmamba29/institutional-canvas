@@ -19,8 +19,34 @@ export { listListings, getListing } from './listings.service';
 export * from './suppliers.service';
 export * from './orders.service';
 export * from './organizations.service';
-export * from './elevenlabs.service';
-export * from './elevenlabs-multi-agent.service';
+
+// ElevenLabs services - avoid duplicate export by re-exporting specific items
+export { 
+  createAgent, 
+  getSterlingAgentConfig, 
+  getAgentId, 
+  isConfigured,
+  type AgentConfig 
+} from './elevenlabs.service';
+
+export {
+  type AgentRole,
+  type AgentLanguage,
+  type AgentSessionStatus,
+  type MultiAgentConfig,
+  type AgentSession,
+  type AgentMessage,
+  isMultiAgentConfigured,
+  getAgentConfig,
+  createAgentSession,
+  startAgentSession,
+  endAgentSession,
+  logAgentMessage,
+  getConversationHistory,
+  getBuyerAgentConfig,
+  getSupplierAgentConfig,
+} from './elevenlabs-multi-agent.service';
+
 export * from './knowledge-base.service';
 export * from './airtable.service';
 export * from './language-detection.service';

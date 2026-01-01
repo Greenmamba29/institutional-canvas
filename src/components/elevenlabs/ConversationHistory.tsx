@@ -8,24 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { User, Bot, Clock, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { getConversationHistory } from '@/services/elevenlabs-multi-agent.service';
+import { getConversationHistory, AgentMessage } from '@/services/elevenlabs-multi-agent.service';
 import { format } from 'date-fns';
 
 interface ConversationHistoryProps {
   agentSessionId: string;
   autoRefresh?: boolean;
-  refreshInterval?: number; // milliseconds
+  refreshInterval?: number;
 }
 
-interface Message {
+interface Message extends AgentMessage {
   id: string;
-  message_type: string;
-  speaker_role: string;
-  content: string;
-  language?: string;
   timestamp: string;
-  sentiment?: 'positive' | 'neutral' | 'negative';
-  intent?: string;
   confidence_score?: number;
 }
 
@@ -41,7 +35,13 @@ export function ConversationHistory({
     try {
       const { data } = await getConversationHistory(agentSessionId, 100);
       if (data) {
-        setMessages(data);
+        // Transform AgentMessage to Message with required fields
+        const transformed: Message[] = data.map((msg, idx) => ({
+          ...msg,
+          id: `msg_${idx}_${Date.now()}`,
+          timestamp: new Date().toISOString(),
+        }));
+        setMessages(transformed);
       }
     } catch (error) {
       console.error('Failed to fetch conversation history:', error);
@@ -123,7 +123,6 @@ export function ConversationHistory({
                 key={message.id}
                 className={`p-3 rounded-lg border ${getSentimentColor(message.sentiment)}`}
               >
-                {/* Message Header */}
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     {message.speaker_role === 'user' ? (
@@ -148,11 +147,7 @@ export function ConversationHistory({
                     {format(new Date(message.timestamp), 'HH:mm:ss')}
                   </div>
                 </div>
-
-                {/* Message Content */}
                 <p className="text-sm mb-2">{message.content}</p>
-
-                {/* Message Metadata */}
                 <div className="flex flex-wrap gap-2">
                   {message.language && (
                     <Badge variant="secondary" className="text-xs">
@@ -162,11 +157,6 @@ export function ConversationHistory({
                   {message.intent && (
                     <Badge variant="outline" className="text-xs">
                       Intent: {message.intent}
-                    </Badge>
-                  )}
-                  {message.confidence_score && (
-                    <Badge variant="outline" className="text-xs">
-                      Confidence: {(message.confidence_score * 100).toFixed(0)}%
                     </Badge>
                   )}
                 </div>
