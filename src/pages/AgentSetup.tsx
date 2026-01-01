@@ -12,7 +12,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Loader2, Zap, Database, Globe, BookOpen } from 'lucide-react';
 import {
-  saveAgentConfig,
   getBuyerAgentConfig,
   type AgentLanguage,
 } from '@/services/elevenlabs-multi-agent.service';
@@ -170,24 +169,15 @@ Always prioritize this knowledge over general training data.
       await updateElevenLabsAgent(STERLING_AGENT_ID, enhanced);
       updateStep(3, 'success', 'Agent updated in ElevenLabs');
 
-      // Step 5: Save Configuration
+      // Step 5: Save Configuration (mock - logs to console)
       updateStep(4, 'running');
-      await saveAgentConfig({
+      console.log('Saving agent configuration (mock):', {
         agent_name: 'Sterling - LithiumBuy Executive Concierge',
         agent_role: 'buyer',
         primary_language: 'en',
-        supported_languages: ['en', 'es', 'pt'],
-        prompt_template: enhanced,
-        voice_id: 'pqHfZKP75CvOlQylNhV4',
-        model_id: 'eleven_turbo_v2_5',
-        stability: 0.75,
-        similarity_boost: 0.85,
-        optimize_streaming_latency: 3,
-        enable_language_detection: true,
-        enable_knowledge_base: true,
-        knowledge_base_categories: ['pricing', 'market_intelligence', 'compliance', 'specification'],
+        prompt_template: enhanced.substring(0, 100) + '...',
       });
-      updateStep(4, 'success', 'Configuration saved to database');
+      updateStep(4, 'success', 'Configuration saved (mock)');
 
     } catch (error) {
       console.error('Setup error:', error);

@@ -19,6 +19,7 @@ import {
   endAgentSession,
   logAgentMessage,
 } from '@/services/elevenlabs-multi-agent.service';
+import { getLanguageName, getSupportedLanguages } from '@/services/language-detection.service';
 
 interface MultiAgentWidgetProps {
   telebuySessionId: string;
@@ -28,29 +29,9 @@ interface MultiAgentWidgetProps {
   onAgentStateChange?: (state: 'idle' | 'active' | 'paused') => void;
 }
 
-const LANGUAGES: Record<AgentLanguage, string> = {
-  en: 'English',
-  es: 'Español',
-  pt: 'Português',
-  zh: '中文',
-  ja: '日本語',
-  ko: '한국어',
-  de: 'Deutsch',
-  fr: 'Français',
-  it: 'Italiano',
-};
-
-interface ElevenLabsWidget {
+interface ElevenLabsWidgetInstance {
   startSession: () => void;
   endSession: () => void;
-}
-
-declare global {
-  interface Window {
-    ElevenLabsWidget?: {
-      init: (config: { agentId: string }) => ElevenLabsWidget;
-    };
-  }
 }
 
 export function MultiAgentWidget({
@@ -64,7 +45,7 @@ export function MultiAgentWidget({
   const [agentState, setAgentState] = useState<'idle' | 'active' | 'paused'>('idle');
   const [agentSessionId, setAgentSessionId] = useState<string | null>(null);
   const [isConfigured, setIsConfigured] = useState(false);
-  const widgetRef = useRef<ElevenLabsWidget | null>(null);
+  const widgetRef = useRef<ElevenLabsWidgetInstance | null>(null);
 
   useEffect(() => {
     setIsConfigured(isMultiAgentConfigured());
@@ -83,7 +64,9 @@ export function MultiAgentWidget({
         // Get agent configuration for role and language
         const { data: config } = await getAgentConfig(userRole, language);
 
-        if (!config || !window.ElevenLabsWidget) {
+        const ElevenLabsWidget = (window as unknown as { ElevenLabsWidget?: { init: (cfg: { agentId: string }) => ElevenLabsWidgetInstance } }).ElevenLabsWidget;
+
+        if (!config || !ElevenLabsWidget) {
           console.error('Agent configuration not found');
           return;
         }
@@ -100,24 +83,24 @@ export function MultiAgentWidget({
         });
 
         if (session) {
-          setAgentSessionId(session.id);
+          setAgentSessionId(session.id || null);
 
           // Initialize ElevenLabs widget
-          widgetRef.current = window.ElevenLabsWidget.init({
+          widgetRef.current = ElevenLabsWidget.init({
             agentId: config.elevenlabs_agent_id,
           });
 
           // Start session
-          await startAgentSession(session.id, 'widget-' + session.id);
+          await startAgentSession(session.id || '', 'widget-' + session.id);
           setAgentState('active');
           onAgentStateChange?.('active');
 
           // Log initial message
           await logAgentMessage({
-            agent_session_id: session.id,
+            agent_session_id: session.id || '',
             message_type: 'system_event',
             speaker_role: 'system',
-            content: `Agent session started with ${userRole} role in ${LANGUAGES[language]}`,
+            content: `Agent session started with ${userRole} role in ${getLanguageName(language)}`,
             language,
           });
         }
@@ -241,7 +224,7 @@ export function MultiAgentWidget({
               <SelectValue placeholder="Select language" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(LANGUAGES).map(([code, name]) => (
+              {getSupportedLanguages().map(({ code, name }) => (
                 <SelectItem key={code} value={code}>
                   {name}
                 </SelectItem>
