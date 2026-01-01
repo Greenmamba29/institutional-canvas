@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { Shield, CheckCircle } from 'lucide-react';
 
-type BadgeTier = 'gold' | 'standard' | 'basic' | 'kyc';
+export type BadgeTier = 'gold' | 'silver' | 'bronze' | 'standard' | 'basic' | 'kyc';
 
 interface VerificationBadgeProps {
   tier: BadgeTier;
@@ -10,12 +10,26 @@ interface VerificationBadgeProps {
 }
 
 export function VerificationBadge({ tier, showIcon = true, className }: VerificationBadgeProps) {
-  const configs = {
+  const configs: Record<BadgeTier, { label: string; bg: string; text: string; border: string; icon: typeof Shield }> = {
     gold: {
       label: 'GOLD VERIFIED',
-      bg: 'bg-accent/20',
-      text: 'text-accent',
-      border: 'border-accent/30',
+      bg: 'bg-yellow-500/20',
+      text: 'text-yellow-500',
+      border: 'border-yellow-500/30',
+      icon: Shield,
+    },
+    silver: {
+      label: 'SILVER VERIFIED',
+      bg: 'bg-gray-400/20',
+      text: 'text-gray-400',
+      border: 'border-gray-400/30',
+      icon: Shield,
+    },
+    bronze: {
+      label: 'BRONZE VERIFIED',
+      bg: 'bg-orange-600/20',
+      text: 'text-orange-600',
+      border: 'border-orange-600/30',
       icon: Shield,
     },
     standard: {
