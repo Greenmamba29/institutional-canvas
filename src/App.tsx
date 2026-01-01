@@ -33,6 +33,7 @@ import Purchases from "./pages/Purchases";
 import Team from "./pages/Team";
 import PasswordReset from "./pages/PasswordReset";
 import AgentSetup from "./pages/AgentSetup";
+import SupplierDetail from "./pages/SupplierDetail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,7 +67,7 @@ const App = () => {
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/onboarding" element={<Onboarding />} />
                       <Route path="/marketplace" element={<Marketplace />} />
-                      <Route path="/marketplace/:id" element={<Marketplace />} />
+                      <Route path="/marketplace/suppliers/:id" element={<SupplierDetail />} />
                       <Route path="/rfqs" element={<RFQs />} />
                       <Route path="/rfqs/:id" element={<RFQs />} />
                       <Route path="/bids" element={<Bids />} />
