@@ -6,6 +6,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   getSuppliers,
+  getFeaturedSuppliers,
   getSupplierById,
   getSupplierProducts,
   getSupplierCertifications,
@@ -18,6 +19,7 @@ export const supplierKeys = {
   all: ['suppliers'] as const,
   lists: () => [...supplierKeys.all, 'list'] as const,
   list: (filters: Record<string, unknown>) => [...supplierKeys.lists(), filters] as const,
+  featured: () => [...supplierKeys.all, 'featured'] as const,
   details: () => [...supplierKeys.all, 'detail'] as const,
   detail: (id: string) => [...supplierKeys.details(), id] as const,
   products: (id: string) => [...supplierKeys.detail(id), 'products'] as const,
@@ -38,6 +40,17 @@ export function useSuppliers(options?: { verificationTier?: string; limit?: numb
     queryKey: supplierKeys.list(options ?? {}),
     queryFn: async () => {
       const { data, error } = await getSuppliers(options);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useFeaturedSuppliers() {
+  return useQuery({
+    queryKey: supplierKeys.featured(),
+    queryFn: async () => {
+      const { data, error } = await getFeaturedSuppliers();
       if (error) throw error;
       return data;
     },

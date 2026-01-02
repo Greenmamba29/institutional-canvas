@@ -183,7 +183,11 @@ export default function SupplierDetail() {
               </TabsContent>
 
               <TabsContent value="reviews">
-                <SupplierReviews reviews={reviews || []} supplierId={id || ""} />
+                <SupplierReviews 
+                  reviews={reviews || []} 
+                  supplierId={id || ""} 
+                  supplierName={displayName}
+                />
               </TabsContent>
 
               <TabsContent value="certifications">

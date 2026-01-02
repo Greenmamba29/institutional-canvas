@@ -3,8 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Star, ThumbsUp, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
+import { Star, ThumbsUp, MessageSquare, ChevronDown, ChevronUp, PenSquare } from "lucide-react";
 import { format } from "date-fns";
+import { WriteReviewModal } from "@/components/reviews/WriteReviewModal";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supplierKeys } from "@/hooks/useSuppliers";
 
 interface Review {
   id: string;
@@ -20,11 +25,14 @@ interface Review {
 interface SupplierReviewsProps {
   reviews: Review[];
   supplierId: string;
+  supplierName?: string;
 }
 
-export function SupplierReviews({ reviews, supplierId }: SupplierReviewsProps) {
+export function SupplierReviews({ reviews, supplierId, supplierName }: SupplierReviewsProps) {
   const [sortBy, setSortBy] = useState<"newest" | "highest" | "helpful">("newest");
   const [showAll, setShowAll] = useState(false);
+  const [writeReviewOpen, setWriteReviewOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const sortedReviews = [...reviews].sort((a, b) => {
     switch (sortBy) {
@@ -53,15 +61,40 @@ export function SupplierReviews({ reviews, supplierId }: SupplierReviewsProps) {
       : 0,
   }));
 
+  const handleMarkHelpful = async (reviewId: string) => {
+    const { error } = await supabase
+      .from('reviews')
+      .update({ helpful_count: (reviews.find(r => r.id === reviewId)?.helpful_count || 0) + 1 })
+      .eq('id', reviewId);
+    
+    if (error) {
+      toast.error("Failed to mark as helpful");
+    } else {
+      toast.success("Marked as helpful");
+      queryClient.invalidateQueries({ queryKey: supplierKeys.reviews(supplierId) });
+    }
+  };
+
   if (reviews.length === 0) {
     return (
       <Card className="glass-panel border-border/50">
         <CardContent className="p-8 text-center">
           <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">No reviews yet</h3>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-4">
             Be the first to review this supplier.
           </p>
+          <Button onClick={() => setWriteReviewOpen(true)}>
+            <PenSquare className="h-4 w-4 mr-2" />
+            Write a Review
+          </Button>
+          <WriteReviewModal
+            open={writeReviewOpen}
+            onOpenChange={setWriteReviewOpen}
+            supplierId={supplierId}
+            supplierName={supplierName || "Supplier"}
+            onSuccess={() => queryClient.invalidateQueries({ queryKey: supplierKeys.reviews(supplierId) })}
+          />
         </CardContent>
       </Card>
     );
@@ -113,18 +146,24 @@ export function SupplierReviews({ reviews, supplierId }: SupplierReviewsProps) {
       </Card>
 
       {/* Sort Options */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Sort by:</span>
-        {(["newest", "highest", "helpful"] as const).map((option) => (
-          <Button
-            key={option}
-            variant={sortBy === option ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setSortBy(option)}
-          >
-            {option.charAt(0).toUpperCase() + option.slice(1)}
-          </Button>
-        ))}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Sort by:</span>
+          {(["newest", "highest", "helpful"] as const).map((option) => (
+            <Button
+              key={option}
+              variant={sortBy === option ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setSortBy(option)}
+            >
+              {option.charAt(0).toUpperCase() + option.slice(1)}
+            </Button>
+          ))}
+        </div>
+        <Button onClick={() => setWriteReviewOpen(true)}>
+          <PenSquare className="h-4 w-4 mr-2" />
+          Write a Review
+        </Button>
       </div>
 
       {/* Reviews List */}
@@ -177,7 +216,12 @@ export function SupplierReviews({ reviews, supplierId }: SupplierReviewsProps) {
                   <p className="text-sm text-foreground/90">{review.content}</p>
 
                   <div className="flex items-center gap-4 mt-4">
-                    <Button variant="ghost" size="sm" className="text-muted-foreground">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-muted-foreground"
+                      onClick={() => handleMarkHelpful(review.id)}
+                    >
                       <ThumbsUp className="h-4 w-4 mr-1" />
                       Helpful ({review.helpful_count || 0})
                     </Button>
@@ -207,6 +251,14 @@ export function SupplierReviews({ reviews, supplierId }: SupplierReviewsProps) {
           </Button>
         </div>
       )}
+
+      <WriteReviewModal
+        open={writeReviewOpen}
+        onOpenChange={setWriteReviewOpen}
+        supplierId={supplierId}
+        supplierName={supplierName || "Supplier"}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: supplierKeys.reviews(supplierId) })}
+      />
     </div>
   );
 }

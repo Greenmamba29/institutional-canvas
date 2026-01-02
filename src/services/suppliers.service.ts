@@ -15,20 +15,28 @@ export type Certification = Tables<'certifications'>;
 export type Location = Tables<'locations'>;
 export type Review = Tables<'reviews'>;
 
+// Extended supplier type with related data
+export interface SupplierWithDetails extends Supplier {
+  products?: Product[];
+  certifications?: Certification[];
+  reviews?: Review[];
+  locations?: Location[];
+}
+
 // ============================================
 // READ-ONLY QUERIES (Direct reads are allowed)
 // ============================================
 
 /**
  * Get all suppliers with optional filters
+ * Queries the suppliers table directly using org_id as primary key
  */
 export async function getSuppliers(options?: {
   verificationTier?: string;
   limit?: number;
 }) {
-  // Use public view for marketplace directory (safe columns only)
   let query = supabase
-    .from('suppliers_public')
+    .from('suppliers')
     .select('*');
   
   if (options?.verificationTier) {
@@ -44,15 +52,29 @@ export async function getSuppliers(options?: {
 }
 
 /**
- * Get supplier by ID with full profile
+ * Get featured/verified suppliers for marketplace
+ */
+export async function getFeaturedSuppliers() {
+  const { data, error } = await supabase
+    .from('suppliers')
+    .select('*')
+    .in('verification_tier', ['gold', 'silver'])
+    .limit(5);
+  
+  return { data, error };
+}
+
+/**
+ * Get supplier by org_id with full profile
  * Split into separate queries to avoid TS2589 deep type recursion
  */
 export async function getSupplierById(supplierId: string) {
-  const [supplierResult, productsResult, certificationsResult, reviewsResult] = await Promise.all([
+  const [supplierResult, productsResult, certificationsResult, reviewsResult, locationsResult] = await Promise.all([
     supabase.from('suppliers').select('*').eq('org_id', supplierId).single(),
     supabase.from('products').select('*').eq('supplier_id', supplierId),
     supabase.from('certifications').select('*').eq('supplier_id', supplierId),
-    supabase.from('reviews').select('*').eq('supplier_id', supplierId),
+    supabase.from('reviews').select('*').eq('supplier_id', supplierId).order('created_at', { ascending: false }),
+    supabase.from('locations').select('*').eq('supplier_id', supplierId),
   ]);
 
   const error = supplierResult.error || productsResult.error || certificationsResult.error || reviewsResult.error;
@@ -67,7 +89,8 @@ export async function getSupplierById(supplierId: string) {
       products: productsResult.data || [],
       certifications: certificationsResult.data || [],
       reviews: reviewsResult.data || [],
-    },
+      locations: locationsResult.data || [],
+    } as SupplierWithDetails,
     error: null,
   };
 }
@@ -111,7 +134,7 @@ export async function getSupplierReviews(supplierId: string) {
 }
 
 /**
- * Search suppliers by name
+ * Search suppliers by display name
  * Sanitizes input to prevent SQL injection in LIKE patterns
  */
 export async function searchSuppliers(query: string) {
@@ -130,9 +153,8 @@ export async function searchSuppliers(query: string) {
     return { data: [], error: null };
   }
   
-  // Use public view for marketplace search (safe columns only)
   const { data, error } = await supabase
-    .from('suppliers_public')
+    .from('suppliers')
     .select('*')
     .ilike('display_name', `%${sanitized}%`);
   
