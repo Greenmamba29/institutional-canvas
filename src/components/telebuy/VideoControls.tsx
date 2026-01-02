@@ -1,3 +1,10 @@
+/**
+ * Video Controls Component
+ * 
+ * Provides camera, mic, screen share, and speaker controls
+ * Uses Daily.co SDK methods directly (not PostMessage)
+ */
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,58 +19,56 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type DailyIframe from '@daily-co/daily-js';
 
 interface VideoControlsProps {
-  roomUrl: string;
+  callFrame: ReturnType<typeof DailyIframe.createFrame> | null;
   onLeave: () => void;
 }
 
-export function VideoControls({ roomUrl, onLeave }: VideoControlsProps) {
+export function VideoControls({ callFrame, onLeave }: VideoControlsProps) {
   const [cameraOn, setCameraOn] = useState(true);
   const [micOn, setMicOn] = useState(true);
   const [screenShareOn, setScreenShareOn] = useState(false);
   const [speakerOn, setSpeakerOn] = useState(true);
 
-  // Send control messages to Daily.co iframe
-  const sendControlMessage = (action: string, data?: any) => {
-    const iframe = document.querySelector('iframe[title="Video Call"]') as HTMLIFrameElement;
-    if (iframe && iframe.contentWindow) {
-      iframe.contentWindow.postMessage(
-        {
-          action,
-          ...data,
-        },
-        '*'
-      );
+  const toggleCamera = async () => {
+    if (!callFrame) return;
+    const newState = !cameraOn;
+    setCameraOn(newState);
+    await callFrame.setLocalVideo(newState);
+  };
+
+  const toggleMic = async () => {
+    if (!callFrame) return;
+    const newState = !micOn;
+    setMicOn(newState);
+    await callFrame.setLocalAudio(newState);
+  };
+
+  const toggleScreenShare = async () => {
+    if (!callFrame) return;
+    const newState = !screenShareOn;
+    setScreenShareOn(newState);
+    if (newState) {
+      await callFrame.startScreenShare();
+    } else {
+      await callFrame.stopScreenShare();
     }
   };
 
-  const toggleCamera = () => {
-    const newState = !cameraOn;
-    setCameraOn(newState);
-    sendControlMessage('set-camera', { on: newState });
-  };
-
-  const toggleMic = () => {
-    const newState = !micOn;
-    setMicOn(newState);
-    sendControlMessage('set-microphone', { on: newState });
-  };
-
-  const toggleScreenShare = () => {
-    const newState = !screenShareOn;
-    setScreenShareOn(newState);
-    sendControlMessage(newState ? 'start-screen-share' : 'stop-screen-share');
-  };
-
   const toggleSpeaker = () => {
+    // Speaker control is handled via browser audio - toggle mute all remote participants
     const newState = !speakerOn;
     setSpeakerOn(newState);
-    sendControlMessage('set-speaker', { on: newState });
+    // Note: Daily doesn't have direct speaker mute - this is a UI indicator
+    // Audio output is controlled at the browser/OS level
   };
 
   const handleLeave = () => {
-    sendControlMessage('leave-meeting');
+    if (callFrame) {
+      callFrame.leave();
+    }
     onLeave();
   };
 
@@ -71,13 +76,10 @@ export function VideoControls({ roomUrl, onLeave }: VideoControlsProps) {
     <div className="flex items-center justify-center gap-2 p-4 bg-card rounded-lg border border-border">
       {/* Camera Toggle */}
       <Button
-        variant={cameraOn ? 'default' : 'destructive'}
+        variant={cameraOn ? 'outline' : 'destructive'}
         size="icon"
         onClick={toggleCamera}
-        className={cn(
-          'h-12 w-12 rounded-full',
-          cameraOn ? 'bg-muted hover:bg-muted/80' : ''
-        )}
+        className={cn('h-12 w-12 rounded-full')}
         title={cameraOn ? 'Turn off camera' : 'Turn on camera'}
       >
         {cameraOn ? (
@@ -89,13 +91,10 @@ export function VideoControls({ roomUrl, onLeave }: VideoControlsProps) {
 
       {/* Microphone Toggle */}
       <Button
-        variant={micOn ? 'default' : 'destructive'}
+        variant={micOn ? 'outline' : 'destructive'}
         size="icon"
         onClick={toggleMic}
-        className={cn(
-          'h-12 w-12 rounded-full',
-          micOn ? 'bg-muted hover:bg-muted/80' : ''
-        )}
+        className={cn('h-12 w-12 rounded-full')}
         title={micOn ? 'Mute microphone' : 'Unmute microphone'}
       >
         {micOn ? (
@@ -107,13 +106,10 @@ export function VideoControls({ roomUrl, onLeave }: VideoControlsProps) {
 
       {/* Screen Share Toggle */}
       <Button
-        variant={screenShareOn ? 'default' : 'outline'}
+        variant={screenShareOn ? 'secondary' : 'outline'}
         size="icon"
         onClick={toggleScreenShare}
-        className={cn(
-          'h-12 w-12 rounded-full',
-          screenShareOn ? 'bg-gold hover:bg-gold/90 text-black' : 'bg-muted hover:bg-muted/80'
-        )}
+        className={cn('h-12 w-12 rounded-full')}
         title={screenShareOn ? 'Stop screen share' : 'Share screen'}
       >
         {screenShareOn ? (
@@ -125,13 +121,10 @@ export function VideoControls({ roomUrl, onLeave }: VideoControlsProps) {
 
       {/* Speaker Toggle */}
       <Button
-        variant={speakerOn ? 'default' : 'outline'}
+        variant={speakerOn ? 'outline' : 'secondary'}
         size="icon"
         onClick={toggleSpeaker}
-        className={cn(
-          'h-12 w-12 rounded-full',
-          speakerOn ? 'bg-muted hover:bg-muted/80' : ''
-        )}
+        className={cn('h-12 w-12 rounded-full')}
         title={speakerOn ? 'Mute speaker' : 'Unmute speaker'}
       >
         {speakerOn ? (
