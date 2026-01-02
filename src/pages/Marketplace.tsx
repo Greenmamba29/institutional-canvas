@@ -26,6 +26,7 @@ import { useProducts, type ProductFilters } from "@/hooks/useProducts";
 import { SupplierFilters, type FilterState } from "@/components/marketplace/SupplierFilters";
 import { ProductCard } from "@/components/marketplace/ProductCard";
 import { ProductList } from "@/components/marketplace/ProductList";
+import { FeaturedSuppliers } from "@/components/marketplace/FeaturedSuppliers";
 import { useDebounce } from "@/hooks/useDebounce";
 
 const DEFAULT_FILTERS: FilterState = {
@@ -145,6 +146,9 @@ export default function Marketplace() {
             </div>
           </div>
         </div>
+
+        {/* Featured Suppliers Section */}
+        <FeaturedSuppliers />
 
         {/* Main Content */}
         <div className="flex gap-6">

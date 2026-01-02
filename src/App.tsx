@@ -7,8 +7,11 @@ import { AuthProvider } from "@/context/AuthContext";
 import { OrganizationProvider } from "@/context/OrganizationContext";
 import { RoleProvider } from "@/context/RoleContext";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { CompareProvider } from "@/context/CompareContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CompareFloatingBar } from "@/components/compare/CompareFloatingBar";
+import { GlobalSearchCommand } from "@/components/search/GlobalSearchCommand";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -52,11 +55,14 @@ const App = () => {
           <OrganizationProvider>
             <RoleProvider>
               <NotificationProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
-                  <Routes>
+                <CompareProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
+                      <GlobalSearchCommand />
+                      <CompareFloatingBar />
+                      <Routes>
                     {/* Public routes */}
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/password-reset" element={<PasswordReset />} />
@@ -91,10 +97,11 @@ const App = () => {
                       <Route path="/messages" element={<Messages />} />
                     </Route>
                     
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                  </BrowserRouter>
-                </TooltipProvider>
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                    </BrowserRouter>
+                  </TooltipProvider>
+                </CompareProvider>
               </NotificationProvider>
             </RoleProvider>
           </OrganizationProvider>
