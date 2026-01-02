@@ -10,8 +10,8 @@ import { SupplierProfileSidebar } from "@/components/rfq/SupplierProfileSidebar"
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Plus, Truck, Flag, AlertCircle } from "lucide-react";
+import { RFQListSkeleton } from "@/components/ui/skeleton-loaders";
+import { Search, Truck, Flag, AlertCircle } from "lucide-react";
 import { useRFQs } from "@/hooks/useRFQs";
 import type { RFQ } from "@/services/rfqs.service";
 import { CreateRFQDialog } from "@/components/rfq/CreateRFQDialog";
@@ -145,11 +145,7 @@ export default function RFQs() {
             </div>
 
             {isLoading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
-                ))}
-              </div>
+              <RFQListSkeleton count={5} />
             ) : filteredRfqs.length === 0 ? (
               <div className="glass-panel rounded-xl p-8 text-center">
                 <p className="text-muted-foreground">No RFQs found</p>

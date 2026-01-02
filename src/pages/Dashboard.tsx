@@ -15,6 +15,7 @@ import { UpcomingAuctions } from "@/components/supplier/UpcomingAuctions";
 import { TrendingUp, DollarSign, Activity, Lock } from "lucide-react";
 import { useDashboardStats, usePriceTicker } from "@/hooks/useDashboardStats";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardKPISkeleton } from "@/components/ui/skeleton-loaders";
 
 const chartData = [
   { date: 'Oct 1', value: 42000 },
