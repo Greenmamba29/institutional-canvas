@@ -4,7 +4,7 @@ import { LayoutShell } from "@/components/layout/LayoutShell";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { MarketplaceGridSkeleton } from "@/components/ui/skeleton-loaders";
 import {
   Select,
   SelectContent,
@@ -176,18 +176,7 @@ export default function Marketplace() {
             </div>
 
             {/* Loading State */}
-            {isLoading && (
-              <div className={viewMode === "grid" ? "grid sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-2"}>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="glass-panel rounded-xl p-4">
-                    <Skeleton className="h-4 w-3/4 mb-2" />
-                    <Skeleton className="h-3 w-1/2 mb-4" />
-                    <Skeleton className="h-20 w-full mb-4" />
-                    <Skeleton className="h-6 w-1/3" />
-                  </div>
-                ))}
-              </div>
-            )}
+            {isLoading && <MarketplaceGridSkeleton count={6} />}
 
             {/* Error State */}
             {error && (

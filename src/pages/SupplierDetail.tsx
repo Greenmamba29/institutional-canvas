@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DetailPageSkeleton } from "@/components/ui/skeleton-loaders";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -43,21 +43,7 @@ export default function SupplierDetail() {
   if (isLoading) {
     return (
       <LayoutShell>
-        <div className="space-y-6 animate-fade-in">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded-lg" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-40" />
-            </div>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              <Skeleton className="h-96 w-full rounded-xl" />
-            </div>
-            <Skeleton className="h-64 w-full rounded-xl" />
-          </div>
-        </div>
+        <DetailPageSkeleton />
       </LayoutShell>
     );
   }

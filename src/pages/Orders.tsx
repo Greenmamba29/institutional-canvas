@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/shared/DataTable";
-import { Skeleton } from "@/components/ui/skeleton";
+import { StatsGridSkeleton, QuoteListSkeleton } from "@/components/ui/skeleton-loaders";
 import { Package, Truck, CheckCircle, Clock, DollarSign, AlertCircle } from "lucide-react";
 import { useOrders } from "@/hooks/useOrders";
 import { format } from "date-fns";
@@ -95,18 +95,14 @@ export default function Orders() {
     return (
       <LayoutShell>
         <PageHeader title="Orders" description="Track and manage your purchase orders" />
-        <div className="grid gap-4 md:grid-cols-4 mt-6 mb-6">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <Skeleton className="h-16" />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="mt-6 mb-6">
+          <StatsGridSkeleton count={4} />
         </div>
         <Card>
           <CardHeader><CardTitle>Recent Orders</CardTitle></CardHeader>
-          <CardContent><Skeleton className="h-64" /></CardContent>
+          <CardContent>
+            <QuoteListSkeleton count={5} />
+          </CardContent>
         </Card>
       </LayoutShell>
     );
