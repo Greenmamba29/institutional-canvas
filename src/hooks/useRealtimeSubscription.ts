@@ -42,28 +42,28 @@ export function useRealtimeSubscription({
   useEffect(() => {
     if (!enabled) return;
 
-    let channel: RealtimeChannel;
+    let channel: RealtimeChannel | null = null;
 
     const setupSubscription = () => {
       // Create a unique channel name
       const channelName = `${table}_${event}_${filter || 'all'}`.replace(/[^a-zA-Z0-9_]/g, '_');
 
-      channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes' as const,
-          {
-            event: event as 'INSERT' | 'UPDATE' | 'DELETE' | '*',
-            schema: 'public' as const,
-            table,
-            filter,
-          } as unknown as { event: '*'; schema: 'public'; table: string; filter?: string },
-          (payload) => {
-            // Invalidate the related query to trigger a refetch
-            queryClient.invalidateQueries({ queryKey });
-          }
-        )
-        .subscribe();
+      channel = supabase.channel(channelName);
+      
+      // Use type assertion to handle the postgres_changes subscription
+      (channel as any).on(
+        'postgres_changes',
+        {
+          event: event,
+          schema: 'public',
+          table,
+          ...(filter ? { filter } : {}),
+        },
+        () => {
+          // Invalidate the related query to trigger a refetch
+          queryClient.invalidateQueries({ queryKey });
+        }
+      ).subscribe();
     };
 
     setupSubscription();

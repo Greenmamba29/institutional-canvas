@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import DailyIframe from '@daily-co/daily-js';
-import { Button } from '@/components/ui/button';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Phone, FileText, Package, Save } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FileText, Package, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { VideoControls } from './VideoControls';
 
 interface VideoCallRoomProps {
   meetingUrl: string;
@@ -27,6 +30,53 @@ export function VideoCallRoom({
   const [callFrame, setCallFrame] = useState<ReturnType<typeof DailyIframe.createFrame> | null>(null);
   const [notes, setNotes] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const queryClient = useQueryClient();
+
+  // Save notes mutation using Supabase RPC
+  const saveNotesMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const { data, error } = await supabase
+        .from('telebuy_sessions')
+        .update({ notes: content })
+        .eq('id', sessionId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      setLastSaved(new Date());
+      toast.success('Notes saved');
+      queryClient.invalidateQueries({ queryKey: ['telebuy-sessions'] });
+    },
+    onError: (error) => {
+      console.error('Failed to save notes:', error);
+      toast.error('Failed to save notes');
+    },
+  });
+
+  const handleSaveNotes = useCallback(() => {
+    if (!notes.trim()) {
+      toast.error('Please write some notes before saving');
+      return;
+    }
+    saveNotesMutation.mutate(notes);
+  }, [notes, saveNotesMutation]);
+
+  // Auto-save notes every 30 seconds
+  useEffect(() => {
+    if (!notes || !isConnected) return;
+    
+    const interval = setInterval(() => {
+      if (notes.trim()) {
+        saveNotesMutation.mutate(notes);
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [notes, isConnected, saveNotesMutation]);
 
   useEffect(() => {
     const container = document.getElementById('daily-video-container');
@@ -39,7 +89,7 @@ export function VideoCallRoom({
         border: '0',
         borderRadius: '8px',
       },
-      showLeaveButton: true,
+      showLeaveButton: false, // We have our own controls
       showFullscreenButton: true,
     });
 
@@ -75,80 +125,96 @@ export function VideoCallRoom({
     };
   }, [meetingUrl, meetingToken, onLeave]);
 
-  const handleEndCall = () => {
-    if (callFrame) {
-      callFrame.leave();
+  const handleLeave = () => {
+    // Save notes before leaving
+    if (notes.trim()) {
+      saveNotesMutation.mutate(notes);
     }
-  };
-
-  const handleSaveNotes = () => {
-    // TODO: Save notes to session via RPC
-    console.log('Saving notes for session:', sessionId, notes);
-    toast.success('Notes saved');
+    onLeave?.();
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-200px)]">
-      {/* Video Container */}
-      <div className="lg:col-span-3 bg-muted rounded-lg overflow-hidden">
-        <div id="daily-video-container" className="w-full h-full min-h-[400px]" />
-      </div>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-280px)]">
+        {/* Video Container */}
+        <div className="lg:col-span-3 bg-muted rounded-lg overflow-hidden">
+          <div id="daily-video-container" className="w-full h-full min-h-[400px]" />
+        </div>
 
-      {/* Sidebar */}
-      <div className="space-y-4">
-        {/* Session Info */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Session Info
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div>
-              <p className="text-xs text-muted-foreground">Deal</p>
-              <p className="text-sm font-medium">{dealName}</p>
-            </div>
-            {supplierName && (
+        {/* Sidebar */}
+        <div className="space-y-4">
+          {/* Session Info */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Session Info
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
               <div>
-                <p className="text-xs text-muted-foreground">Supplier</p>
-                <p className="text-sm font-medium">{supplierName}</p>
+                <p className="text-xs text-muted-foreground">Deal</p>
+                <p className="text-sm font-medium">{dealName}</p>
               </div>
-            )}
-            <Badge variant={isConnected ? 'default' : 'secondary'}>
-              {isConnected ? 'Connected' : 'Connecting...'}
-            </Badge>
-          </CardContent>
-        </Card>
+              {supplierName && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Supplier</p>
+                  <p className="text-sm font-medium">{supplierName}</p>
+                </div>
+              )}
+              <Badge variant={isConnected ? 'default' : 'secondary'}>
+                {isConnected ? 'Connected' : 'Connecting...'}
+              </Badge>
+            </CardContent>
+          </Card>
 
-        {/* Notes */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Meeting Notes
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Textarea
-              placeholder="Take notes during the call..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[150px] text-sm"
-            />
-            <Button size="sm" variant="outline" onClick={handleSaveNotes} className="w-full">
-              <Save className="h-3 w-3 mr-2" />
-              Save Notes
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* End Call Button */}
-        <Button variant="destructive" onClick={handleEndCall} className="w-full">
-          <Phone className="h-4 w-4 mr-2" />
-          End Call
-        </Button>
+          {/* Notes */}
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Meeting Notes
+                </CardTitle>
+                {lastSaved && (
+                  <Badge variant="outline" className="text-xs">
+                    Saved {lastSaved.toLocaleTimeString()}
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Textarea
+                placeholder="Take notes during the call..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-[150px] text-sm"
+              />
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Auto-saves every 30s
+                </p>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={handleSaveNotes} 
+                  disabled={saveNotesMutation.isPending}
+                >
+                  {saveNotesMutation.isPending ? (
+                    <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-3 w-3 mr-2" />
+                  )}
+                  Save
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
+
+      {/* Video Controls Bar */}
+      <VideoControls callFrame={callFrame} onLeave={handleLeave} />
     </div>
   );
 }
