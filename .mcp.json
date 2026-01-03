@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "browser-mcp": {
+      "command": "node",
+      "args": ["/opt/node22/lib/node_modules/@browsermcp/mcp/dist/index.js"]
+    }
+  }
+}
