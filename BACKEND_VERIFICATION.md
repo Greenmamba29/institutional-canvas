@@ -145,7 +145,8 @@ Grant Types: Authorization Code, Refresh Token, Implicit
 ### Callback URLs
 ```
 Development: http://localhost:5173/callback ✅
-Production: https://lithiumbuy.com/callback
+Production: https://lithiumbuy.com/callback ✅
+            https://lithiumbuy.com/* (wildcard for all routes)
             https://www.lithiumbuy.com/callback
 ```
 
@@ -225,15 +226,19 @@ INSERT INTO rfqs (org_id, created_by, title, description, target_quantity, targe
 
 ## 🧪 Testing Checklist
 
-### Phase 1-4 Verification (Lovable Complete)
+### Phase 1-4 Verification (Production: lithiumbuy.com)
+- [ ] Visit https://lithiumbuy.com
+- [ ] Click "Login" → Redirects to Auth0
+- [ ] Login with your credentials
+- [ ] Should redirect to `/callback` → then `/dashboard`
+- [ ] Verify authentication works
+- [ ] Check that user can access protected routes
+- [ ] Logout → Redirects to landing
+
+### Local Development Testing
 - [ ] Start dev server: `npm run dev`
 - [ ] Visit http://localhost:5173
-- [ ] Click "Login" → Redirects to Auth0
-- [ ] Login with `buyer@test.com` / `Test123!@#`
-- [ ] Should redirect to `/callback` → then `/dashboard`
-- [ ] Verify org name shows in header (Tesla)
-- [ ] Check that no org switcher appears (single org user)
-- [ ] Logout → Redirects to landing
+- [ ] Test login flow locally
 
 ### Multi-Org User Test
 - [ ] Login with `multi@test.com` / `Test123!@#`
