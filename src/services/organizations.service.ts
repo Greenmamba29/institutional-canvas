@@ -13,9 +13,14 @@ type OrgMember = Database['public']['Tables']['org_members']['Row'];
 
 export interface CreateOrganizationParams {
   name: string;
-  orgType: 'buyer' | 'supplier' | 'admin' | 'partner';
+  orgType: 'buyer' | 'supplier' | 'admin' | 'soe';
   email?: string;
   phone?: string;
+  // SOE-specific fields (required when orgType === 'soe')
+  governmentId?: string;
+  jurisdiction?: string;
+  soeCategory?: string;
+  parentMinistry?: string;
 }
 
 export interface InviteOrgMemberParams {
@@ -51,6 +56,11 @@ export async function createOrganization(
     p_name: params.name,
     p_email: params.email || null,
     p_phone: params.phone || null,
+    // SOE-specific fields
+    p_government_id: params.governmentId || null,
+    p_jurisdiction: params.jurisdiction || null,
+    p_soe_category: params.soeCategory || null,
+    p_parent_ministry: params.parentMinistry || null,
   };
 
   const result = await callAuthenticatedRpc<Organization>(client, 'create_organization', rpcParams);

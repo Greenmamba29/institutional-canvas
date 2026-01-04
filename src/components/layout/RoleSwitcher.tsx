@@ -10,6 +10,7 @@ const layoutOptions: { value: UILayoutPreference; label: string }[] = [
   { value: 'admin', label: 'ADMIN' },
   { value: 'supplier', label: 'SUPPLIER' },
   { value: 'buyer', label: 'BUYER' },
+  { value: 'soe', label: 'SOE' },
 ];
 
 export function RoleSwitcher() {
