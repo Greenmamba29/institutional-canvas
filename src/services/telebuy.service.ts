@@ -17,33 +17,44 @@ export type TelebuyDocument = Tables<'telebuy_documents'>;
 // ============================================
 
 /**
- * Create a new TeleBuy session (PENDING BACKEND IMPLEMENTATION)
- * @see ORCHESTRATION/API.openapiv1.yaml - POST /rpc/create_telebuy_session
+ * Create a new TeleBuy session
  */
-export async function createTelebuySession(_params: {
+export async function createTelebuySession(params: {
   supplierId: string;
   scheduledAt: string;
   meetingUrl: string;
-}): Promise<{ data: null; error: Error }> {
-  // TODO: Replace with rpc('create_telebuy_session', params) when backend implements
-  console.warn('[telebuy.service] create_telebuy_session RPC not yet implemented');
-  return { data: null, error: new Error('RPC create_telebuy_session not implemented - request backend implementation') };
+  notes?: string;
+}) {
+  const { data, error } = await supabase.rpc('create_telebuy_session', {
+    p_supplier_id: params.supplierId,
+    p_scheduled_at: params.scheduledAt,
+    p_meeting_url: params.meetingUrl,
+    p_notes: params.notes,
+  });
+  return { data, error };
 }
 
 /**
- * Update session status (PENDING BACKEND IMPLEMENTATION)
+ * Update session status
  */
-export async function updateSessionStatus(_sessionId: string, _status: string): Promise<{ data: null; error: Error }> {
-  console.warn('[telebuy.service] update_session_status RPC not yet implemented');
-  return { data: null, error: new Error('RPC update_session_status not implemented - request backend implementation') };
+export async function updateSessionStatus(sessionId: string, status: string) {
+  const { data, error } = await supabase.rpc('update_session_status', {
+    p_session_id: sessionId,
+    p_status: status,
+  });
+  return { data, error };
 }
 
 /**
- * Add transcript to session (PENDING BACKEND IMPLEMENTATION)
+ * Add transcript to session
  */
-export async function addSessionTranscript(_sessionId: string, _transcript: string): Promise<{ data: null; error: Error }> {
-  console.warn('[telebuy.service] add_session_transcript RPC not yet implemented');
-  return { data: null, error: new Error('RPC add_session_transcript not implemented - request backend implementation') };
+export async function addSessionTranscript(sessionId: string, transcript: string, aiSummary?: string) {
+  const { data, error } = await supabase.rpc('add_session_transcript', {
+    p_session_id: sessionId,
+    p_transcript: transcript,
+    p_ai_summary: aiSummary,
+  });
+  return { data, error };
 }
 
 // ============================================

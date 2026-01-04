@@ -2620,6 +2620,36 @@ export type Database = {
       }
     }
     Functions: {
+      add_session_transcript: {
+        Args: {
+          p_ai_summary?: string
+          p_session_id: string
+          p_transcript: string
+        }
+        Returns: {
+          created_at: string | null
+          ended_at: string | null
+          id: string
+          meeting_id: string | null
+          meeting_url: string
+          notes: string | null
+          org_id: string | null
+          recording_url: string | null
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          supplier_id: string
+          transcript: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "telebuy_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       can_process: {
         Args: { p_requested?: number; p_user: string }
         Returns: Json
@@ -2801,6 +2831,37 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "rfqs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_telebuy_session: {
+        Args: {
+          p_meeting_url: string
+          p_notes?: string
+          p_scheduled_at: string
+          p_supplier_id: string
+        }
+        Returns: {
+          created_at: string | null
+          ended_at: string | null
+          id: string
+          meeting_id: string | null
+          meeting_url: string
+          notes: string | null
+          org_id: string | null
+          recording_url: string | null
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          supplier_id: string
+          transcript: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "telebuy_sessions"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -3297,6 +3358,32 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "purchases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_session_status: {
+        Args: { p_session_id: string; p_status: string }
+        Returns: {
+          created_at: string | null
+          ended_at: string | null
+          id: string
+          meeting_id: string | null
+          meeting_url: string
+          notes: string | null
+          org_id: string | null
+          recording_url: string | null
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          supplier_id: string
+          transcript: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "telebuy_sessions"
           isOneToOne: true
           isSetofReturn: false
         }
