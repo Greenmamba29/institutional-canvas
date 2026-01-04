@@ -32,6 +32,8 @@ import {
   Database,
   CreditCard,
   Target,
+  Landmark,
+  ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -71,6 +73,19 @@ const supplierNavItems = [
   { label: 'Analytics', path: '/analytics', icon: TrendingUp },
 ];
 
+// SOE Navigation - Government-focused ordering
+const soeNavItems = [
+  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Strategic Procurement', path: '/rfqs', icon: FileText, count: 8 },
+  { label: 'National Reserves', path: '/data', icon: Database },
+  { label: 'Supplier Registry', path: '/marketplace', icon: Store },
+  { label: 'Contracts', path: '/deals', icon: Handshake },
+  { label: 'Orders', path: '/orders', icon: Package, count: 3 },
+  { label: 'TeleBuy', path: '/telebuy', icon: Video },
+  { label: 'Compliance', path: '/verification', icon: ClipboardCheck, count: 5 },
+  { label: 'Reports', path: '/analytics', icon: TrendingUp },
+];
+
 const bottomNavItems = [
   { label: 'Settings', path: '/settings', icon: Settings },
   { label: 'Billing', path: '/settings/billing', icon: CreditCard },
@@ -84,7 +99,17 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
   const isActive = (path: string) => location.pathname.startsWith(path);
   // UI layout determines which navigation to show - this is cosmetic, not authorization
-  const navItems = uiLayoutPreference === 'supplier' ? supplierNavItems : adminNavItems;
+  const navItems = uiLayoutPreference === 'supplier' 
+    ? supplierNavItems 
+    : uiLayoutPreference === 'soe'
+    ? soeNavItems
+    : adminNavItems;
+
+  const layoutLabel = uiLayoutPreference === 'supplier' 
+    ? 'Supplier Terminal' 
+    : uiLayoutPreference === 'soe'
+    ? 'Government Portal'
+    : 'Mission Control';
 
   return (
     <div className="min-h-screen bg-background flex w-full">
@@ -105,7 +130,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
               <div className="flex flex-col">
                 <span className="font-bold text-lg tracking-tight">Lithium & Lux</span>
                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                  {uiLayoutPreference === 'supplier' ? 'Supplier Terminal' : 'Mission Control'}
+                  {layoutLabel}
                 </span>
               </div>
             )}
@@ -150,6 +175,39 @@ export function LayoutShell({ children }: LayoutShellProps) {
             <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-xs font-semibold">
               <Plus className="h-3.5 w-3.5 mr-1" />
               LIST NEW MATERIAL
+            </Button>
+          </div>
+        )}
+
+        {/* SOE Profile Card - shown when user selects SOE layout */}
+        {uiLayoutPreference === 'soe' && sidebarOpen && (
+          <div className="p-4 border-b border-border/50 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center text-success font-bold text-sm">
+                <Landmark className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">Government Entity</p>
+                <span className="text-[10px] text-success font-medium">VERIFIED SOE</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground">STRATEGIC RESERVES</span>
+              <span className="font-mono font-bold text-success">12,500 MT</span>
+            </div>
+            <div className="p-2 rounded-lg bg-success/5 border border-success/20">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Active Contracts</span>
+                <span className="font-semibold text-success">7</span>
+              </div>
+              <div className="flex items-center justify-between text-xs mt-1">
+                <span className="text-muted-foreground">Pending Review</span>
+                <span className="font-semibold text-warning">3</span>
+              </div>
+            </div>
+            <Button className="w-full bg-success hover:bg-success/90 text-success-foreground text-xs font-semibold">
+              <FileText className="h-3.5 w-3.5 mr-1" />
+              NEW PROCUREMENT RFQ
             </Button>
           </div>
         )}
@@ -219,7 +277,11 @@ export function LayoutShell({ children }: LayoutShellProps) {
           {sidebarOpen && (
             <div className="pt-3 mt-3 border-t border-border/30">
               <p className="text-[10px] text-muted-foreground text-center tracking-widest">
-                {uiLayoutPreference === 'supplier' ? 'SUPPLIER TERMINAL V4.1' : 'MISSION CONTROL CENTER • CONNECTED'}
+                {uiLayoutPreference === 'supplier' 
+                  ? 'SUPPLIER TERMINAL V4.1' 
+                  : uiLayoutPreference === 'soe'
+                  ? 'GOVERNMENT PORTAL • SECURE'
+                  : 'MISSION CONTROL CENTER • CONNECTED'}
               </p>
             </div>
           )}

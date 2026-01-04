@@ -1418,30 +1418,42 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          government_id: string | null
           id: string
+          jurisdiction: string | null
           name: string
           org_type: string
+          parent_ministry: string | null
           phone: string | null
+          soe_category: string | null
           status: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string
           email?: string | null
+          government_id?: string | null
           id?: string
+          jurisdiction?: string | null
           name: string
           org_type: string
+          parent_ministry?: string | null
           phone?: string | null
+          soe_category?: string | null
           status?: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string
           email?: string | null
+          government_id?: string | null
           id?: string
+          jurisdiction?: string | null
           name?: string
           org_type?: string
+          parent_ministry?: string | null
           phone?: string | null
+          soe_category?: string | null
           status?: string
           updated_at?: string | null
         }
@@ -2639,30 +2651,67 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      create_organization: {
-        Args: {
-          p_email?: string
-          p_name: string
-          p_org_type: string
-          p_phone?: string
-        }
-        Returns: {
-          created_at: string
-          email: string | null
-          id: string
-          name: string
-          org_type: string
-          phone: string | null
-          status: string
-          updated_at: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "organizations"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      create_organization:
+        | {
+            Args: {
+              p_email?: string
+              p_name: string
+              p_org_type: string
+              p_phone?: string
+            }
+            Returns: {
+              created_at: string
+              email: string | null
+              government_id: string | null
+              id: string
+              jurisdiction: string | null
+              name: string
+              org_type: string
+              parent_ministry: string | null
+              phone: string | null
+              soe_category: string | null
+              status: string
+              updated_at: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "organizations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_email?: string
+              p_government_id?: string
+              p_jurisdiction?: string
+              p_name: string
+              p_org_type: string
+              p_parent_ministry?: string
+              p_phone?: string
+              p_soe_category?: string
+            }
+            Returns: {
+              created_at: string
+              email: string | null
+              government_id: string | null
+              id: string
+              jurisdiction: string | null
+              name: string
+              org_type: string
+              parent_ministry: string | null
+              phone: string | null
+              soe_category: string | null
+              status: string
+              updated_at: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "organizations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       create_purchase:
         | {
             Args: {
@@ -2861,10 +2910,14 @@ export type Database = {
         Returns: {
           created_at: string
           email: string | null
+          government_id: string | null
           id: string
+          jurisdiction: string | null
           name: string
           org_type: string
+          parent_ministry: string | null
           phone: string | null
+          soe_category: string | null
           status: string
           updated_at: string | null
         }[]

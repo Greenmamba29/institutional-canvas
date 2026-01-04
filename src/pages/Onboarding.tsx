@@ -19,10 +19,12 @@ import {
   Loader2,
   CheckCircle2,
   Info,
+  Landmark,
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Step = 'choice' | 'create' | 'join';
-type OrgType = 'buyer' | 'supplier';
+type OrgType = 'buyer' | 'supplier' | 'soe';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -37,6 +39,12 @@ export default function Onboarding() {
   const [orgId, setOrgId] = useState('');
   const [inviteToken, setInviteToken] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  
+  // SOE-specific fields
+  const [governmentId, setGovernmentId] = useState('');
+  const [jurisdiction, setJurisdiction] = useState('');
+  const [soeCategory, setSoeCategory] = useState('');
+  const [parentMinistry, setParentMinistry] = useState('');
 
   const handleCreateOrg = async () => {
     if (!orgName.trim()) {
@@ -44,11 +52,30 @@ export default function Onboarding() {
       return;
     }
 
+    // SOE-specific validation
+    if (orgType === 'soe') {
+      if (!governmentId.trim()) {
+        toast.error('Government ID is required for State Owned Entities');
+        return;
+      }
+      if (!jurisdiction.trim()) {
+        toast.error('Jurisdiction is required for State Owned Entities');
+        return;
+      }
+    }
+
     try {
       await createOrg.mutateAsync({
         name: orgName.trim(),
         orgType,
         email: user?.email,
+        // SOE-specific fields
+        ...(orgType === 'soe' && {
+          governmentId: governmentId.trim(),
+          jurisdiction: jurisdiction.trim(),
+          soeCategory: soeCategory || undefined,
+          parentMinistry: parentMinistry.trim() || undefined,
+        }),
       });
       
       // Show success animation
@@ -237,9 +264,10 @@ export default function Onboarding() {
                   <div className="group relative">
                     <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                     <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10">
-                      <div className="glass-panel rounded-lg p-3 w-64 text-xs text-muted-foreground">
+                      <div className="glass-panel rounded-lg p-3 w-72 text-xs text-muted-foreground">
                         <strong className="text-foreground">Buyer:</strong> Purchase materials, create RFQs, bid on auctions<br/>
-                        <strong className="text-foreground mt-2 block">Supplier:</strong> List materials, respond to RFQs, create auctions
+                        <strong className="text-foreground mt-2 block">Supplier:</strong> List materials, respond to RFQs, create auctions<br/>
+                        <strong className="text-foreground mt-2 block">SOE:</strong> Government entities for strategic procurement
                       </div>
                     </div>
                   </div>
@@ -247,45 +275,126 @@ export default function Onboarding() {
                 <RadioGroup
                   value={orgType}
                   onValueChange={(v) => setOrgType(v as OrgType)}
-                  className="grid grid-cols-2 gap-4"
+                  className="grid grid-cols-3 gap-3"
                 >
                   <label
                     htmlFor="buyer"
-                    className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors ${
+                    className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
                       orgType === 'buyer' 
                         ? 'border-primary bg-primary/5' 
                         : 'border-border hover:border-muted-foreground'
                     }`}
                   >
                     <RadioGroupItem value="buyer" id="buyer" />
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <ShoppingCart className="h-5 w-5 text-primary" />
                       <div>
-                        <p className="font-medium">Buyer</p>
-                        <p className="text-xs text-muted-foreground">Purchase materials</p>
+                        <p className="font-medium text-sm">Buyer</p>
+                        <p className="text-[10px] text-muted-foreground">Purchase</p>
                       </div>
                     </div>
                   </label>
 
                   <label
                     htmlFor="supplier"
-                    className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors ${
+                    className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
                       orgType === 'supplier' 
                         ? 'border-primary bg-primary/5' 
                         : 'border-border hover:border-muted-foreground'
                     }`}
                   >
                     <RadioGroupItem value="supplier" id="supplier" />
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Package className="h-5 w-5 text-accent" />
                       <div>
-                        <p className="font-medium">Supplier</p>
-                        <p className="text-xs text-muted-foreground">Sell materials</p>
+                        <p className="font-medium text-sm">Supplier</p>
+                        <p className="text-[10px] text-muted-foreground">Sell</p>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="soe"
+                    className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
+                      orgType === 'soe' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-muted-foreground'
+                    }`}
+                  >
+                    <RadioGroupItem value="soe" id="soe" />
+                    <div className="flex items-center gap-2">
+                      <Landmark className="h-5 w-5 text-success" />
+                      <div>
+                        <p className="font-medium text-sm">SOE</p>
+                        <p className="text-[10px] text-muted-foreground">Government</p>
                       </div>
                     </div>
                   </label>
                 </RadioGroup>
               </div>
+
+              {/* SOE-specific fields */}
+              {orgType === 'soe' && (
+                <div className="space-y-4 p-4 rounded-xl bg-success/5 border border-success/20">
+                  <div className="flex items-center gap-2 text-success text-sm font-medium">
+                    <Landmark className="h-4 w-4" />
+                    State Owned Entity Details
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="governmentId">Government ID *</Label>
+                      <Input
+                        id="governmentId"
+                        placeholder="e.g., GOV-2024-001"
+                        value={governmentId}
+                        onChange={(e) => setGovernmentId(e.target.value)}
+                        className="h-10"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="jurisdiction">Jurisdiction *</Label>
+                      <Input
+                        id="jurisdiction"
+                        placeholder="e.g., Chile, Argentina"
+                        value={jurisdiction}
+                        onChange={(e) => setJurisdiction(e.target.value)}
+                        className="h-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="soeCategory">Category</Label>
+                      <Select value={soeCategory} onValueChange={setSoeCategory}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mining_authority">Mining Authority</SelectItem>
+                          <SelectItem value="energy_ministry">Energy Ministry</SelectItem>
+                          <SelectItem value="strategic_reserves">Strategic Reserves</SelectItem>
+                          <SelectItem value="development_bank">Development Bank</SelectItem>
+                          <SelectItem value="commodity_board">Commodity Board</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="parentMinistry">Parent Ministry</Label>
+                      <Input
+                        id="parentMinistry"
+                        placeholder="e.g., Ministry of Energy"
+                        value={parentMinistry}
+                        onChange={(e) => setParentMinistry(e.target.value)}
+                        className="h-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Button

@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
  * Use serverRole (fetched from database) for any security-related logic.
  * This is purely cosmetic - determines which dashboard/navigation to show.
  */
-export type UILayoutPreference = 'admin' | 'supplier' | 'buyer';
+export type UILayoutPreference = 'admin' | 'supplier' | 'buyer' | 'soe';
 
 /**
  * Server-validated role from org_members table.
@@ -48,7 +48,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   // It only determines which dashboard layout and navigation to display
   const [uiLayoutPreference, setUILayoutPreference] = useState<UILayoutPreference>(() => {
     const stored = localStorage.getItem('lithium-lux-ui-layout');
-    if (stored === 'admin' || stored === 'supplier' || stored === 'buyer') {
+    if (stored === 'admin' || stored === 'supplier' || stored === 'buyer' || stored === 'soe') {
       return stored;
     }
     return 'buyer';
