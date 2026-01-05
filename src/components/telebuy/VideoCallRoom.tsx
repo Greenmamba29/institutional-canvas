@@ -9,6 +9,10 @@ import { FileText, Package, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { VideoControls } from './VideoControls';
+import { TeleBuyActionBar } from './TeleBuyActionBar';
+import { CreatePurchaseModal } from './CreatePurchaseModal';
+import { DealReviewModal } from './DealReviewModal';
+import { ConfirmPurchaseFlow } from './ConfirmPurchaseFlow';
 
 interface VideoCallRoomProps {
   meetingUrl: string;
@@ -16,6 +20,8 @@ interface VideoCallRoomProps {
   sessionId: string;
   dealName: string;
   supplierName?: string;
+  supplierId?: string;
+  dealId?: string;
   onLeave?: () => void;
 }
 
@@ -25,12 +31,17 @@ export function VideoCallRoom({
   sessionId,
   dealName,
   supplierName,
+  supplierId,
+  dealId,
   onLeave,
 }: VideoCallRoomProps) {
   const [callFrame, setCallFrame] = useState<ReturnType<typeof DailyIframe.createFrame> | null>(null);
   const [notes, setNotes] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [showCreatePurchaseModal, setShowCreatePurchaseModal] = useState(false);
+  const [showDealReviewModal, setShowDealReviewModal] = useState(false);
+  const [showConfirmPurchaseFlow, setShowConfirmPurchaseFlow] = useState(false);
   const queryClient = useQueryClient();
 
   // Save notes mutation using Supabase RPC
@@ -215,6 +226,37 @@ export function VideoCallRoom({
 
       {/* Video Controls Bar */}
       <VideoControls callFrame={callFrame} onLeave={handleLeave} />
+
+      {/* TeleBuy Action Bar */}
+      <TeleBuyActionBar
+        onAddToCart={() => setShowCreatePurchaseModal(true)}
+        onReviewAgreement={() => setShowDealReviewModal(true)}
+        onConfirmPurchase={() => setShowConfirmPurchaseFlow(true)}
+        isDisabled={!isConnected}
+      />
+
+      {/* Modals */}
+      <CreatePurchaseModal
+        open={showCreatePurchaseModal}
+        onOpenChange={setShowCreatePurchaseModal}
+        supplierId={supplierId}
+        supplierName={supplierName}
+        dealId={dealId}
+      />
+
+      <DealReviewModal
+        open={showDealReviewModal}
+        onOpenChange={setShowDealReviewModal}
+        dealId={dealId}
+      />
+
+      <ConfirmPurchaseFlow
+        open={showConfirmPurchaseFlow}
+        onOpenChange={setShowConfirmPurchaseFlow}
+        supplierId={supplierId}
+        supplierName={supplierName}
+        sessionId={sessionId}
+      />
     </div>
   );
 }
