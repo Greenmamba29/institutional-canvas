@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Shield, Zap, Globe, Loader2, KeyRound } from 'lucide-react';
+import { Sparkles, Shield, Zap, Globe, Loader2, KeyRound, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Auth() {
@@ -17,62 +17,87 @@ export default function Auth() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [session, setSession] = useState<any>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
-  // Check for existing session and detect PASSWORD_RECOVERY event
+  // Check for URL hash errors and recovery tokens
   useEffect(() => {
-    // Helper function to check if URL contains recovery token
-    const checkRecoveryToken = (): boolean => {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      return hashParams.get('type') === 'recovery';
-    };
+    // Parse URL hash for Supabase auth responses
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const errorDescription = hashParams.get('error_description');
+    const errorCode = hashParams.get('error_code');
+    const accessToken = hashParams.get('access_token');
+    const type = hashParams.get('type');
 
-    // Check URL hash for password recovery token BEFORE checking session
-    // Supabase includes recovery tokens in the hash: #access_token=...&type=recovery
-    const isRecoveryFlow = checkRecoveryToken();
-    
-    if (isRecoveryFlow) {
-      // Set password update mode immediately to prevent redirect
-      setIsUpdatePasswordMode(true);
+    // Handle error from Supabase redirect (e.g., expired link)
+    if (errorDescription) {
+      setAuthError(errorDescription.replace(/\+/g, ' '));
+      toast({
+        title: 'Authentication Error',
+        description: errorDescription.replace(/\+/g, ' '),
+        variant: 'destructive',
+        duration: 8000,
+      });
+      // Clear the hash to prevent showing error again on refresh
+      window.history.replaceState(null, '', window.location.pathname);
+      return;
     }
 
-    // Set up auth state listener FIRST to catch PASSWORD_RECOVERY event
-    // This must be registered before getSession() to catch the event
+    // Check for recovery flow - Supabase sends type=recovery in hash
+    const isRecoveryFlow = type === 'recovery' && accessToken;
+    
+    if (isRecoveryFlow) {
+      console.log('[Auth] Recovery flow detected, showing password update form');
+      setIsUpdatePasswordMode(true);
+      // Don't clear hash yet - Supabase needs to process the token
+    }
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[Auth] Auth state changed:', event, session?.user?.email);
       setSession(session);
       
-      // Detect password recovery flow from reset link
+      // Detect password recovery flow
       if (event === 'PASSWORD_RECOVERY') {
+        console.log('[Auth] PASSWORD_RECOVERY event received');
         setIsUpdatePasswordMode(true);
-        // Stay on auth page to update password - don't redirect
         return;
       }
+
+      // Handle successful sign in after email confirmation
+      if (event === 'SIGNED_IN' && !isUpdatePasswordMode) {
+        // Check if this is from email confirmation (not recovery)
+        const hashType = new URLSearchParams(window.location.hash.substring(1)).get('type');
+        if (hashType !== 'recovery') {
+          toast({
+            title: 'Welcome!',
+            description: 'You have been signed in successfully.',
+          });
+        }
+      }
       
-      // Only redirect if not in update password mode and not a recovery flow
-      // Check URL hash directly to avoid race conditions with state updates
-      if (session && !isUpdatePasswordMode && !checkRecoveryToken()) {
+      // Only redirect if authenticated, not in password update mode, and not recovery
+      if (session && !isUpdatePasswordMode && type !== 'recovery') {
         const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       }
     });
 
-    // Check for existing session AFTER setting up the listener
-    // This ensures PASSWORD_RECOVERY event is handled before redirect
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       // Don't redirect if we're in a recovery flow
-      // Check URL hash directly (not state) to avoid race conditions with async state updates
-      // The state variable in closure might be stale, but URL hash is always current
-      if (session && !checkRecoveryToken()) {
+      if (session && !isRecoveryFlow && !isUpdatePasswordMode) {
         const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, location, isUpdatePasswordMode]);
+  }, [navigate, location, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,10 +165,28 @@ export default function Auth() {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
+      
+      // Parse Supabase error messages into user-friendly ones
+      let errorTitle = isResetMode ? 'Reset failed' : isSignUp ? 'Sign up failed' : 'Sign in failed';
+      let errorMessage = error.message || 'Please check your credentials and try again.';
+      
+      // Handle specific error cases
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please check your credentials or use "Forgot password" to reset.';
+      } else if (error.message?.includes('User already registered')) {
+        errorMessage = 'This email is already registered. Please sign in instead or use "Forgot password" to reset your password.';
+        setIsSignUp(false); // Switch to sign in mode
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = 'Please check your inbox and click the confirmation link we sent you.';
+      } else if (error.message?.includes('rate limit')) {
+        errorMessage = 'Too many attempts. Please wait a few minutes and try again.';
+      }
+      
       toast({
-        title: isResetMode ? 'Reset failed' : isSignUp ? 'Sign up failed' : 'Sign in failed',
-        description: error.message || 'Please check your credentials and try again.',
+        title: errorTitle,
+        description: errorMessage,
         variant: 'destructive',
+        duration: 8000,
       });
     } finally {
       setIsLoading(false);
@@ -297,6 +340,23 @@ export default function Auth() {
           </div>
 
           <div className="glass-panel rounded-2xl p-8 space-y-6">
+            {/* Show auth error banner if present */}
+            {authError && (
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Authentication Error</p>
+                  <p className="text-xs opacity-80">{authError}</p>
+                </div>
+                <button 
+                  onClick={() => setAuthError(null)}
+                  className="text-xs hover:underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
             {isUpdatePasswordMode ? (
               <>
                 <div className="text-center space-y-2">
