@@ -649,6 +649,83 @@ export type Database = {
           },
         ]
       }
+      deal_signatures: {
+        Row: {
+          created_at: string
+          deal_id: string | null
+          document_hash: string | null
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          purchase_id: string | null
+          signature_data: string | null
+          signature_type: string | null
+          signed_at: string
+          signer_org_id: string
+          signer_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          deal_id?: string | null
+          document_hash?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          purchase_id?: string | null
+          signature_data?: string | null
+          signature_type?: string | null
+          signed_at?: string
+          signer_org_id: string
+          signer_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string | null
+          document_hash?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          purchase_id?: string | null
+          signature_data?: string | null
+          signature_type?: string | null
+          signed_at?: string
+          signer_org_id?: string
+          signer_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_signatures_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_signatures_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_signatures_signer_org_id_fkey"
+            columns: ["signer_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_signatures_signer_org_id_fkey"
+            columns: ["signer_org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           buyer_user_id: string
@@ -1983,6 +2060,82 @@ export type Database = {
         }
         Relationships: []
       }
+      rfq_documents: {
+        Row: {
+          ai_extracted_data: Json | null
+          ai_processed_at: string | null
+          ai_summary: string | null
+          created_at: string
+          document_type: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          org_id: string
+          processing_status: string | null
+          rfq_id: string | null
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          ai_extracted_data?: Json | null
+          ai_processed_at?: string | null
+          ai_summary?: string | null
+          created_at?: string
+          document_type?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          org_id: string
+          processing_status?: string | null
+          rfq_id?: string | null
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          ai_extracted_data?: Json | null
+          ai_processed_at?: string | null
+          ai_summary?: string | null
+          created_at?: string
+          document_type?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          org_id?: string
+          processing_status?: string | null
+          rfq_id?: string | null
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_documents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_documents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_documents_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfqs: {
         Row: {
           created_at: string
@@ -2389,6 +2542,69 @@ export type Database = {
           },
         ]
       }
+      telebuy_transcripts: {
+        Row: {
+          ai_action_items: Json | null
+          ai_key_points: Json | null
+          ai_summary: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          language: string | null
+          org_id: string
+          processing_status: string | null
+          session_id: string
+          speaker_segments: Json | null
+          transcript_text: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_action_items?: Json | null
+          ai_key_points?: Json | null
+          ai_summary?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          language?: string | null
+          org_id: string
+          processing_status?: string | null
+          session_id: string
+          speaker_segments?: Json | null
+          transcript_text?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_action_items?: Json | null
+          ai_key_points?: Json | null
+          ai_summary?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          language?: string | null
+          org_id?: string
+          processing_status?: string | null
+          session_id?: string
+          speaker_segments?: Json | null
+          transcript_text?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telebuy_transcripts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telebuy_transcripts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transcripts: {
         Row: {
           chunks: Json | null
@@ -2620,6 +2836,37 @@ export type Database = {
       }
     }
     Functions: {
+      add_deal_signature: {
+        Args: {
+          p_deal_id?: string
+          p_document_hash?: string
+          p_metadata?: Json
+          p_purchase_id?: string
+          p_signature_data?: string
+          p_signature_type?: string
+        }
+        Returns: {
+          created_at: string
+          deal_id: string | null
+          document_hash: string | null
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          purchase_id: string | null
+          signature_data: string | null
+          signature_type: string | null
+          signed_at: string
+          signer_org_id: string
+          signer_user_id: string
+          user_agent: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deal_signatures"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       add_session_transcript: {
         Args: {
           p_ai_summary?: string
@@ -3265,6 +3512,38 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "deals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_telebuy_transcript: {
+        Args: {
+          p_ai_action_items?: Json
+          p_ai_key_points?: Json
+          p_ai_summary?: string
+          p_duration_seconds?: number
+          p_session_id: string
+          p_speaker_segments?: Json
+          p_transcript_text: string
+        }
+        Returns: {
+          ai_action_items: Json | null
+          ai_key_points: Json | null
+          ai_summary: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          language: string | null
+          org_id: string
+          processing_status: string | null
+          session_id: string
+          speaker_segments: Json | null
+          transcript_text: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "telebuy_transcripts"
           isOneToOne: true
           isSetofReturn: false
         }
