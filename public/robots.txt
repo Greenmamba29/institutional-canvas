@@ -1,5 +1,7 @@
+# LithiumBuy Robots.txt
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
@@ -10,5 +12,11 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: LinkedInBot
+Allow: /
+
 User-agent: *
 Allow: /
+
+# Sitemap location
+Sitemap: https://lithiumbuy.com/sitemap.xml
