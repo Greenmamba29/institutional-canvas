@@ -13,23 +13,23 @@ export function VerificationBadge({ tier, showIcon = true, className }: Verifica
   const configs: Record<BadgeTier, { label: string; bg: string; text: string; border: string; icon: typeof Shield }> = {
     gold: {
       label: 'GOLD VERIFIED',
-      bg: 'bg-yellow-500/20',
-      text: 'text-yellow-500',
-      border: 'border-yellow-500/30',
+      bg: 'bg-[#FFB800]/20',
+      text: 'text-[#FFB800]',
+      border: 'border-[#FFB800]/30',
       icon: Shield,
     },
     silver: {
       label: 'SILVER VERIFIED',
-      bg: 'bg-gray-400/20',
-      text: 'text-gray-400',
-      border: 'border-gray-400/30',
+      bg: 'bg-[#C0C0C0]/20',
+      text: 'text-[#C0C0C0]',
+      border: 'border-[#C0C0C0]/30',
       icon: Shield,
     },
     bronze: {
       label: 'BRONZE VERIFIED',
-      bg: 'bg-orange-600/20',
-      text: 'text-orange-600',
-      border: 'border-orange-600/30',
+      bg: 'bg-[#CD7F32]/20',
+      text: 'text-[#CD7F32]',
+      border: 'border-[#CD7F32]/30',
       icon: Shield,
     },
     standard: {

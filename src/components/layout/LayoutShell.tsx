@@ -20,7 +20,6 @@ import {
   X,
   Search,
   Settings,
-  Sparkles,
   ShieldCheck,
   Users,
   Package,
@@ -35,6 +34,7 @@ import {
   Landmark,
   ClipboardCheck,
 } from "lucide-react";
+import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
 
 interface LayoutShellProps {
@@ -123,17 +123,12 @@ export function LayoutShell({ children }: LayoutShellProps) {
         {/* Logo */}
         <div className="flex items-center justify-between p-4 border-b border-border/50">
           <Link to="/" className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-gold">
-              <Sparkles className="h-5 w-5 text-accent-foreground" />
-            </div>
-            {sidebarOpen && (
-              <div className="flex flex-col">
-                <span className="font-bold text-lg tracking-tight">Lithium & Lux</span>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                  {layoutLabel}
-                </span>
-              </div>
-            )}
+            <Logo 
+              size={sidebarOpen ? 'md' : 'sm'} 
+              showText={sidebarOpen} 
+              variant={sidebarOpen ? 'full' : 'icon'}
+              layoutLabel={layoutLabel}
+            />
           </Link>
           <Button
             variant="ghost"
@@ -276,13 +271,13 @@ export function LayoutShell({ children }: LayoutShellProps) {
           ))}
           {sidebarOpen && (
             <div className="pt-3 mt-3 border-t border-border/30">
-              <p className="text-[10px] text-muted-foreground text-center tracking-widest">
-                {uiLayoutPreference === 'supplier' 
-                  ? 'SUPPLIER TERMINAL V4.1' 
-                  : uiLayoutPreference === 'soe'
-                  ? 'GOVERNMENT PORTAL • SECURE'
-                  : 'MISSION CONTROL CENTER • CONNECTED'}
-              </p>
+            <p className="text-[10px] text-muted-foreground text-center tracking-widest">
+                  {uiLayoutPreference === 'supplier' 
+                    ? 'LITHIUMBUY • SUPPLIER TERMINAL' 
+                    : uiLayoutPreference === 'soe'
+                    ? 'LITHIUMBUY • GOVERNMENT PORTAL'
+                    : 'LITHIUMBUY • MISSION CONTROL'}
+                </p>
             </div>
           )}
         </div>
@@ -305,13 +300,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
       >
         <div className="flex items-center justify-between p-4 border-b border-border/50">
           <Link to="/" className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-gold">
-              <Sparkles className="h-5 w-5 text-accent-foreground" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg">Lithium & Lux</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Trading</span>
-            </div>
+            <Logo size="md" layoutLabel="Trading Platform" />
           </Link>
           <Button
             variant="ghost"

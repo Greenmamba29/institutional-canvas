@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Shield, Zap, Globe, Loader2, KeyRound, AlertCircle } from 'lucide-react';
+import { Shield, Zap, Globe, Loader2, KeyRound, AlertCircle } from 'lucide-react';
+import { Logo } from '@/components/shared/Logo';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Auth() {
@@ -280,14 +281,8 @@ export default function Auth() {
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-xl bg-gradient-gold">
-                <Sparkles className="h-6 w-6 text-accent-foreground" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">Lithium & Lux</h1>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest">B2B Trading Platform</p>
-              </div>
+            <div className="mb-4">
+              <Logo size="lg" layoutLabel="B2B Trading Platform" />
             </div>
           </div>
 
@@ -329,14 +324,8 @@ export default function Auth() {
       {/* Right Panel - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-12">
-            <div className="p-3 rounded-xl bg-gradient-gold">
-              <Sparkles className="h-6 w-6 text-accent-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">Lithium & Lux</h1>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest">Trading Platform</p>
-            </div>
+          <div className="lg:hidden flex items-center justify-center mb-12">
+            <Logo size="lg" layoutLabel="Trading Platform" />
           </div>
 
           <div className="glass-panel rounded-2xl p-8 space-y-6">
