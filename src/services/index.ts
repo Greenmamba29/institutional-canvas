@@ -20,6 +20,38 @@ export * from './suppliers.service';
 export * from './orders.service';
 export * from './organizations.service';
 
+// Quote service (named exports to avoid conflicts with orders.service)
+export { 
+  createQuote, 
+  getQuotes as getQuoteRequests,
+  type Quote as QuoteRequest,
+  type CreateQuoteParams 
+} from './quotes.service';
+
+// Review service (named exports to avoid conflicts with suppliers.service)
+export { 
+  createReview, 
+  incrementReviewHelpful,
+  getSupplierReviews as getReviewsForSupplier,
+  type Review as SupplierReview,
+  type CreateReviewParams 
+} from './reviews.service';
+
+// TeleBuy service
+export {
+  createTelebuySession,
+  updateSessionStatus,
+  updateTelebuyNotes,
+  addSessionTranscript,
+  getTelebuySessions,
+  getSessionById,
+  getUpcomingSessions,
+  getSessionDocuments,
+  type TelebuySession,
+  type TelebuyDocument,
+  type CreateTelebuySessionParams
+} from './telebuy.service';
+
 // ElevenLabs services - avoid duplicate export by re-exporting specific items
 export { 
   createAgent, 
