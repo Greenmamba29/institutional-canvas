@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, CreditCard, Zap, Building2 } from "lucide-react";
+import { Check, CreditCard, Zap, Building2, Clock, Mail } from "lucide-react";
 
 const plans = [
   {
@@ -33,6 +33,7 @@ const plans = [
       "Priority support",
     ],
     highlighted: true,
+    comingSoon: true,
   },
   {
     name: "Enterprise",
@@ -47,6 +48,7 @@ const plans = [
       "Bulk operations",
       "Dedicated account manager",
     ],
+    comingSoon: true,
   },
 ];
 
@@ -94,7 +96,13 @@ export default function Billing() {
                 {plan.current && (
                   <Badge variant="outline">Current</Badge>
                 )}
-                {plan.highlighted && (
+                {plan.comingSoon && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Coming Soon
+                  </Badge>
+                )}
+                {plan.highlighted && !plan.comingSoon && (
                   <Badge className="bg-accent text-accent-foreground">Popular</Badge>
                 )}
               </div>
@@ -113,17 +121,54 @@ export default function Billing() {
                   </li>
                 ))}
               </ul>
-              <Button 
-                className={`w-full ${plan.highlighted ? "bg-accent hover:bg-accent/90 text-accent-foreground" : ""}`}
-                variant={plan.current ? "outline" : "default"}
-                disabled={plan.current}
-              >
-                {plan.current ? "Current Plan" : `Upgrade to ${plan.name}`}
-              </Button>
+              {plan.current ? (
+                <Button 
+                  className="w-full"
+                  variant="outline"
+                  disabled
+                >
+                  Current Plan
+                </Button>
+              ) : plan.comingSoon ? (
+                <Button 
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => window.location.href = 'mailto:sales@lithiumbuy.com?subject=Interest in ' + plan.name + ' Plan'}
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Contact Sales
+                </Button>
+              ) : (
+                <Button 
+                  className={`w-full ${plan.highlighted ? "bg-accent hover:bg-accent/90 text-accent-foreground" : ""}`}
+                >
+                  Upgrade to {plan.name}
+                </Button>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Contact Section */}
+      <Card className="mt-8">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">Need a custom plan?</h3>
+              <p className="text-sm text-muted-foreground">
+                Contact our sales team for enterprise pricing and custom integrations
+              </p>
+            </div>
+            <Button variant="outline" asChild>
+              <a href="mailto:sales@lithiumbuy.com">
+                <Mail className="h-4 w-4 mr-2" />
+                sales@lithiumbuy.com
+              </a>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </LayoutShell>
   );
 }

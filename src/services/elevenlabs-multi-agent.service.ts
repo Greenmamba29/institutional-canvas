@@ -3,12 +3,16 @@
  * Manages multiple conversational AI agents for TeleBuy (buyer, supplier, neutral)
  * with multi-language support
  * 
- * NOTE: This service uses mock implementations since the required database tables
- * (elevenlabs_agent_configs, telebuy_agent_sessions, telebuy_agent_messages)
- * are not yet created in the Supabase schema.
+ * SECURITY: API keys are NEVER used client-side. All ElevenLabs API calls
+ * must go through Supabase Edge Functions.
+ * 
+ * This service uses environment variables for AGENT IDs only (safe for frontend).
+ * The actual ELEVENLABS_API_KEY must be stored in Supabase Edge Function secrets.
  */
 
-const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
+import { isFeatureEnabled } from '@/config/env';
+
+// Agent IDs only - safe for frontend (not API keys!)
 const ELEVENLABS_BUYER_AGENT_ID = import.meta.env.VITE_ELEVENLABS_BUYER_AGENT_ID;
 const ELEVENLABS_SUPPLIER_AGENT_ID = import.meta.env.VITE_ELEVENLABS_SUPPLIER_AGENT_ID;
 const ELEVENLABS_CONCIERGE_AGENT_ID = import.meta.env.VITE_ELEVENLABS_CONCIERGE_AGENT_ID;
@@ -61,9 +65,15 @@ export interface AgentMessage {
 
 /**
  * Check if multi-agent system is configured
+ * Only checks for agent IDs (not API keys - those are server-side only)
  */
 export function isMultiAgentConfigured(): boolean {
-  return Boolean(ELEVENLABS_API_KEY && (ELEVENLABS_BUYER_AGENT_ID || ELEVENLABS_SUPPLIER_AGENT_ID || ELEVENLABS_CONCIERGE_AGENT_ID));
+  // Check feature flag first
+  if (!isFeatureEnabled('elevenlabs')) {
+    return false;
+  }
+  
+  return Boolean(ELEVENLABS_BUYER_AGENT_ID || ELEVENLABS_SUPPLIER_AGENT_ID || ELEVENLABS_CONCIERGE_AGENT_ID);
 }
 
 /**
@@ -74,6 +84,10 @@ export async function getAgentConfig(
   role: AgentRole,
   _language: AgentLanguage = 'en'
 ): Promise<{ data: { elevenlabs_agent_id: string } | null; error: Error | null }> {
+  if (!isMultiAgentConfigured()) {
+    return { data: null, error: new Error('ElevenLabs is not configured. Enable it in your environment.') };
+  }
+  
   try {
     let agentId: string | undefined;
     
@@ -104,8 +118,13 @@ export async function getAgentConfig(
 
 /**
  * Create a new agent session (mock implementation)
+ * TODO: Implement via Supabase Edge Function when tables are created
  */
 export async function createAgentSession(session: AgentSession): Promise<{ data: AgentSession | null; error: Error | null }> {
+  if (!isMultiAgentConfigured()) {
+    return { data: null, error: new Error('ElevenLabs is not configured') };
+  }
+  
   try {
     // Generate a mock session ID
     const mockSession: AgentSession = {
@@ -114,7 +133,7 @@ export async function createAgentSession(session: AgentSession): Promise<{ data:
       status: session.status || 'initializing',
     };
     
-    console.log('Created agent session (mock):', mockSession.id);
+    console.log('[ElevenLabs] Created agent session (mock):', mockSession.id);
     return { data: mockSession, error: null };
   } catch (error) {
     return { data: null, error: error as Error };
@@ -129,7 +148,7 @@ export async function startAgentSession(
   elevenlabsConversationId: string
 ): Promise<{ data: { id: string; status: string } | null; error: Error | null }> {
   try {
-    console.log(`Started agent session (mock): ${sessionId} with conversation: ${elevenlabsConversationId}`);
+    console.log(`[ElevenLabs] Started agent session (mock): ${sessionId} with conversation: ${elevenlabsConversationId}`);
     return { 
       data: { id: sessionId, status: 'active' }, 
       error: null 
@@ -144,7 +163,7 @@ export async function startAgentSession(
  */
 export async function endAgentSession(sessionId: string): Promise<{ data: { id: string; status: string } | null; error: Error | null }> {
   try {
-    console.log(`Ended agent session (mock): ${sessionId}`);
+    console.log(`[ElevenLabs] Ended agent session (mock): ${sessionId}`);
     return { 
       data: { id: sessionId, status: 'ended' }, 
       error: null 
@@ -159,7 +178,7 @@ export async function endAgentSession(sessionId: string): Promise<{ data: { id: 
  */
 export async function logAgentMessage(message: AgentMessage): Promise<{ data: AgentMessage | null; error: Error | null }> {
   try {
-    console.log('Logged agent message (mock):', message.content.substring(0, 50) + '...');
+    console.log('[ElevenLabs] Logged agent message (mock):', message.content.substring(0, 50) + '...');
     return { data: message, error: null };
   } catch (error) {
     return { data: null, error: error as Error };
@@ -174,7 +193,7 @@ export async function getConversationHistory(
   _limit: number = 50
 ): Promise<{ data: AgentMessage[] | null; error: Error | null }> {
   try {
-    console.log(`Getting conversation history for session (mock): ${agentSessionId}`);
+    console.log(`[ElevenLabs] Getting conversation history for session (mock): ${agentSessionId}`);
     return { data: [], error: null };
   } catch (error) {
     return { data: null, error: error as Error };

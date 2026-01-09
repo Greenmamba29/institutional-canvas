@@ -37,6 +37,7 @@ import Team from "./pages/Team";
 import PasswordReset from "./pages/PasswordReset";
 import AgentSetup from "./pages/AgentSetup";
 import SupplierDetail from "./pages/SupplierDetail";
+import Health from "./pages/Health";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,6 +96,7 @@ const App = () => {
                       <Route path="/team" element={<Team />} />
                       <Route path="/verification" element={<Verification />} />
                       <Route path="/messages" element={<Messages />} />
+                      <Route path="/health" element={<Health />} />
                     </Route>
                     
                       <Route path="*" element={<NotFound />} />
