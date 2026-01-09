@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { createReview } from "@/services/reviews.service";
 import {
   Dialog,
   DialogContent,
@@ -70,14 +70,13 @@ export function WriteReviewModal({
   const onSubmit = async (data: ReviewFormData) => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from("reviews").insert({
-        supplier_id: supplierId,
+      const { error } = await createReview({
+        supplierId,
         rating: data.rating,
         content: data.content,
         author: data.author,
-        company: data.company || null,
-        verified_purchase: data.verified_purchase,
-        helpful_count: 0,
+        company: data.company,
+        verifiedPurchase: data.verified_purchase,
       });
 
       if (error) throw error;

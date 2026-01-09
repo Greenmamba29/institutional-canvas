@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { createTelebuySession } from '@/services/telebuy.service';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,12 +63,11 @@ export function CreateSessionModal({
       // Generate a placeholder meeting URL (Daily.co room creation would be done server-side)
       const meetingUrl = `https://lithiumbuy.daily.co/room-${Date.now()}`;
 
-      const { error } = await supabase.from('telebuy_sessions').insert({
-        supplier_id: supplierId,
-        scheduled_at: scheduledAt.toISOString(),
-        meeting_url: meetingUrl,
-        notes: notes || null,
-        status: 'scheduled',
+      const { error } = await createTelebuySession({
+        supplierId,
+        scheduledAt: scheduledAt.toISOString(),
+        meetingUrl,
+        notes: notes || undefined,
       });
 
       if (error) throw error;

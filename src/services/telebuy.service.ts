@@ -1,60 +1,67 @@
 /**
- * TeleBuy Service - Video meeting session management
+ * TeleBuy Service - RPC wrappers for TeleBuy session operations
  * 
- * NOTE: Session writes require backend RPC implementation.
- * @see ORCHESTRATION/API.openapiv1.yaml - create_telebuy_session
+ * Uses create_telebuy_session, update_session_status, update_telebuy_notes RPCs
  */
 
-import { supabase } from '@/lib/supabase/rpc';
+import { callRpc, supabase } from '@/lib/supabase/rpc';
 import type { Tables } from '@/integrations/supabase/types';
 
 export type TelebuySession = Tables<'telebuy_sessions'>;
 export type TelebuyDocument = Tables<'telebuy_documents'>;
 
-// ============================================
-// PENDING RPC IMPLEMENTATIONS
-// These functions are stubs - backend must implement the RPCs
-// ============================================
-
-/**
- * Create a new TeleBuy session
- */
-export async function createTelebuySession(params: {
+export interface CreateTelebuySessionParams {
   supplierId: string;
   scheduledAt: string;
   meetingUrl: string;
   notes?: string;
-}) {
-  const { data, error } = await supabase.rpc('create_telebuy_session', {
+}
+
+/**
+ * Create a new TeleBuy session via RPC
+ */
+export async function createTelebuySession(params: CreateTelebuySessionParams) {
+  return callRpc<TelebuySession>('create_telebuy_session', {
     p_supplier_id: params.supplierId,
     p_scheduled_at: params.scheduledAt,
     p_meeting_url: params.meetingUrl,
-    p_notes: params.notes,
+    p_notes: params.notes || null,
   });
-  return { data, error };
 }
 
 /**
- * Update session status
+ * Update session status via RPC
  */
 export async function updateSessionStatus(sessionId: string, status: string) {
-  const { data, error } = await supabase.rpc('update_session_status', {
+  return callRpc<TelebuySession>('update_session_status', {
     p_session_id: sessionId,
     p_status: status,
   });
-  return { data, error };
 }
 
 /**
- * Add transcript to session
+ * Update session notes via RPC
  */
-export async function addSessionTranscript(sessionId: string, transcript: string, aiSummary?: string) {
-  const { data, error } = await supabase.rpc('add_session_transcript', {
+export async function updateTelebuyNotes(sessionId: string, notes: string) {
+  return callRpc<TelebuySession>('update_telebuy_notes', {
+    p_session_id: sessionId,
+    p_notes: notes,
+  });
+}
+
+/**
+ * Add transcript to session via RPC
+ */
+export async function addSessionTranscript(
+  sessionId: string,
+  transcript: string,
+  aiSummary?: string
+) {
+  return callRpc<TelebuySession>('add_session_transcript', {
     p_session_id: sessionId,
     p_transcript: transcript,
-    p_ai_summary: aiSummary,
+    p_ai_summary: aiSummary || null,
   });
-  return { data, error };
 }
 
 // ============================================
@@ -97,7 +104,7 @@ export async function getSessionById(sessionId: string) {
       telebuy_documents (*)
     `)
     .eq('id', sessionId)
-    .single();
+    .maybeSingle();
   
   return { data, error };
 }

@@ -3050,6 +3050,65 @@ export type Database = {
               isSetofReturn: false
             }
           }
+      create_quote: {
+        Args: {
+          p_expires_at?: string
+          p_notes?: string
+          p_product_id?: string
+          p_quantity?: number
+          p_requested_price?: number
+          p_supplier_id: string
+        }
+        Returns: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          notes: string | null
+          org_id: string | null
+          product_id: string | null
+          quantity: number
+          requested_price: number | null
+          status: string
+          supplier_id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "quotes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_review: {
+        Args: {
+          p_author: string
+          p_company?: string
+          p_content: string
+          p_rating: number
+          p_supplier_id: string
+          p_verified_purchase?: boolean
+        }
+        Returns: {
+          author: string
+          company: string | null
+          content: string
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          rating: number
+          supplier_id: string
+          updated_at: string | null
+          user_id: string | null
+          verified_purchase: boolean | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reviews"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_rfq: {
         Args: {
           p_delivery_location: string
@@ -3314,6 +3373,28 @@ export type Database = {
       has_org_role: {
         Args: { p_org_id: string; p_role: string }
         Returns: boolean
+      }
+      increment_review_helpful: {
+        Args: { p_review_id: string }
+        Returns: {
+          author: string
+          company: string | null
+          content: string
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          rating: number
+          supplier_id: string
+          updated_at: string | null
+          user_id: string | null
+          verified_purchase: boolean | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reviews"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       increment_usage_counters: {
         Args: {
@@ -3643,6 +3724,32 @@ export type Database = {
       }
       update_session_status: {
         Args: { p_session_id: string; p_status: string }
+        Returns: {
+          created_at: string | null
+          ended_at: string | null
+          id: string
+          meeting_id: string | null
+          meeting_url: string
+          notes: string | null
+          org_id: string | null
+          recording_url: string | null
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          supplier_id: string
+          transcript: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "telebuy_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_telebuy_notes: {
+        Args: { p_notes: string; p_session_id: string }
         Returns: {
           created_at: string | null
           ended_at: string | null

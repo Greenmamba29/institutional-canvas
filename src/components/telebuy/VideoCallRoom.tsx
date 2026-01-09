@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Package, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { updateTelebuyNotes } from '@/services/telebuy.service';
 import { VideoControls } from './VideoControls';
 import { TeleBuyActionBar } from './TeleBuyActionBar';
 import { CreatePurchaseModal } from './CreatePurchaseModal';
@@ -44,15 +44,10 @@ export function VideoCallRoom({
   const [showConfirmPurchaseFlow, setShowConfirmPurchaseFlow] = useState(false);
   const queryClient = useQueryClient();
 
-  // Save notes mutation using Supabase RPC
+  // Save notes mutation using RPC
   const saveNotesMutation = useMutation({
     mutationFn: async (content: string) => {
-      const { data, error } = await supabase
-        .from('telebuy_sessions')
-        .update({ notes: content })
-        .eq('id', sessionId)
-        .select()
-        .single();
+      const { data, error } = await updateTelebuyNotes(sessionId, content);
       
       if (error) throw error;
       return data;

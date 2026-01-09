@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Star, ThumbsUp, MessageSquare, ChevronDown, ChevronUp, PenSquare } from "lucide-react";
 import { format } from "date-fns";
 import { WriteReviewModal } from "@/components/reviews/WriteReviewModal";
-import { supabase } from "@/integrations/supabase/client";
+import { incrementReviewHelpful } from "@/services/reviews.service";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supplierKeys } from "@/hooks/useSuppliers";
@@ -62,10 +62,7 @@ export function SupplierReviews({ reviews, supplierId, supplierName }: SupplierR
   }));
 
   const handleMarkHelpful = async (reviewId: string) => {
-    const { error } = await supabase
-      .from('reviews')
-      .update({ helpful_count: (reviews.find(r => r.id === reviewId)?.helpful_count || 0) + 1 })
-      .eq('id', reviewId);
+    const { error } = await incrementReviewHelpful(reviewId);
     
     if (error) {
       toast.error("Failed to mark as helpful");
