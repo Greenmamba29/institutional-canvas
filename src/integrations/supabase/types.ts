@@ -197,6 +197,57 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_feature_flags: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          feature_key: string
+          id: string
+          name: string
+          org_id: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          feature_key: string
+          id?: string
+          name: string
+          org_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          feature_key?: string
+          id?: string
+          name?: string
+          org_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_feature_flags_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_feature_flags_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_processing_queue: {
         Row: {
           created_at: string | null
@@ -273,6 +324,69 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      ai_run_ledger: {
+        Row: {
+          actor_id: string | null
+          completed_at: string | null
+          error_message: string | null
+          feature_key: string
+          id: string
+          input_hash: string | null
+          metadata: Json | null
+          org_id: string | null
+          output_stored_at: string | null
+          run_id: string
+          started_at: string | null
+          status: string
+          trigger_source: string
+        }
+        Insert: {
+          actor_id?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          feature_key: string
+          id?: string
+          input_hash?: string | null
+          metadata?: Json | null
+          org_id?: string | null
+          output_stored_at?: string | null
+          run_id: string
+          started_at?: string | null
+          status?: string
+          trigger_source: string
+        }
+        Update: {
+          actor_id?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          feature_key?: string
+          id?: string
+          input_hash?: string | null
+          metadata?: Json | null
+          org_id?: string | null
+          output_stored_at?: string | null
+          run_id?: string
+          started_at?: string | null
+          status?: string
+          trigger_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_run_ledger_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_run_ledger_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       auction_bids: {
         Row: {
@@ -1258,6 +1372,66 @@ export type Database = {
         }
         Relationships: []
       }
+      kyb_verification_queue: {
+        Row: {
+          documents: Json | null
+          id: string
+          notes: string | null
+          org_id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          risk_score: number | null
+          status: string
+          submitted_at: string | null
+          verification_data: Json | null
+          verification_tier: string
+        }
+        Insert: {
+          documents?: Json | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          risk_score?: number | null
+          status?: string
+          submitted_at?: string | null
+          verification_data?: Json | null
+          verification_tier: string
+        }
+        Update: {
+          documents?: Json | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          risk_score?: number | null
+          status?: string
+          submitted_at?: string | null
+          verification_data?: Json | null
+          verification_tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyb_verification_queue_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kyb_verification_queue_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           address: string | null
@@ -2018,6 +2192,48 @@ export type Database = {
           },
         ]
       }
+      release_gates: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          description: string | null
+          gate_id: string
+          gate_type: string
+          id: string
+          name: string
+          notion_page_id: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          gate_id: string
+          gate_type: string
+          id?: string
+          name: string
+          notion_page_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          gate_id?: string
+          gate_type?: string
+          id?: string
+          name?: string
+          notion_page_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           author: string
@@ -2193,6 +2409,72 @@ export type Database = {
           {
             foreignKeyName: "rfqs_organization_id_fkey"
             columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      risk_flags: {
+        Row: {
+          description: string
+          entity_id: string
+          entity_type: string
+          flag_type: string
+          flagged_at: string | null
+          flagged_by: string | null
+          id: string
+          metadata: Json | null
+          org_id: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+        }
+        Insert: {
+          description: string
+          entity_id: string
+          entity_type: string
+          flag_type: string
+          flagged_at?: string | null
+          flagged_by?: string | null
+          id?: string
+          metadata?: Json | null
+          org_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          status?: string
+        }
+        Update: {
+          description?: string
+          entity_id?: string
+          entity_type?: string
+          flag_type?: string
+          flagged_at?: string | null
+          flagged_by?: string | null
+          id?: string
+          metadata?: Json | null
+          org_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_flags_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_flags_org_id_fkey"
+            columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
@@ -2901,9 +3183,38 @@ export type Database = {
         Args: { p_requested?: number; p_user: string }
         Returns: Json
       }
+      check_ai_feature_flag: {
+        Args: { p_feature_key: string; p_org_id?: string }
+        Returns: {
+          feature_status: string
+          is_enabled: boolean
+          is_shadow: boolean
+        }[]
+      }
+      check_ai_financial_isolation: {
+        Args: { p_action: string; p_trigger_source: string }
+        Returns: boolean
+      }
+      check_release_gate: {
+        Args: { p_gate_id: string }
+        Returns: {
+          gate_status: string
+          is_open: boolean
+          requires_review: boolean
+        }[]
+      }
       check_usage_limit: {
         Args: { p_tier?: string; p_user_id: string }
         Returns: Json
+      }
+      complete_ai_run: {
+        Args: {
+          p_error_message?: string
+          p_output_location?: string
+          p_run_id: string
+          p_success?: boolean
+        }
+        Returns: undefined
       }
       create_deal: {
         Args: { p_rfq_id: string; p_supplier_id: string; p_title: string }
@@ -3631,6 +3942,19 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      start_ai_run: {
+        Args: {
+          p_feature_key: string
+          p_metadata?: Json
+          p_org_id?: string
+          p_trigger_source: string
+        }
+        Returns: {
+          is_shadow: boolean
+          ledger_id: string
+          run_id: string
+        }[]
+      }
       submit_bid: {
         Args: {
           p_currency: string
