@@ -1,7 +1,8 @@
 /**
  * Authenticated Supabase Client Factory
  * 
- * Creates a Supabase client with Auth0 JWT token injected for RLS enforcement.
+ * Creates a Supabase client with Supabase Auth JWT token injected for RLS enforcement.
+ * This ensures Row-Level Security policies can access jwt_user_id() and jwt_org_id().
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -9,15 +10,15 @@ import type { Database } from '@/integrations/supabase/types';
 
 // Use environment variables for consistency and credential rotation support
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Validate environment variables are present
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('Missing required Supabase environment variables: VITE_SUPABASE_URL and/or VITE_SUPABASE_PUBLISHABLE_KEY');
+  throw new Error('Missing required Supabase environment variables: VITE_SUPABASE_URL and/or VITE_SUPABASE_ANON_KEY');
 }
 
 /**
- * Creates an authenticated Supabase client with the Auth0 access token
+ * Creates an authenticated Supabase client with the Supabase Auth access token
  */
 export function createAuthenticatedClient(accessToken: string): SupabaseClient<Database> {
   return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {

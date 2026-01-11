@@ -1,7 +1,8 @@
 # LithiumBuy - Vercel Deployment Guide
 
-**Last Updated**: 2024-12-24  
-**Status**: Production Ready
+**Last Updated**: January 11, 2026  
+**Status**: Production Ready  
+**Authentication**: Supabase Auth (Native)
 
 ---
 
@@ -23,25 +24,10 @@ Go to **Project Settings** → **Environment Variables** and add:
 
 ```bash
 # ===================================
-# Auth0 Configuration (REQUIRED)
-# ===================================
-VITE_AUTH0_DOMAIN=dev-vbox82zyf82ityy0.us.auth0.com
-VITE_AUTH0_CLIENT_ID=YnXqFAVjFUcmqeJUZgvbyFzK35A4mBzW
-VITE_AUTH0_AUDIENCE=https://api.lithiumbuy.com
-
-# ===================================
 # Supabase Configuration (REQUIRED)
 # ===================================
-VITE_SUPABASE_URL=https://vuekwckknfjivjighhfd.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1ZWt3Y2trbmZqaXZqaWdoaGZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5OTEyNjUsImV4cCI6MjA1MDU2NzI2NX0.8kE5RaGP4qAKPnw3L1a2O-TuIcKvRMqo4hgkxXr_Nsg
-
-# ===================================
-# Production URLs (Auto-configured)
-# ===================================
-# These will be auto-set by Vercel:
-# VERCEL_URL (e.g., lithiumbuy.vercel.app)
-# VERCEL_GIT_COMMIT_SHA
-# VERCEL_GIT_COMMIT_REF
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key_here
 ```
 
 **Important Notes**:
@@ -49,34 +35,23 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 - Never commit these to git (they're in `.gitignore`)
 - Vercel encrypts all environment variables
 
-### Step 3: Update Auth0 Callback URLs
+### Step 3: Configure Supabase Auth URLs
 
-After deployment, update Auth0 with your production URLs:
+After deployment, update Supabase Auth with your production URLs:
 
-1. Go to: https://manage.auth0.com/dashboard/us/dev-vbox82zyf82ityy0/applications
-2. Click your application
-3. Add to **Allowed Callback URLs**:
+1. Go to: https://supabase.com/dashboard/project/YOUR_PROJECT/auth/url-configuration
+2. Add to **Site URL**:
    ```
-   https://lithiumbuy.vercel.app/callback
-   https://www.lithiumbuy.com/callback
-   https://your-vercel-url.vercel.app/callback
+   https://your-app.vercel.app
    ```
 
-4. Add to **Allowed Logout URLs**:
+3. Add to **Redirect URLs**:
    ```
-   https://lithiumbuy.vercel.app
-   https://www.lithiumbuy.com
-   https://your-vercel-url.vercel.app
-   ```
-
-5. Add to **Allowed Web Origins**:
-   ```
-   https://lithiumbuy.vercel.app
-   https://www.lithiumbuy.com
-   https://your-vercel-url.vercel.app
+   https://your-app.vercel.app/**
+   https://www.yourdomain.com/**
    ```
 
-6. Click **Save Changes**
+4. Click **Save**
 
 ### Step 4: Deploy
 
@@ -99,10 +74,7 @@ Vercel will automatically:
 
 | Variable | Value | Environment | Description |
 |----------|-------|-------------|-------------|
-| `VITE_AUTH0_DOMAIN` | `dev-vbox82zyf82ityy0.us.auth0.com` | All | Auth0 tenant domain |
-| `VITE_AUTH0_CLIENT_ID` | `YnXqFAVjFUcmqeJUZgvbyFzK35A4mBzW` | All | Auth0 application client ID |
-| `VITE_AUTH0_AUDIENCE` | `https://api.lithiumbuy.com` | All | Auth0 API identifier (optional) |
-| `VITE_SUPABASE_URL` | `https://vuekwckknfjivjighhfd.supabase.co` | All | Supabase project URL |
+| `VITE_SUPABASE_URL` | `https://your-project.supabase.co` | All | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | `eyJhbG...` | All | Supabase anonymous key (public) |
 
 ### Auto-Configured by Vercel
@@ -118,9 +90,9 @@ Vercel will automatically:
 
 ## 🔧 Vercel Configuration
 
-### vercel.json (Optional)
+### vercel.json
 
-Create `vercel.json` in project root for advanced configuration:
+The project includes a `vercel.json` with security headers and SPA rewrites:
 
 ```json
 {
@@ -134,30 +106,15 @@ Create `vercel.json` in project root for advanced configuration:
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        }
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
     }
   ],
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
 ```
@@ -236,8 +193,6 @@ Every PR gets a unique preview URL:
 https://lithiumbuy-pr-123-username.vercel.app
 ```
 
-Share this URL for testing before merging to production.
-
 ---
 
 ## 🧪 Testing Deployment
@@ -251,12 +206,9 @@ vercel logs <deployment-url>
 
 ### 2. Verify Environment Variables
 
-Create test script: `scripts/check-env.js`
+Open browser devtools console and check:
 
 ```javascript
-console.log('Environment Check:');
-console.log('Auth0 Domain:', import.meta.env.VITE_AUTH0_DOMAIN ? '✅' : '❌');
-console.log('Auth0 Client ID:', import.meta.env.VITE_AUTH0_CLIENT_ID ? '✅' : '❌');
 console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? '✅' : '❌');
 console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅' : '❌');
 ```
@@ -265,8 +217,8 @@ console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅' : '�
 
 Visit your deployment URL and verify:
 - [ ] Page loads without errors
-- [ ] Login redirects to Auth0
-- [ ] Auth0 redirects back to app
+- [ ] Login redirects to Supabase Auth
+- [ ] Auth redirects back to app
 - [ ] Dashboard loads with org context
 - [ ] Real-time updates work
 - [ ] All API calls succeed
@@ -286,32 +238,12 @@ git commit -m "Add missing dependency"
 git push
 ```
 
-**Error**: `Build exceeded memory limit`
-```json
-// Add to vercel.json
-{
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "maxLambdaSize": "50mb"
-      }
-    }
-  ]
-}
-```
+### Auth Redirect Issues
 
-### Auth0 Redirect Issues
-
-**Error**: `Callback URL not allowed`
+**Error**: `Invalid redirect URL`
 ```
-Solution: Add your Vercel URL to Auth0 Allowed Callback URLs
-```
-
-**Error**: `CORS error when calling Auth0`
-```
-Solution: Add your Vercel URL to Auth0 Allowed Web Origins
+Solution: Add your Vercel URL to Supabase Auth Redirect URLs
+Dashboard → Authentication → URL Configuration
 ```
 
 ### Environment Variables Not Loading
@@ -348,39 +280,19 @@ vercel --prod
     {
       "source": "/assets/(.*)",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     }
   ]
 }
 ```
 
-### Enable Compression
+### Compression
 
 Vercel automatically compresses:
 - HTML, CSS, JS with Brotli + Gzip
 - Images with automatic optimization
 - Fonts with optimal caching
-
-### Image Optimization
-
-Use Vercel Image Optimization:
-
-```typescript
-import Image from 'next/image'; // If using Next.js
-
-// Or for Vite:
-<img 
-  src="/icon-512.png" 
-  width="512" 
-  height="512" 
-  loading="lazy" 
-  decoding="async" 
-/>
-```
 
 ---
 
@@ -464,23 +376,21 @@ vercel env pull .env.local
 ## 🎉 Post-Deployment Checklist
 
 - [ ] All environment variables added to Vercel
-- [ ] Auth0 callback URLs updated with production URL
+- [ ] Supabase Auth redirect URLs updated
 - [ ] Custom domain configured (if applicable)
 - [ ] SSL certificate issued (automatic)
 - [ ] Test login flow on production
 - [ ] Test multi-tenant functionality
 - [ ] Test real-time updates
-- [ ] Test PWA installation
+- [ ] Test TeleBuy video sessions
 - [ ] Monitor deployment logs for errors
 - [ ] Set up Vercel Analytics (optional)
-- [ ] Configure alerts for deployment failures
 
 ---
 
 ## 📞 Support
 
 **Vercel Documentation**: https://vercel.com/docs  
-**Auth0 Documentation**: https://auth0.com/docs  
 **Supabase Documentation**: https://supabase.com/docs
 
 **Project Maintainer**: @paco  

@@ -1,25 +1,30 @@
 /**
  * Auctions Service - Lithium & Lux RPC Layer
  * 
- * Uses list_auctions and place_auction_bid RPCs with input validation
+ * Uses list_auctions and place_auction_bid RPCs with input validation.
+ * All write operations require an authenticated Supabase client.
  */
 
-import { callRpc, supabase } from '@/lib/supabase/rpc';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { callAuthenticatedRpc } from '@/lib/supabase/authenticated-client';
 import { placeAuctionBidSchema, validateInput, type PlaceAuctionBidInput } from '@/lib/validation/schemas';
-import type { Tables } from '@/integrations/supabase/types';
+import type { Tables, Database } from '@/integrations/supabase/types';
 
 export type Auction = Tables<'auctions'>;
 export type AuctionBid = Tables<'auction_bids'>;
 
 /**
- * List all auctions
+ * List all auctions (authenticated)
  */
-export async function listAuctions() {
-  return callRpc<Auction[]>('list_auctions');
+export async function listAuctions(
+  client: SupabaseClient<Database>
+): Promise<{ data: Auction[] | null; error: Error | null }> {
+  return callAuthenticatedRpc<Auction[]>(client, 'list_auctions');
 }
 
 /**
- * Get a single auction by ID
+ * Get a single auction by ID (direct read - RLS protected)
  */
 export async function getAuctionById(auctionId: string) {
   const { data, error } = await supabase
@@ -28,11 +33,11 @@ export async function getAuctionById(auctionId: string) {
     .eq('id', auctionId)
     .single();
   
-  return { data, error };
+  return { data, error: error ? new Error(error.message) : null };
 }
 
 /**
- * Get bids for an auction
+ * Get bids for an auction (direct read - RLS protected)
  */
 export async function getAuctionBids(auctionId: string) {
   const { data, error } = await supabase
@@ -41,14 +46,17 @@ export async function getAuctionBids(auctionId: string) {
     .eq('auction_id', auctionId)
     .order('amount', { ascending: false });
   
-  return { data, error };
+  return { data, error: error ? new Error(error.message) : null };
 }
 
 /**
- * Place a bid on an auction with validated input
+ * Place a bid on an auction with validated input (authenticated)
  */
-export async function placeAuctionBid(params: PlaceAuctionBidInput) {
+export async function placeAuctionBid(
+  client: SupabaseClient<Database>,
+  params: PlaceAuctionBidInput
+): Promise<{ data: AuctionBid | null; error: Error | null }> {
   // Validate input before sending to RPC
   const validated = validateInput(placeAuctionBidSchema, params);
-  return callRpc<AuctionBid>('place_auction_bid', validated);
+  return callAuthenticatedRpc<AuctionBid>(client, 'place_auction_bid', validated);
 }

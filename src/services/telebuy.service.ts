@@ -1,53 +1,81 @@
 /**
  * TeleBuy Service - Video meeting session management
  * 
- * NOTE: Session writes require backend RPC implementation.
- * @see ORCHESTRATION/API.openapiv1.yaml - create_telebuy_session
+ * Provides authenticated RPC calls for TeleBuy session operations.
+ * All write operations require an authenticated Supabase client.
  */
 
-import { supabase } from '@/lib/supabase/rpc';
-import type { Tables } from '@/integrations/supabase/types';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { callAuthenticatedRpc } from '@/lib/supabase/authenticated-client';
+import { validateInput } from '@/lib/validation/schemas';
+import {
+  createTelebuySessionSchema,
+  updateSessionStatusSchema,
+  addSessionTranscriptSchema,
+  type CreateTelebuySessionInput,
+  type UpdateSessionStatusInput,
+  type AddSessionTranscriptInput,
+} from '@/lib/validation/telebuy.schemas';
+import type { Tables, Database } from '@/integrations/supabase/types';
 
 export type TelebuySession = Tables<'telebuy_sessions'>;
 export type TelebuyDocument = Tables<'telebuy_documents'>;
 
 // ============================================
-// PENDING RPC IMPLEMENTATIONS
-// These functions are stubs - backend must implement the RPCs
+// WRITE OPERATIONS (Authenticated RPC)
 // ============================================
 
 /**
- * Create a new TeleBuy session (PENDING BACKEND IMPLEMENTATION)
- * @see ORCHESTRATION/API.openapiv1.yaml - POST /rpc/create_telebuy_session
+ * Create a new TeleBuy session
  */
-export async function createTelebuySession(_params: {
-  supplierId: string;
-  scheduledAt: string;
-  meetingUrl: string;
-}): Promise<{ data: null; error: Error }> {
-  // TODO: Replace with rpc('create_telebuy_session', params) when backend implements
-  console.warn('[telebuy.service] create_telebuy_session RPC not yet implemented');
-  return { data: null, error: new Error('RPC create_telebuy_session not implemented - request backend implementation') };
+export async function createTelebuySession(
+  client: SupabaseClient<Database>,
+  params: CreateTelebuySessionInput
+): Promise<{ data: TelebuySession | null; error: Error | null }> {
+  try {
+    const validated = validateInput(createTelebuySessionSchema, params);
+    return callAuthenticatedRpc<TelebuySession>(client, 'create_telebuy_session', validated);
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error('Validation failed');
+    return { data: null, error };
+  }
 }
 
 /**
- * Update session status (PENDING BACKEND IMPLEMENTATION)
+ * Update session status
  */
-export async function updateSessionStatus(_sessionId: string, _status: string): Promise<{ data: null; error: Error }> {
-  console.warn('[telebuy.service] update_session_status RPC not yet implemented');
-  return { data: null, error: new Error('RPC update_session_status not implemented - request backend implementation') };
+export async function updateSessionStatus(
+  client: SupabaseClient<Database>,
+  params: UpdateSessionStatusInput
+): Promise<{ data: TelebuySession | null; error: Error | null }> {
+  try {
+    const validated = validateInput(updateSessionStatusSchema, params);
+    return callAuthenticatedRpc<TelebuySession>(client, 'update_telebuy_session_status', validated);
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error('Validation failed');
+    return { data: null, error };
+  }
 }
 
 /**
- * Add transcript to session (PENDING BACKEND IMPLEMENTATION)
+ * Add transcript to session
  */
-export async function addSessionTranscript(_sessionId: string, _transcript: string): Promise<{ data: null; error: Error }> {
-  console.warn('[telebuy.service] add_session_transcript RPC not yet implemented');
-  return { data: null, error: new Error('RPC add_session_transcript not implemented - request backend implementation') };
+export async function addSessionTranscript(
+  client: SupabaseClient<Database>,
+  params: AddSessionTranscriptInput
+): Promise<{ data: TelebuySession | null; error: Error | null }> {
+  try {
+    const validated = validateInput(addSessionTranscriptSchema, params);
+    return callAuthenticatedRpc<TelebuySession>(client, 'add_session_transcript', validated);
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error('Validation failed');
+    return { data: null, error };
+  }
 }
 
 // ============================================
-// READ-ONLY QUERIES (Direct reads are allowed)
+// READ-ONLY QUERIES (Direct reads - RLS protected)
 // ============================================
 
 /**
@@ -71,7 +99,7 @@ export async function getTelebuySessions(options?: { status?: string; limit?: nu
   }
   
   const { data, error } = await query;
-  return { data, error };
+  return { data, error: error ? new Error(error.message) : null };
 }
 
 /**
@@ -88,7 +116,7 @@ export async function getSessionById(sessionId: string) {
     .eq('id', sessionId)
     .single();
   
-  return { data, error };
+  return { data, error: error ? new Error(error.message) : null };
 }
 
 /**
@@ -106,7 +134,7 @@ export async function getUpcomingSessions(limit: number = 5) {
     .order('scheduled_at', { ascending: true })
     .limit(limit);
   
-  return { data, error };
+  return { data, error: error ? new Error(error.message) : null };
 }
 
 /**
@@ -119,5 +147,5 @@ export async function getSessionDocuments(sessionId: string) {
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false });
   
-  return { data, error };
+  return { data, error: error ? new Error(error.message) : null };
 }
