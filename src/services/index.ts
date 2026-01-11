@@ -82,3 +82,6 @@ export {
 export * from './knowledge-base.service';
 export * from './airtable.service';
 export * from './language-detection.service';
+
+// AI Gating Service
+export * from './ai-gating.service';

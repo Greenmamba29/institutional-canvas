@@ -1,11 +1,11 @@
 /**
  * Airtable Integration Service
- * Connects to Airtable for FAQ knowledge base and internal marketplace data
+ * Connects to Airtable via Edge Function proxy for FAQ knowledge base and internal marketplace data
+ * 
+ * SECURITY: API keys are stored server-side in Edge Function secrets, not exposed to client
  */
 
-const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
-const AIRTABLE_API_URL = 'https://api.airtable.com/v0';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AirtableFAQ {
   id: string;
@@ -31,7 +31,8 @@ export interface AirtableProduct {
 }
 
 /**
- * Fetch records from Airtable
+ * Fetch records from Airtable via Edge Function proxy
+ * API keys are stored securely server-side
  */
 async function fetchAirtableRecords<T>(
   tableName: string,
@@ -41,43 +42,27 @@ async function fetchAirtableRecords<T>(
     sort?: Array<{ field: string; direction: 'asc' | 'desc' }>;
   }
 ): Promise<T[]> {
-  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
-    console.warn('Airtable not configured. Returning empty results.');
-    return [];
-  }
-
   try {
-    const params = new URLSearchParams();
-    if (options?.filterByFormula) {
-      params.append('filterByFormula', options.filterByFormula);
-    }
-    if (options?.maxRecords) {
-      params.append('maxRecords', options.maxRecords.toString());
-    }
-    if (options?.sort) {
-      options.sort.forEach((s, i) => {
-        params.append(`sort[${i}][field]`, s.field);
-        params.append(`sort[${i}][direction]`, s.direction);
-      });
-    }
-
-    const url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}${
-      params.toString() ? '?' + params.toString() : ''
-    }`;
-
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+    const { data, error } = await supabase.functions.invoke('airtable-proxy', {
+      body: {
+        table: tableName,
+        filter: options?.filterByFormula,
+        maxRecords: options?.maxRecords,
+        sort: options?.sort,
       },
     });
 
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.statusText}`);
+    if (error) {
+      console.error('Error calling Airtable proxy:', error);
+      return [];
     }
 
-    const data = await response.json();
-    return data.records.map((record: any) => ({
+    if (!data?.configured) {
+      console.warn('Airtable not configured on server. Returning empty results.');
+      return [];
+    }
+
+    return (data.records || []).map((record: { id: string; fields: Record<string, unknown> }) => ({
       id: record.id,
       ...record.fields,
     }));
@@ -217,10 +202,12 @@ export function formatProductsForAgent(products: AirtableProduct[]): string {
 }
 
 /**
- * Check if Airtable is configured
+ * Check if Airtable is configured (now always returns true, config is server-side)
  */
 export function isAirtableConfigured(): boolean {
-  return Boolean(AIRTABLE_API_KEY && AIRTABLE_BASE_ID);
+  // Configuration is now server-side, so we can't check from client
+  // The Edge Function will return configured: false if not set up
+  return true;
 }
 
 /**

@@ -11,14 +11,23 @@ const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+const FEATURE_KEY = 'transcript_summarization';
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false }
+  });
+
+  let runId: string | null = null;
+  let isShadow = false;
+
   try {
-    const { sessionId, transcriptText } = await req.json();
+    const { sessionId, transcriptText, orgId } = await req.json();
 
     if (!sessionId || !transcriptText) {
       return new Response(
@@ -28,6 +37,48 @@ serve(async (req) => {
     }
 
     console.log(`[ai-summarize-transcript] Processing session: ${sessionId}`);
+
+    // =====================================================
+    // AI GATING CHECK - Check feature flag before processing
+    // =====================================================
+    const { data: flagData, error: flagError } = await supabase.rpc('check_ai_feature_flag', {
+      p_feature_key: FEATURE_KEY,
+      p_org_id: orgId || null
+    });
+
+    if (flagError) {
+      console.error('[ai-summarize-transcript] Flag check error:', flagError);
+    }
+
+    const flag = flagData?.[0];
+    const isEnabled = flag?.is_enabled ?? false;
+    isShadow = flag?.is_shadow ?? false;
+
+    if (!isEnabled && !isShadow) {
+      console.log(`[ai-summarize-transcript] Feature ${FEATURE_KEY} is disabled`);
+      return new Response(
+        JSON.stringify({ error: 'AI transcript summarization is currently disabled', gated: true }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // =====================================================
+    // START AI RUN - Create ledger entry
+    // =====================================================
+    const { data: runData, error: runError } = await supabase.rpc('start_ai_run', {
+      p_feature_key: FEATURE_KEY,
+      p_trigger_source: 'system',
+      p_org_id: orgId || null,
+      p_metadata: { session_id: sessionId }
+    });
+
+    if (runError) {
+      console.error('[ai-summarize-transcript] Start run error:', runError);
+      throw new Error(`Failed to start AI run: ${runError.message}`);
+    }
+
+    runId = runData?.[0]?.run_id;
+    console.log(`[ai-summarize-transcript] Started AI run: ${runId}, shadow: ${isShadow}`);
 
     // Call Lovable AI Gateway for summarization
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -94,36 +145,53 @@ Format your response as JSON:
       };
     }
 
-    // Get auth header for RPC call
-    const authHeader = req.headers.get('Authorization');
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false }
-    });
+    // =====================================================
+    // SHADOW MODE CHECK - Only save if NOT in shadow mode
+    // =====================================================
+    let transcriptId = null;
+    if (!isShadow) {
+      // Save to database using RPC
+      const { data: transcript, error: saveError } = await supabase.rpc('save_telebuy_transcript', {
+        p_session_id: sessionId,
+        p_transcript_text: transcriptText,
+        p_ai_summary: analysis.summary,
+        p_ai_action_items: analysis.action_items,
+        p_ai_key_points: analysis.key_points,
+        p_duration_seconds: null,
+        p_speaker_segments: []
+      });
 
-    // Save to database using RPC
-    const { data: transcript, error: saveError } = await supabase.rpc('save_telebuy_transcript', {
-      p_session_id: sessionId,
-      p_transcript_text: transcriptText,
-      p_ai_summary: analysis.summary,
-      p_ai_action_items: analysis.action_items,
-      p_ai_key_points: analysis.key_points,
-      p_duration_seconds: null,
-      p_speaker_segments: []
-    });
-
-    if (saveError) {
-      console.error('[ai-summarize-transcript] Save error:', saveError);
-      // Don't fail completely, still return the analysis
+      if (saveError) {
+        console.error('[ai-summarize-transcript] Save error:', saveError);
+        // Don't fail completely, still return the analysis
+      } else {
+        transcriptId = transcript?.id;
+      }
+    } else {
+      console.log('[ai-summarize-transcript] SHADOW MODE: Analysis completed but NOT saved to database');
     }
 
-    console.log(`[ai-summarize-transcript] Successfully processed session: ${sessionId}`);
+    // =====================================================
+    // COMPLETE AI RUN - Update ledger
+    // =====================================================
+    if (runId) {
+      await supabase.rpc('complete_ai_run', {
+        p_run_id: runId,
+        p_output_location: isShadow ? 'shadow_run_not_stored' : `telebuy_transcripts/${transcriptId || sessionId}`,
+        p_success: true
+      });
+    }
+
+    console.log(`[ai-summarize-transcript] Successfully processed session: ${sessionId}, shadow: ${isShadow}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         sessionId,
         analysis,
-        transcriptId: transcript?.id
+        transcriptId,
+        shadow: isShadow,
+        runId
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -131,6 +199,16 @@ Format your response as JSON:
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('[ai-summarize-transcript] Error:', error);
+
+    // Complete AI run with failure
+    if (runId) {
+      await supabase.rpc('complete_ai_run', {
+        p_run_id: runId,
+        p_success: false,
+        p_error_message: errorMessage
+      });
+    }
+
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

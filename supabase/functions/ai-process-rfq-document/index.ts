@@ -11,14 +11,23 @@ const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+const FEATURE_KEY = 'rfq_document_processing';
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false }
+  });
+
+  let runId: string | null = null;
+  let isShadow = false;
+
   try {
-    const { documentId, documentText, documentType } = await req.json();
+    const { documentId, documentText, documentType, orgId } = await req.json();
 
     if (!documentId || !documentText) {
       return new Response(
@@ -28,6 +37,48 @@ serve(async (req) => {
     }
 
     console.log(`[ai-process-rfq-document] Processing document: ${documentId}, type: ${documentType}`);
+
+    // =====================================================
+    // AI GATING CHECK - Check feature flag before processing
+    // =====================================================
+    const { data: flagData, error: flagError } = await supabase.rpc('check_ai_feature_flag', {
+      p_feature_key: FEATURE_KEY,
+      p_org_id: orgId || null
+    });
+
+    if (flagError) {
+      console.error('[ai-process-rfq-document] Flag check error:', flagError);
+    }
+
+    const flag = flagData?.[0];
+    const isEnabled = flag?.is_enabled ?? false;
+    isShadow = flag?.is_shadow ?? false;
+
+    if (!isEnabled && !isShadow) {
+      console.log(`[ai-process-rfq-document] Feature ${FEATURE_KEY} is disabled`);
+      return new Response(
+        JSON.stringify({ error: 'AI document processing is currently disabled', gated: true }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // =====================================================
+    // START AI RUN - Create ledger entry
+    // =====================================================
+    const { data: runData, error: runError } = await supabase.rpc('start_ai_run', {
+      p_feature_key: FEATURE_KEY,
+      p_trigger_source: 'system',
+      p_org_id: orgId || null,
+      p_metadata: { document_id: documentId, document_type: documentType }
+    });
+
+    if (runError) {
+      console.error('[ai-process-rfq-document] Start run error:', runError);
+      throw new Error(`Failed to start AI run: ${runError.message}`);
+    }
+
+    runId = runData?.[0]?.run_id;
+    console.log(`[ai-process-rfq-document] Started AI run: ${runId}, shadow: ${isShadow}`);
 
     // Build prompt based on document type
     let systemPrompt = `You are a document analyst for LithiumBuy, a B2B lithium marketplace.
@@ -136,32 +187,47 @@ Format your response as JSON:
       };
     }
 
-    // Update document in database
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false }
-    });
+    // =====================================================
+    // SHADOW MODE CHECK - Only save if NOT in shadow mode
+    // =====================================================
+    if (!isShadow) {
+      const { error: updateError } = await supabase
+        .from('rfq_documents')
+        .update({
+          ai_summary: analysis.summary,
+          ai_extracted_data: analysis,
+          ai_processed_at: new Date().toISOString(),
+          processing_status: 'completed'
+        })
+        .eq('id', documentId);
 
-    const { error: updateError } = await supabase
-      .from('rfq_documents')
-      .update({
-        ai_summary: analysis.summary,
-        ai_extracted_data: analysis,
-        ai_processed_at: new Date().toISOString(),
-        processing_status: 'completed'
-      })
-      .eq('id', documentId);
-
-    if (updateError) {
-      console.error('[ai-process-rfq-document] Update error:', updateError);
+      if (updateError) {
+        console.error('[ai-process-rfq-document] Update error:', updateError);
+      }
+    } else {
+      console.log('[ai-process-rfq-document] SHADOW MODE: Analysis completed but NOT saved to database');
     }
 
-    console.log(`[ai-process-rfq-document] Successfully processed document: ${documentId}`);
+    // =====================================================
+    // COMPLETE AI RUN - Update ledger
+    // =====================================================
+    if (runId) {
+      await supabase.rpc('complete_ai_run', {
+        p_run_id: runId,
+        p_output_location: isShadow ? 'shadow_run_not_stored' : `rfq_documents/${documentId}`,
+        p_success: true
+      });
+    }
+
+    console.log(`[ai-process-rfq-document] Successfully processed document: ${documentId}, shadow: ${isShadow}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         documentId,
-        analysis
+        analysis,
+        shadow: isShadow,
+        runId
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -169,6 +235,16 @@ Format your response as JSON:
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('[ai-process-rfq-document] Error:', error);
+
+    // Complete AI run with failure
+    if (runId) {
+      await supabase.rpc('complete_ai_run', {
+        p_run_id: runId,
+        p_success: false,
+        p_error_message: errorMessage
+      });
+    }
+
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
