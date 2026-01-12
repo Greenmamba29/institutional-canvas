@@ -38,6 +38,7 @@ import PasswordReset from "./pages/PasswordReset";
 import AgentSetup from "./pages/AgentSetup";
 import SupplierDetail from "./pages/SupplierDetail";
 import Health from "./pages/Health";
+import Landing from "./pages/Landing";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,12 +66,13 @@ const App = () => {
                       <CompareFloatingBar />
                       <Routes>
                     {/* Public routes */}
+                    <Route path="/" element={<Landing />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/password-reset" element={<PasswordReset />} />
                     
                     {/* Protected routes - using Outlet pattern */}
                     <Route element={<ProtectedRoute />}>
-                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/onboarding" element={<Onboarding />} />
                       <Route path="/marketplace" element={<Marketplace />} />

@@ -241,4 +241,214 @@
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+
+  /* ==================== */
+  /* GLASSMORPHISM EFFECTS */
+  /* ==================== */
+
+  /* Ambient Background Mesh */
+  .ambient-bg {
+    background: 
+      radial-gradient(ellipse 80% 50% at 20% 40%, hsl(186 100% 50% / 0.12), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 60%, hsl(270 70% 50% / 0.08), transparent),
+      radial-gradient(ellipse 50% 30% at 50% 100%, hsl(45 93% 58% / 0.08), transparent);
+  }
+
+  /* Cursor following light */
+  .cursor-light {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, hsl(186 100% 50% / 0.04) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    transition: opacity 0.3s;
+  }
+
+  /* Basic Glass */
+  .glass-basic {
+    background: hsl(222 47% 11% / 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(217 33% 30% / 0.3);
+  }
+
+  /* Frosted Glass with Noise Texture */
+  .glass-frosted {
+    background: hsl(222 47% 11% / 0.7);
+    backdrop-filter: blur(30px) saturate(150%);
+    -webkit-backdrop-filter: blur(30px) saturate(150%);
+    border: 1px solid hsl(217 33% 30% / 0.3);
+    position: relative;
+  }
+
+  .glass-frosted::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.02;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  /* Gradient Border Glass */
+  .glass-gradient-border {
+    background: hsl(222 47% 8% / 0.8);
+    backdrop-filter: blur(20px);
+    border: none;
+    position: relative;
+  }
+
+  .glass-gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(186 100% 50% / 0.5), hsl(270 70% 50% / 0.4), hsl(45 93% 58% / 0.3));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  /* Inset Glass (recessed) */
+  .glass-inset {
+    background: hsl(222 47% 6% / 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(217 33% 20% / 0.5);
+    box-shadow: 
+      inset 0 2px 4px hsl(222 47% 3% / 0.5),
+      inset 0 -1px 2px hsl(217 33% 30% / 0.1);
+  }
+
+  /* Glass Tablet Frame */
+  .glass-tablet {
+    background: linear-gradient(135deg, hsl(222 47% 14% / 0.9), hsl(222 47% 8% / 0.7));
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(217 33% 30% / 0.4);
+    box-shadow: 
+      0 25px 80px hsl(222 47% 3% / 0.6),
+      inset 0 1px 0 hsl(217 33% 40% / 0.2);
+  }
+
+  /* Glass Navigation */
+  .glass-nav {
+    background: hsl(222 47% 8% / 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid hsl(217 33% 20% / 0.3);
+  }
+
+  /* ==================== */
+  /* LIGHTING EFFECTS     */
+  /* ==================== */
+
+  /* Neon Glow Buttons */
+  .neon-btn-cyan {
+    background: hsl(186 100% 50%);
+    color: hsl(222 47% 6%);
+    font-weight: 600;
+    box-shadow: 
+      0 0 10px hsl(186 100% 50%),
+      0 0 20px hsl(186 100% 50% / 0.5),
+      0 0 40px hsl(186 100% 50% / 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .neon-btn-cyan:hover {
+    box-shadow: 
+      0 0 15px hsl(186 100% 50%),
+      0 0 30px hsl(186 100% 50% / 0.6),
+      0 0 60px hsl(186 100% 50% / 0.4);
+    transform: translateY(-2px);
+  }
+
+  .neon-btn-gold {
+    background: hsl(45 93% 58%);
+    color: hsl(222 47% 6%);
+    font-weight: 600;
+    box-shadow: 
+      0 0 10px hsl(45 93% 58%),
+      0 0 20px hsl(45 93% 58% / 0.5),
+      0 0 40px hsl(45 93% 58% / 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .neon-btn-gold:hover {
+    box-shadow: 
+      0 0 15px hsl(45 93% 58%),
+      0 0 30px hsl(45 93% 58% / 0.6),
+      0 0 60px hsl(45 93% 58% / 0.4);
+    transform: translateY(-2px);
+  }
+
+  /* Spotlight Sweep Animation */
+  @keyframes spotlight-sweep {
+    0% { left: -100px; }
+    100% { left: calc(100% + 100px); }
+  }
+
+  .spotlight-sweep {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .spotlight-sweep::after {
+    content: '';
+    position: absolute;
+    width: 100px;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, hsl(186 100% 50% / 0.08), transparent);
+    transform: rotate(15deg);
+    animation: spotlight-sweep 4s ease-in-out infinite;
+    top: -50%;
+  }
+
+  /* Apple-style text gradients */
+  .apple-text-gradient {
+    background: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(217 10% 60%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gold-text-gradient {
+    background: linear-gradient(180deg, hsl(45 100% 85%) 0%, hsl(45 93% 58%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* 3D Transform Utilities */
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .perspective-2000 {
+    perspective: 2000px;
+  }
+
+  /* Floating Animation */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* Elevation hover effect */
+  .elevation-hover {
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .elevation-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 60px hsl(186 100% 50% / 0.3);
+  }
 }
