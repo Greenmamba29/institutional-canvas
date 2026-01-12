@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useRole } from "@/context/RoleContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { GMVSummaryPanel } from "./GMVSummaryPanel";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -45,6 +45,7 @@ const adminNavItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Marketplace', path: '/marketplace', icon: Store },
   { label: 'Auctions', path: '/auctions', icon: Gavel, count: 14 },
+  { label: 'Recycling', path: '/recycling', icon: Activity, count: 3 },
   { label: 'Bids', path: '/bids', icon: Target, count: 5 },
   { label: 'RFQs', path: '/rfqs', icon: FileText, count: 8 },
   { label: 'Deals', path: '/deals', icon: Handshake },
@@ -61,6 +62,7 @@ const adminNavItems = [
 // TODO: Realtime publish later: subscribe to bid events + notification events
 const supplierNavItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Recycling', path: '/recycling', icon: Activity, count: 2 },
   { label: 'RFQs', path: '/rfqs', icon: FileText, count: 15 },
   { label: 'Auctions', path: '/auctions', icon: Gavel, count: 2 },
   { label: 'Bid Activity', path: '/bids', icon: Target, count: 3 },
@@ -80,7 +82,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { viewMode } = useRole();
+  const { viewMode } = useOrganization();
 
   const isActive = (path: string) => location.pathname.startsWith(path);
   const navItems = viewMode === 'supplier' ? supplierNavItems : adminNavItems;
@@ -102,9 +104,9 @@ export function LayoutShell({ children }: LayoutShellProps) {
             </div>
             {sidebarOpen && (
               <div className="flex flex-col">
-                <span className="font-bold text-lg tracking-tight">Lithium & Lux</span>
+                <span className="font-bold text-lg tracking-tight">LithiumBuy</span>
                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                  {viewMode === 'supplier' ? 'Supplier Terminal' : 'Mission Control'}
+                  {viewMode === 'supplier' ? 'Recycling & Supply' : 'Mission Control'}
                 </span>
               </div>
             )}
@@ -246,8 +248,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
               <Sparkles className="h-5 w-5 text-accent-foreground" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-lg">Lithium & Lux</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Trading</span>
+              <span className="font-bold text-lg">LithiumBuy</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Recycling & Supply</span>
             </div>
           </Link>
           <Button

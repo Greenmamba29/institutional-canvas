@@ -32,8 +32,8 @@ export default function Marketplace() {
     <LayoutShell>
       <div className="space-y-6 animate-fade-in">
         <PageHeader
-          title="Marketplace"
-          description="Browse verified lithium and battery metals listings"
+          title="Lithium & Recycling Marketplace"
+          description="Browse verified listings for primary lithium and advanced battery recycling materials"
           icon={Store}
         />
 

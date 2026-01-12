@@ -87,7 +87,7 @@ export default function Onboarding() {
               <Sparkles className="h-6 w-6 text-accent-foreground" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold mb-2">Welcome to Lithium & Lux</h1>
+          <h1 className="text-2xl font-bold mb-2">Welcome to LithiumBuy</h1>
           <p className="text-muted-foreground">
             {user?.email && `Signed in as ${user.email}`}
           </p>

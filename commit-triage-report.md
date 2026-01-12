@@ -25,7 +25,7 @@ Generated: 12/25/2025, 10:05:49 PM
 
 - **gpt-engineer-app[bot]**: 66 commits
 - **Greenmamba29**: 26 commits
-- **Lovable**: 1 commits
+- **Frontend**: 1 commits
 
 ## Commits by Category
 
@@ -39,9 +39,9 @@ Generated: 12/25/2025, 10:05:49 PM
 | `bdf91b8` | 2025-12-26 | gpt-engineer-app[bot] | Changes |
 | `2bbd84f` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
 | `14cd375` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
-| `73d5d31` | 2025-12-25 | gpt-engineer-app[bot] | Lovable update |
+| `73d5d31` | 2025-12-25 | gpt-engineer-app[bot] | Frontend update |
 | `2badd1d` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
-| `86da7a1` | 2025-12-25 | gpt-engineer-app[bot] | Lovable update |
+| `86da7a1` | 2025-12-25 | gpt-engineer-app[bot] | Frontend update |
 | `769a750` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
 | `850f277` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
 | `ad33fa2` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
@@ -50,15 +50,15 @@ Generated: 12/25/2025, 10:05:49 PM
 | `8bd6725` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
 | `d4c0fb5` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
 | `766a32e` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
-| `8b28495` | 2025-12-25 | gpt-engineer-app[bot] | Lovable update |
+| `8b28495` | 2025-12-25 | gpt-engineer-app[bot] | Frontend update |
 | `9ec2cf0` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
-| `bc41933` | 2025-12-25 | gpt-engineer-app[bot] | Lovable update |
+| `bc41933` | 2025-12-25 | gpt-engineer-app[bot] | Frontend update |
 | `1955ed4` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
 | `2568cc4` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
-| `e82f2e5` | 2025-12-25 | gpt-engineer-app[bot] | Lovable update |
+| `e82f2e5` | 2025-12-25 | gpt-engineer-app[bot] | Frontend update |
 | `6851249` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
 | `0f32c8f` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
-| `f77624c` | 2025-12-25 | gpt-engineer-app[bot] | Lovable update |
+| `f77624c` | 2025-12-25 | gpt-engineer-app[bot] | Frontend update |
 | `c3bca5c` | 2025-12-25 | gpt-engineer-app[bot] | Changes |
 | `5dcd936` | 2025-12-24 | gpt-engineer-app[bot] | Switch to suppliers_public view |
 | `2a27a44` | 2025-12-24 | gpt-engineer-app[bot] | Changes |
@@ -80,7 +80,7 @@ Generated: 12/25/2025, 10:05:49 PM
 | `174437c` | 2025-12-18 | gpt-engineer-app[bot] | Changes |
 | `b1fb615` | 2025-12-18 | gpt-engineer-app[bot] | Build institutional scaffold MVP |
 | `fbb8244` | 2025-12-18 | gpt-engineer-app[bot] | Changes |
-| `bebc3a2` | 2025-01-01 | Lovable | template: new_style_vite_react_shadcn_ts |
+| `bebc3a2` | 2025-01-01 | Frontend | template: new_style_vite_react_shadcn_ts |
 
 ### ✨ Feature (25)
 
@@ -101,7 +101,7 @@ Generated: 12/25/2025, 10:05:49 PM
 | `24d71e5` | 2025-12-23 | Greenmamba29 | feat: complete Stream 0 - Backend finalization |
 | `6f78e8f` | 2025-12-23 | Greenmamba29 | docs: add divide & conquer MVP implementation plan |
 | `2da5358` | 2025-12-23 | Greenmamba29 | feat: add organizations, org_members, purchases tables with  |
-| `5fa60ff` | 2025-12-23 | Greenmamba29 | docs: add SKILLS.md for Lovable/Warp orchestration |
+| `5fa60ff` | 2025-12-23 | Greenmamba29 | docs: add SKILLS.md for Frontend/Warp orchestration |
 | `2b477d3` | 2025-12-23 | Greenmamba29 | feat: apply Lithium Buy domain core migration |
 | `d41e653` | 2025-12-23 | Greenmamba29 | docs: add comprehensive schema verification tests |
 | `e744a5b` | 2025-12-23 | Greenmamba29 | feat(backend): add purchase table enhancements |
@@ -175,9 +175,9 @@ Generated: 12/25/2025, 10:05:49 PM
 | `be35ab0` | 2025-12-24 | Greenmamba29 | ✨ Feature | Add comprehensive deployment and PicaOS workflow d |
 | `00dda5e` | 2025-12-25 | gpt-engineer-app[bot] | ✨ Feature | Add org_id to core tables |
 | `14cd375` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
-| `73d5d31` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Lovable update |
+| `73d5d31` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Frontend update |
 | `2badd1d` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
-| `86da7a1` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Lovable update |
+| `86da7a1` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Frontend update |
 | `769a750` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
 | `5170358` | 2025-12-25 | gpt-engineer-app[bot] | 🐛 Bug Fix | Improve auth redirect handling |
 | `850f277` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
@@ -191,17 +191,17 @@ Generated: 12/25/2025, 10:05:49 PM
 | `d4c0fb5` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
 | `6862c62` | 2025-12-25 | gpt-engineer-app[bot] | ✨ Feature | Improve warn-level validation |
 | `766a32e` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
-| `8b28495` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Lovable update |
+| `8b28495` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Frontend update |
 | `9ec2cf0` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
-| `bc41933` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Lovable update |
+| `bc41933` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Frontend update |
 | `1955ed4` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
 | `520bce0` | 2025-12-25 | gpt-engineer-app[bot] | 🐛 Bug Fix | Refactor warn issues to viewMode |
 | `2568cc4` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
-| `e82f2e5` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Lovable update |
+| `e82f2e5` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Frontend update |
 | `6851249` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
 | `77fc06e` | 2025-12-25 | gpt-engineer-app[bot] | 🐛 Bug Fix | Fix security issues from scan |
 | `0f32c8f` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
-| `f77624c` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Lovable update |
+| `f77624c` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Frontend update |
 | `c3bca5c` | 2025-12-25 | gpt-engineer-app[bot] | 📦 Other | Changes |
 | `5dcd936` | 2025-12-24 | gpt-engineer-app[bot] | 📦 Other | Switch to suppliers_public view |
 | `2a27a44` | 2025-12-24 | gpt-engineer-app[bot] | 📦 Other | Changes |

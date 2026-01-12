@@ -3,11 +3,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/context/AuthContext";
-import { OrganizationProvider } from "@/context/OrganizationContext";
-import { RoleProvider } from "@/context/RoleContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { OrganizationProvider, useOrganization } from "@/context/OrganizationContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -40,59 +41,72 @@ const queryClient = new QueryClient({
   },
 });
 
+const AppContent = () => {
+  const { isLoading: authLoading } = useAuth();
+  const { isLoading: orgLoading } = useOrganization();
+
+  if (authLoading || orgLoading) {
+    return <LoadingScreen message="Initializing LithiumBuy..." />;
+  }
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/auth" element={<Auth />} />
+        
+        {/* Protected routes - using Outlet pattern */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/marketplace/:id" element={<Marketplace />} />
+          <Route path="/rfqs" element={<RFQs />} />
+          <Route path="/rfqs/:id" element={<RFQs />} />
+          <Route path="/bids" element={<Bids />} />
+          <Route path="/auctions" element={<Auctions />} />
+          <Route path="/auctions/:id" element={<Auctions />} />
+          <Route path="/deals" element={<Deals />} />
+          <Route path="/deals/:id" element={<Deals />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/purchases" element={<Purchases />} />
+          <Route path="/telebuy" element={<TeleBuy />} />
+          <Route path="/telebuy/session/:id" element={<TeleBuy />} />
+          <Route path="/ai-studio" element={<AIStudio />} />
+          <Route path="/data" element={<Data />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/billing" element={<Billing />} />
+          <Route path="/settings/team" element={<Team />} />
+          <Route path="/team" element={<Team />} />
+          <Route path="/verification" element={<Verification />} />
+          <Route path="/messages" element={<Messages />} />
+        </Route>
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <OrganizationProvider>
-          <RoleProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <OrganizationProvider>
             <NotificationProvider>
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
-                <BrowserRouter>
-                  <Routes>
-                    {/* Public routes */}
-                    <Route path="/auth" element={<Auth />} />
-                    
-                    {/* Protected routes - using Outlet pattern */}
-                    <Route element={<ProtectedRoute />}>
-                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/onboarding" element={<Onboarding />} />
-                      <Route path="/marketplace" element={<Marketplace />} />
-                      <Route path="/marketplace/:id" element={<Marketplace />} />
-                      <Route path="/rfqs" element={<RFQs />} />
-                      <Route path="/rfqs/:id" element={<RFQs />} />
-                      <Route path="/bids" element={<Bids />} />
-                      <Route path="/auctions" element={<Auctions />} />
-                      <Route path="/auctions/:id" element={<Auctions />} />
-                      <Route path="/deals" element={<Deals />} />
-                      <Route path="/deals/:id" element={<Deals />} />
-                      <Route path="/orders" element={<Orders />} />
-                      <Route path="/purchases" element={<Purchases />} />
-                      <Route path="/telebuy" element={<TeleBuy />} />
-                      <Route path="/telebuy/session/:id" element={<TeleBuy />} />
-                      <Route path="/ai-studio" element={<AIStudio />} />
-                      <Route path="/data" element={<Data />} />
-                      <Route path="/analytics" element={<Analytics />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/settings/billing" element={<Billing />} />
-                      <Route path="/settings/team" element={<Team />} />
-                      <Route path="/team" element={<Team />} />
-                      <Route path="/verification" element={<Verification />} />
-                      <Route path="/messages" element={<Messages />} />
-                    </Route>
-                    
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </BrowserRouter>
+                <AppContent />
               </TooltipProvider>
             </NotificationProvider>
-          </RoleProvider>
-        </OrganizationProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+          </OrganizationProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

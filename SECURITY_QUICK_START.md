@@ -160,7 +160,7 @@ For complete details, see: `SECURITY_FIXES.md`
 - [ ] Ran RLS verification query
 - [ ] Tested audit logging
 - [ ] Set up monitoring alerts
-- [ ] Re-ran Lovable security scan
+- [ ] Re-ran Frontend security scan
 
 ## 🆘 SUPPORT
 

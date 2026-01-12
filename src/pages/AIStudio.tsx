@@ -16,22 +16,22 @@ export default function AIStudio() {
           <div className="p-4 rounded-full bg-accent/10 mb-6">
             <Lock className="h-12 w-12 text-accent" />
           </div>
-          <h1 className="text-3xl font-bold mb-3">SPOT.ai Market Intelligence</h1>
+          <h1 className="text-3xl font-bold mb-3">Lithium & Recycling Intelligence</h1>
           <p className="text-muted-foreground max-w-md mb-6">
-            Unlock AI-powered lithium price forecasting, supplier matching, and deal risk analysis.
+            Dominate the market with AI-powered lithium price forecasting, recycling yield matching, and deal risk analysis.
           </p>
           <div className="space-y-2 text-left mb-8">
             <div className="flex items-center gap-2 text-sm">
               <Sparkles className="h-4 w-4 text-accent" />
-              <span>Real-time lithium price forecasting</span>
+              <span>Real-time lithium & recycling price forecasting</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Target className="h-4 w-4 text-accent" />
-              <span>AI-powered supplier matching</span>
+              <span>AI-powered lithium recycling supplier matching</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <TrendingUp className="h-4 w-4 text-accent" />
-              <span>Deal risk analysis</span>
+              <span>Black mass & circular economy risk analysis</span>
             </div>
           </div>
           <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
@@ -45,8 +45,8 @@ export default function AIStudio() {
   return (
     <LayoutShell>
       <PageHeader
-        title="AI Studio"
-        description="SPOT.ai market intelligence and price forecasting"
+        title="Lithium & Recycling AI Studio"
+        description="Market intelligence and price forecasting for primary and secondary lithium markets"
       />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
@@ -54,12 +54,12 @@ export default function AIStudio() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-accent" />
-              Price Forecast
+              Material Forecast
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              AI-powered lithium price predictions based on market data.
+              AI-powered predictions for lithium carbonate, hydroxide, and recycled black mass.
             </p>
           </CardContent>
         </Card>
@@ -68,12 +68,12 @@ export default function AIStudio() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-accent" />
-              Supplier Matching
+              Circular Matching
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Find the best suppliers for your specific requirements.
+              Find the best primary and recycling partners for your supply chain requirements.
             </p>
           </CardContent>
         </Card>
@@ -82,12 +82,12 @@ export default function AIStudio() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-accent" />
-              Risk Analysis
+              Market Volatility
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Evaluate deal risks and market volatility.
+              Evaluate global supply risks and secondary market volatility.
             </p>
           </CardContent>
         </Card>

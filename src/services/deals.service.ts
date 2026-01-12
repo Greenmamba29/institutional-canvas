@@ -1,5 +1,5 @@
 /**
- * Deals Service - Lithium & Lux RPC Layer
+ * Deals Service - LithiumBuy RPC Layer
  * 
  * Uses create_deal, update_deal_status, respond_to_offer RPCs with input validation.
  * All write operations require an authenticated Supabase client.

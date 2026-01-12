@@ -4,18 +4,18 @@
 **Institutional Canvas / Lithium Buy** - Institutional Trading Platform
 - **Supabase Project**: `vuekwckknfjivjighhfd`
 - **GitHub**: `git@github.com:Greenmamba29/institutional-canvas.git`
-- **Frontend**: Lovable-managed
+- **Frontend**: Frontend-managed
 - **Backend**: Warp-managed
 
 ---
 
 ## Workflow Architecture
 
-### 1. Lovable → Frontend Truth
+### 1. Frontend → Frontend Truth
 **Responsibility**: UI, Routes, Components
 
 **Process**:
-1. Edits UI components in Lovable
+1. Edits UI components in Frontend
 2. Commits changes to GitHub (automatic)
 3. Updates Notion Frontend DB with:
    - Commit URL
@@ -81,7 +81,7 @@ git push origin main
 ---
 
 ### 3. GitHub → Single Source of Truth
-**Responsibility**: Handshake between Lovable and Warp
+**Responsibility**: Handshake between Frontend and Warp
 
 **Rules**:
 - All changes MUST go through GitHub
@@ -202,13 +202,13 @@ institutional-canvas/
 
 ## Integration Rules
 
-### Lovable → Warp Dependencies
-When Lovable needs backend support:
+### Frontend → Warp Dependencies
+When Frontend needs backend support:
 
 1. **Create Issue/Task**: Document the backend requirement
 2. **Warp Implements**: Create migration, RPC, or Edge Function
 3. **Warp Commits**: Push backend changes to GitHub
-4. **Lovable Pulls**: Get latest types and integrate
+4. **Frontend Pulls**: Get latest types and integrate
 5. **Test**: Verify integration works end-to-end
 
 ### Conflict Resolution
@@ -253,7 +253,7 @@ When Lovable needs backend support:
 - [ ] Changes committed and pushed to GitHub
 
 ### After Deploying
-- [ ] Verify deployment on Lovable preview
+- [ ] Verify deployment on Frontend preview
 - [ ] Test critical user flows
 - [ ] Monitor Edge Function logs
 - [ ] Check database query performance
@@ -297,7 +297,7 @@ supabase functions deploy <name>
 
 ## Contact & Support
 - **Warp Agent**: Backend operations, migrations, Edge Functions
-- **Lovable**: Frontend UI, component changes, routing
+- **Frontend**: Frontend UI, component changes, routing
 - **GitHub**: Source of truth, all changes synced here
 - **Supabase Dashboard**: https://supabase.com/dashboard/project/vuekwckknfjivjighhfd
 

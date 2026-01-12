@@ -1,5 +1,5 @@
 /**
- * RFQs Service - Lithium & Lux RPC Layer
+ * RFQs Service - LithiumBuy RPC Layer
  * 
  * Uses create_rfq and list_rfqs RPCs with input validation.
  * All write operations require an authenticated Supabase client.

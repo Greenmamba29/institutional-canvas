@@ -1,5 +1,5 @@
 /**
- * Auctions Service - Lithium & Lux RPC Layer
+ * Auctions Service - LithiumBuy RPC Layer
  * 
  * Uses list_auctions and place_auction_bid RPCs with input validation.
  * All write operations require an authenticated Supabase client.

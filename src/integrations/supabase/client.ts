@@ -14,7 +14,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-    flowType: 'pkce', // Use PKCE flow (redirect-based, no popups) - works in iframes like Lovable
+    flowType: 'pkce', // Use PKCE flow (redirect-based, no popups) for secure authentication
     detectSessionInUrl: true, // Detect session in URL hash (for redirect flows)
   }
 });

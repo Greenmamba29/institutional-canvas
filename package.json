@@ -1,14 +1,35 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "lithiumbuy",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "LithiumBuy - B2B Lithium Trading Platform for Institutional Procurement",
+  "author": "LithiumBuy <hello@lithiumbuy.com>",
+  "license": "UNLICENSED",
+  "homepage": "https://lithiumbuy.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lithiumbuy/platform"
+  },
+  "keywords": [
+    "lithium",
+    "trading",
+    "B2B",
+    "marketplace",
+    "procurement",
+    "battery-materials",
+    "EV",
+    "supply-chain"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -63,6 +84,11 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.2.1",
+    "@vitest/coverage-v8": "^1.3.1",
+    "jsdom": "^24.0.0",
+    "vitest": "^1.3.1",
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.16.5",
@@ -74,7 +100,6 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
-    "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

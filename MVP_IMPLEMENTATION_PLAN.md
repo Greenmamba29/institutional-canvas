@@ -31,8 +31,8 @@
 
 ## 🔀 Parallel Workstreams (After Stream 0)
 
-### Stream 1: Core Auth & Infrastructure (Lovable) - 1 hour
-**Owner**: Lovable Agent  
+### Stream 1: Core Auth & Infrastructure (Frontend) - 1 hour
+**Owner**: Frontend Agent  
 **Priority**: CRITICAL - Blocks all other frontend work
 
 #### Tasks:
@@ -59,8 +59,8 @@
 
 ---
 
-### Stream 2A: Real-time Foundation (Lovable) - 45 min
-**Owner**: Lovable Agent  
+### Stream 2A: Real-time Foundation (Frontend) - 45 min
+**Owner**: Frontend Agent  
 **Depends on**: Stream 1 complete  
 **Runs parallel with**: Stream 2B
 
@@ -87,8 +87,8 @@
 
 ---
 
-### Stream 2B: Action Forms & Interactions (Lovable) - 1.5 hours
-**Owner**: Lovable Agent  
+### Stream 2B: Action Forms & Interactions (Frontend) - 1.5 hours
+**Owner**: Frontend Agent  
 **Depends on**: Stream 1 complete  
 **Runs parallel with**: Stream 2A
 
@@ -119,8 +119,8 @@
 
 ---
 
-### Stream 3: Dashboard & Analytics (Lovable) - 1 hour
-**Owner**: Lovable Agent  
+### Stream 3: Dashboard & Analytics (Frontend) - 1 hour
+**Owner**: Frontend Agent  
 **Depends on**: Stream 1 + 2B complete
 
 #### Tasks:
@@ -140,8 +140,8 @@
 
 ---
 
-### Stream 4: Organizations & Purchases (Lovable) - 1 hour
-**Owner**: Lovable Agent  
+### Stream 4: Organizations & Purchases (Frontend) - 1 hour
+**Owner**: Frontend Agent  
 **Depends on**: Stream 1 complete  
 **Can run parallel with**: Stream 2A/2B
 
@@ -173,8 +173,8 @@
 
 ---
 
-### Stream 5: Polish & Cleanup (Lovable) - 30 min
-**Owner**: Lovable Agent  
+### Stream 5: Polish & Cleanup (Frontend) - 30 min
+**Owner**: Frontend Agent  
 **Depends on**: All streams above complete
 
 #### Tasks:
@@ -217,24 +217,24 @@
 ### Phase 1: Foundation (Sequential)
 ```
 Warp:    [Stream 0: 30min] → Push seed data + verification
-Lovable: Wait for Warp → [Stream 1: 1hr] → Auth working
+Frontend: Wait for Warp → [Stream 1: 1hr] → Auth working
 ```
 
 ### Phase 2: Parallel Build (Concurrent)
 ```
-Lovable Track A: [Stream 2A: 45min - Realtime] ──┐
-Lovable Track B: [Stream 2B: 1.5hr - Forms]    ──┼→ Merge
-Lovable Track C: [Stream 4: 1hr - Orgs/POs]    ──┘
+Frontend Track A: [Stream 2A: 45min - Realtime] ──┐
+Frontend Track B: [Stream 2B: 1.5hr - Forms]    ──┼→ Merge
+Frontend Track C: [Stream 4: 1hr - Orgs/POs]    ──┘
 ```
 
 ### Phase 3: Integration (Sequential)
 ```
-Lovable: [Stream 3: 1hr - Dashboard] → Use data from 2A/2B/4
+Frontend: [Stream 3: 1hr - Dashboard] → Use data from 2A/2B/4
 ```
 
 ### Phase 4: Ship (Sequential)
 ```
-Lovable: [Stream 5: 30min - Cleanup] → Build → Deploy
+Frontend: [Stream 5: 30min - Cleanup] → Build → Deploy
 ```
 
 ---
@@ -247,7 +247,7 @@ Lovable: [Stream 5: 30min - Cleanup] → Build → Deploy
 - [ ] SKILLS.md updated with organizations/purchases patterns
 - [ ] No SQL errors in migrations
 
-### Frontend (Lovable)
+### Frontend (Frontend)
 - [ ] Auth0 login/logout works
 - [ ] JWT injected into Supabase for RLS
 - [ ] Can create RFQ as buyer

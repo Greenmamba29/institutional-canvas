@@ -1,4 +1,4 @@
-import { useRole, ViewMode } from '@/context/RoleContext';
+import { useOrganization, ViewMode } from '@/context/OrganizationContext';
 import { cn } from '@/lib/utils';
 
 const viewModes: { value: ViewMode; label: string }[] = [
@@ -8,7 +8,7 @@ const viewModes: { value: ViewMode; label: string }[] = [
 ];
 
 export function RoleSwitcher() {
-  const { viewMode, setViewMode } = useRole();
+  const { viewMode, setViewMode } = useOrganization();
 
   return (
     <div className="flex items-center bg-secondary/50 rounded-lg p-1 border border-border/50">

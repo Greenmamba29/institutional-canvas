@@ -225,7 +225,7 @@ INSERT INTO rfqs (org_id, created_by, title, description, target_quantity, targe
 
 ## 🧪 Testing Checklist
 
-### Phase 1-4 Verification (Lovable Complete)
+### Phase 1-4 Verification (Frontend Complete)
 - [ ] Start dev server: `npm run dev`
 - [ ] Visit http://localhost:5173
 - [ ] Click "Login" → Redirects to Auth0
@@ -371,7 +371,7 @@ ORDER BY routine_name;
 2. Get their Auth0 user IDs (sub values)
 3. Insert test organizations + org_members in Supabase (2 minutes)
 4. Test login flow with all 3 users (5 minutes)
-5. Proceed to Phase 5 implementation with Lovable
+5. Proceed to Phase 5 implementation with Frontend
 
 **Total Setup Time**: ~15 minutes
 

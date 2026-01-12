@@ -218,7 +218,7 @@ export default function TeleBuy() {
     <LayoutShell>
       <PageHeader
         title="TeleBuy Connect"
-        description="Video-first negotiation platform for B2B lithium deals"
+        description="Video-first negotiation platform for B2B lithium and recycling deals"
       />
 
       <div className="flex gap-6 mt-6">

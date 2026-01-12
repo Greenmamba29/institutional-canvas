@@ -71,7 +71,7 @@ supabase gen types typescript --linked > src/integrations/supabase/types.ts
 
 | Area | Owner | Actions |
 |------|-------|---------|
-| **Frontend** | Lovable | UI, components, routes |
+| **Frontend** | Frontend | UI, components, routes |
 | **Backend** | Warp | Schema, migrations, Edge Functions, types |
 | **Truth** | GitHub | All changes synced here |
 
@@ -104,4 +104,4 @@ supabase migration list
 
 - Issues? Check [WORKFLOW.md](../WORKFLOW.md) Troubleshooting section
 - Warp handles: Backend, DB, Edge Functions
-- Lovable handles: Frontend, UI, Components
+- Frontend handles: Frontend, UI, Components

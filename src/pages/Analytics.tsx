@@ -18,8 +18,8 @@ export default function Analytics() {
     <LayoutShell>
       <div className="space-y-6 animate-fade-in">
         <PageHeader
-          title="Analytics"
-          description="Market intelligence and price indicators"
+          title="Lithium & Recycling Analytics"
+          description="Global market intelligence and price indicators for primary and secondary lithium"
           icon={TrendingUp}
         />
 
@@ -84,7 +84,7 @@ export default function Analytics() {
         {/* Market Overview */}
         <div className="grid lg:grid-cols-3 gap-4">
           <KpiCard
-            title="Global Trading Volume"
+            title="Global Material Volume"
             value="$2.4B"
             change={8.5}
             changeLabel="vs last month"

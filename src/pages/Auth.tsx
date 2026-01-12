@@ -211,8 +211,8 @@ export default function Auth() {
     },
     {
       icon: Zap,
-      title: 'Real-Time Trading',
-      description: 'Live auctions, instant RFQs, and AI-powered price discovery',
+      title: 'Lithium Recycling',
+      description: 'Advanced marketplace for black mass and closed-loop battery materials',
     },
     {
       icon: Globe,
@@ -242,8 +242,8 @@ export default function Auth() {
                 <Sparkles className="h-6 w-6 text-accent-foreground" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">Lithium & Lux</h1>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest">B2B Trading Platform</p>
+                <h1 className="text-2xl font-bold tracking-tight">LithiumBuy</h1>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest">Lithium & Recycling Marketplace</p>
               </div>
             </div>
           </div>
@@ -251,12 +251,11 @@ export default function Auth() {
           <div className="space-y-8">
             <div>
               <h2 className="text-4xl font-bold leading-tight mb-4">
-                The Future of<br />
-                <span className="text-gradient-primary">Lithium Trading</span>
+                The Global Authority in<br />
+                <span className="text-gradient-primary">Lithium & Recycling</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-md">
-                Institutional-grade marketplace for battery metals. Secure transactions, 
-                verified suppliers, and AI-powered market intelligence.
+                The world's leading institutional marketplace for primary lithium procurement and advanced battery recycling.
               </p>
             </div>
 
@@ -291,8 +290,8 @@ export default function Auth() {
               <Sparkles className="h-6 w-6 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">Lithium & Lux</h1>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest">Trading Platform</p>
+              <h1 className="text-xl font-bold">LithiumBuy</h1>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest">Lithium & Recycling</p>
             </div>
           </div>
 
@@ -384,7 +383,7 @@ export default function Auth() {
                       ? 'Enter your email to receive a reset link'
                       : isSignUp 
                         ? 'Enter your details to get started' 
-                        : 'Sign in to access your trading dashboard'}
+                        : 'Sign in to the Lithium & Recycling console'}
                   </p>
                 </div>
 

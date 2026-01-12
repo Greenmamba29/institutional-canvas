@@ -1,5 +1,5 @@
 /**
- * Bids Service - Lithium & Lux RPC Layer
+ * Bids Service - LithiumBuy RPC Layer
  * 
  * Uses submit_bid and withdraw_bid RPCs with input validation.
  * All write operations require an authenticated Supabase client.

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LayoutShell } from "@/components/layout/LayoutShell";
-import { useRole } from "@/context/RoleContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
 import { TabBar } from "@/components/shared/TabBar";
 import { SystemAlert } from "@/components/shared/SystemAlert";
@@ -26,31 +26,31 @@ const chartData = [
 ];
 
 const auditEntries: AuditLogEntry[] = [
-  { id: '1', type: 'approved', title: 'Approved Santiago Lithium S.A.', description: 'KYB verification Tier 1 passed', timestamp: '12M AGO', action: 'REVIEW ESCROW' },
-  { id: '2', type: 'cancelled', title: 'Escrow Contract Cancelled', description: 'Order #77421 - Buyer withdrawal', timestamp: '2H AGO', action: 'ESCROW DETAILS' },
-  { id: '3', type: 'flagged', title: 'Flagged CleanTech Ventures', description: 'Purity mismatch reported by auditor', timestamp: '5M AGO', action: 'REVIEW' },
-  { id: '4', type: 'withdrawal', title: 'Withdrawal Approved', description: 'Batch ID: B990212001MT', timestamp: '6H AGO', action: 'SETTLEMENT' },
+  { id: '1', type: 'approved', title: 'Lithium Recycling Certificate', description: 'Batch #R-2025-99 verified', timestamp: '12M AGO', action: 'VIEW CREDENTIALS' },
+  { id: '2', type: 'cancelled', title: 'Black Mass Trade Cancelled', description: 'Order #77421 - Logistics delay', timestamp: '2H AGO', action: 'DETAILS' },
+  { id: '3', type: 'flagged', title: 'Recycling Purity Flag', description: 'Secondary Li-Carbonate below 99.5%', timestamp: '5M AGO', action: 'REVIEW' },
+  { id: '4', type: 'withdrawal', title: 'Sustainable Source Verified', description: 'Closed-loop certification active', timestamp: '6H AGO', action: 'CERTIFICATE' },
 ];
 
 const trustedPartners: TrustedPartner[] = [
-  { id: '1', name: 'LithiumCorp Chile', verified: true, verificationTier: 'gold', ytdRevenue: 3750000, product: 'Lithium Carbonate', pricePerMT: 83250, responseTime: '4.2H' },
-  { id: '2', name: 'Albemarle Corp', verified: true, verificationTier: 'gold', ytdRevenue: 5200000, product: 'Lithium Hydroxide', pricePerMT: 24500, responseTime: '2.1H' },
+  { id: '1', name: 'Lithium Recycling Global', verified: true, verificationTier: 'gold', ytdRevenue: 3750000, product: 'Recycled Lithium', pricePerMT: 83250, responseTime: '4.2H' },
+  { id: '2', name: 'EcoBattery Solutions', verified: true, verificationTier: 'gold', ytdRevenue: 5200000, product: 'Black Mass (Co/Ni/Li)', pricePerMT: 24500, responseTime: '2.1H' },
 ];
 
 const upcomingAuctions = [
-  { id: '1', company: 'LithiumCorp', countryCode: 'CL', verified: true, volume: 60, product: 'Lithium Carbonate', pricePerMT: 66500 },
-  { id: '2', company: 'Pilbara Minerals', countryCode: 'AU', verified: true, volume: 120, product: 'Spodumene', pricePerMT: 2850 },
+  { id: '1', company: 'LithiumRecycle', countryCode: 'DE', verified: true, volume: 60, product: 'Recycled Carbonate', pricePerMT: 66500 },
+  { id: '2', company: 'GreenLi Tech', countryCode: 'CA', verified: true, volume: 120, product: 'Black Mass', pricePerMT: 2850 },
 ];
 
 const escrowedAssets = [
-  { description: 'Li-Hydroxide LCE', remainder: '4.2k', gain: 1.2 },
-  { description: 'Carbonate Batch A', remainder: '1.8k', gain: -0.4 },
+  { description: 'Recycled Li-Hydroxide', remainder: '4.2k', gain: 1.2 },
+  { description: 'Black Mass Concentrate', remainder: '1.8k', gain: -0.4 },
   { description: 'Spodumene Conc.', remainder: '12.4k', gain: 5.6 },
-  { description: 'Chloride Purified', remainder: '0.9k', gain: 0.1 },
+  { description: 'Secondary Carbonate', remainder: '0.9k', gain: 0.1 },
 ];
 
 export default function Dashboard() {
-  const { viewMode } = useRole();
+  const { viewMode } = useOrganization();
   const [activeTab, setActiveTab] = useState(viewMode === 'supplier' ? 'overview' : 'dashboard');
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: priceData } = usePriceTicker();
@@ -60,10 +60,10 @@ export default function Dashboard() {
     : [{ id: 'dashboard', label: 'DASHBOARD' }, { id: 'auctions', label: 'AUCTION LISTINGS' }, { id: 'performance', label: 'PERFORMANCE' }];
 
   const breadcrumbs = viewMode === 'supplier'
-    ? [{ label: 'PLATFORM' }, { label: 'SUPPLIER DESK' }, { label: 'DASHBOARD' }]
-    : [{ label: 'PLATFORM' }, { label: 'TRADING DESK' }, { label: 'OVERVIEW' }];
+    ? [{ label: 'PLATFORM' }, { label: 'RECYCLING & SUPPLY' }, { label: 'DASHBOARD' }]
+    : [{ label: 'PLATFORM' }, { label: 'RECYCLING CONSOLE' }, { label: 'OVERVIEW' }];
 
-  const title = viewMode === 'supplier' ? 'Supplier Performance Terminal' : 'Institutional Trading Console';
+  const title = viewMode === 'supplier' ? 'Lithium & Recycling Supply Terminal' : 'Global Lithium & Recycling Console';
 
   const renderTabContent = () => {
     // Supplier tabs

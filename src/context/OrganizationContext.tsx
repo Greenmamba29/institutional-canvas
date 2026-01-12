@@ -5,24 +5,41 @@ import { Database } from '@/integrations/supabase/types';
 
 type Organization = Database['public']['Tables']['organizations']['Row'];
 
+export type ViewMode = 'admin' | 'supplier' | 'buyer';
+
 interface OrganizationContextType {
   currentOrg: Organization | null;
   currentOrgId: string | null;
   organizations: Organization[];
   isLoading: boolean;
   hasOrganization: boolean;
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
   switchOrg: (orgId: string) => void;
   refetch: () => void;
 }
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
-const ORG_STORAGE_KEY = 'lithium-lux-current-org';
+const ORG_STORAGE_KEY = 'lithium-buy-current-org';
+const VIEW_MODE_STORAGE_KEY = 'lithium-buy-view-mode';
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { data: organizations = [], isLoading: orgsLoading, refetch } = useMyOrganizations();
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
+  const [viewMode, setViewModeState] = useState<ViewMode>(() => {
+    const stored = localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+    if (stored === 'admin' || stored === 'supplier' || stored === 'buyer') {
+      return stored;
+    }
+    return 'buyer';
+  });
+
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeState(mode);
+    localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+  }, []);
 
   // Load saved org preference on mount and when organizations change
   useEffect(() => {
@@ -59,6 +76,8 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         organizations,
         isLoading,
         hasOrganization,
+        viewMode,
+        setViewMode,
         switchOrg,
         refetch,
       }}

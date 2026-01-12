@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LayoutShell } from "@/components/layout/LayoutShell";
-import { useRole } from "@/context/RoleContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
 import { TabBar } from "@/components/shared/TabBar";
 import { StatusPill } from "@/components/shared/StatusPill";
@@ -30,7 +30,7 @@ function formatVolume(volume: number, unit: string): string {
 }
 
 export default function RFQs() {
-  const { viewMode } = useRole();
+  const { viewMode } = useOrganization();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<'all' | 'submitted' | 'closed' | 'awarded'>('all');
   const [activeTab, setActiveTab] = useState('live');
@@ -107,10 +107,10 @@ export default function RFQs() {
   return (
     <LayoutShell>
       <div className="space-y-6 animate-fade-in">
-        <BreadcrumbNav items={[{ label: 'PLATFORM' }, { label: 'TRADING DESK' }, { label: 'RFQs' }]} />
+        <BreadcrumbNav items={[{ label: 'PLATFORM' }, { label: 'SUPPLY CHAIN' }, { label: 'LITHIUM & RECYCLING RFQs' }]} />
         
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Live RFQs</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Lithium & Recycling RFQs</h1>
           <CreateRFQDialog />
         </div>
 

@@ -15,7 +15,7 @@
 - [x] TypeScript types regenerated
 - [x] Created seed data script (`supabase/seed.sql`)
   - 2 organizations (Tesla buyer, Albemarle supplier)
-  - 2 org_members with Auth0 subs
+  - 2 org_members with Supabase Auth user IDs
   - 3 RFQs
   - 5 bids
   - 1 deal (awarded & accepted)
@@ -28,9 +28,9 @@
 
 ## 🚧 IN PROGRESS
 
-### Stream 1: Core Auth & Infrastructure (Lovable) - ✅ COMPLETE
+### Stream 1: Core Auth & Infrastructure (Frontend) - ✅ COMPLETE
 **Duration**: ~1 hour  
-**Owner**: Lovable Agent  
+**Owner**: Frontend Agent  
 
 #### Tasks:
 - [x] Use **Supabase Auth** (not Auth0) - confirmed with team
@@ -48,32 +48,32 @@
 
 ## 📋 TODO (After Stream 1)
 
-### Stream 2A: Real-time Foundation (Lovable) - 45 min
+### Stream 2A: Real-time Foundation (Frontend) - 45 min
 - [ ] Create `useRealtimeSubscription` hook
 - [ ] Update NotificationContext with backend RPCs
 - [ ] Add realtime to useRFQs, useAuctions, useDeals, useBids
 
-### Stream 2B: Action Forms (Lovable) - 1.5 hours
+### Stream 2B: Action Forms (Frontend) - 1.5 hours
 - [ ] CreateRFQDialog component
 - [ ] SubmitBidForm component  
 - [ ] DealResponseButtons component
 - [ ] AwardDealButton component
 - [ ] Wire up to RFQs/Bids/Deals pages
 
-### Stream 3: Dashboard (Lovable) - 1 hour
+### Stream 3: Dashboard (Frontend) - 1 hour
 - [ ] Create useDashboardStats hook
 - [ ] Update Dashboard with real data
 - [ ] Add price ticker
 - [ ] Show user's organizations
 
-### Stream 4: Orgs & Purchases (Lovable) - 1 hour
+### Stream 4: Orgs & Purchases (Frontend) - 1 hour
 - [ ] Create organizations.service.ts
 - [ ] Create purchases.service.ts
 - [ ] Create useOrganizations/usePurchases hooks
 - [ ] Build Purchases page
 - [ ] CreatePurchaseDialog component
 
-### Stream 5: Polish (Lovable) - 30 min
+### Stream 5: Polish (Frontend) - 30 min
 - [ ] Archive legacy services
 - [ ] Fix TypeScript errors
 - [ ] Build verification
@@ -86,12 +86,12 @@
 | Stream | Status | Duration | Owner | Dependencies |
 |--------|--------|----------|-------|--------------|
 | 0: Backend | ✅ DONE | 30 min | Warp | None |
-| 1: Auth | 🔄 NEXT | 1 hour | Lovable | Stream 0 |
-| 2A: Realtime | ⏳ TODO | 45 min | Lovable | Stream 1 |
-| 2B: Forms | ⏳ TODO | 1.5 hrs | Lovable | Stream 1 |
-| 3: Dashboard | ⏳ TODO | 1 hour | Lovable | Streams 1, 2B |
-| 4: Orgs/POs | ⏳ TODO | 1 hour | Lovable | Stream 1 |
-| 5: Cleanup | ⏳ TODO | 30 min | Lovable | All above |
+| 1: Auth | 🔄 NEXT | 1 hour | Frontend | Stream 0 |
+| 2A: Realtime | ⏳ TODO | 45 min | Frontend | Stream 1 |
+| 2B: Forms | ⏳ TODO | 1.5 hrs | Frontend | Stream 1 |
+| 3: Dashboard | ⏳ TODO | 1 hour | Frontend | Streams 1, 2B |
+| 4: Orgs/POs | ⏳ TODO | 1 hour | Frontend | Stream 1 |
+| 5: Cleanup | ⏳ TODO | 30 min | Frontend | All above |
 
 **Estimated Remaining Time**: 3-4 hours (with parallelization)
 
@@ -153,7 +153,7 @@
 
 ## 🚀 Next Action
 
-**START STREAM 1** in Lovable:
+**START STREAM 1** in Frontend:
 1. Install `@auth0/auth0-react`
 2. Create AuthContext with useAuth hook
 3. Inject JWT into Supabase client
