@@ -6,16 +6,18 @@ import { TabBar } from "@/components/shared/TabBar";
 import { SystemAlert } from "@/components/shared/SystemAlert";
 import { SparklineChart } from "@/components/shared/SparklineChart";
 import { GMVChart } from "@/components/dashboard/GMVChart";
-import { AuditLog, AuditLogEntry } from "@/components/dashboard/AuditLog";
-import { TrustedPartners, TrustedPartner } from "@/components/dashboard/TrustedPartners";
+import { AuditLog } from "@/components/dashboard/AuditLog";
+import { TrustedPartners } from "@/components/dashboard/TrustedPartners";
 import { MetricsReview } from "@/components/dashboard/MetricsReview";
 import { BottomKPIs } from "@/components/dashboard/BottomKPIs";
 import { WeeklyAuctionSnapshot } from "@/components/supplier/WeeklyAuctionSnapshot";
 import { UpcomingAuctions } from "@/components/supplier/UpcomingAuctions";
-import { TrendingUp, DollarSign, Activity, Lock } from "lucide-react";
 import { useDashboardStats, usePriceTicker } from "@/hooks/useDashboardStats";
+import { useAuditLog } from "@/hooks/useAuditLog";
+import { usePartners } from "@/hooks/usePartners";
+import { useEscrowedAssets } from "@/hooks/useEscrowedAssets";
+import { useAuctions } from "@/hooks/useAuctions";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DashboardKPISkeleton } from "@/components/ui/skeleton-loaders";
 
 const chartData = [
   { date: 'Oct 1', value: 42000 },
@@ -26,35 +28,31 @@ const chartData = [
   { date: 'Oct 26', value: 66300 },
 ];
 
-const auditEntries: AuditLogEntry[] = [
-  { id: '1', type: 'approved', title: 'Approved Santiago Lithium S.A.', description: 'KYB verification Tier 1 passed', timestamp: '12M AGO', action: 'REVIEW ESCROW' },
-  { id: '2', type: 'cancelled', title: 'Escrow Contract Cancelled', description: 'Order #77421 - Buyer withdrawal', timestamp: '2H AGO', action: 'ESCROW DETAILS' },
-  { id: '3', type: 'flagged', title: 'Flagged CleanTech Ventures', description: 'Purity mismatch reported by auditor', timestamp: '5M AGO', action: 'REVIEW' },
-  { id: '4', type: 'withdrawal', title: 'Withdrawal Approved', description: 'Batch ID: B990212001MT', timestamp: '6H AGO', action: 'SETTLEMENT' },
-];
-
-const trustedPartners: TrustedPartner[] = [
-  { id: '1', name: 'LithiumCorp Chile', verified: true, verificationTier: 'gold', ytdRevenue: 3750000, product: 'Lithium Carbonate', pricePerMT: 83250, responseTime: '4.2H' },
-  { id: '2', name: 'Albemarle Corp', verified: true, verificationTier: 'gold', ytdRevenue: 5200000, product: 'Lithium Hydroxide', pricePerMT: 24500, responseTime: '2.1H' },
-];
-
-const upcomingAuctions = [
-  { id: '1', company: 'LithiumCorp', countryCode: 'CL', verified: true, volume: 60, product: 'Lithium Carbonate', pricePerMT: 66500 },
-  { id: '2', company: 'Pilbara Minerals', countryCode: 'AU', verified: true, volume: 120, product: 'Spodumene', pricePerMT: 2850 },
-];
-
-const escrowedAssets = [
-  { description: 'Li-Hydroxide LCE', remainder: '4.2k', gain: 1.2 },
-  { description: 'Carbonate Batch A', remainder: '1.8k', gain: -0.4 },
-  { description: 'Spodumene Conc.', remainder: '12.4k', gain: 5.6 },
-  { description: 'Chloride Purified', remainder: '0.9k', gain: 0.1 },
-];
-
 export default function Dashboard() {
   const { uiLayoutPreference } = useRole();
   const [activeTab, setActiveTab] = useState(uiLayoutPreference === 'supplier' ? 'overview' : 'dashboard');
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: priceData } = usePriceTicker();
+  
+  // Real data hooks
+  const { data: auditEntries = [], isLoading: auditLoading } = useAuditLog(4);
+  const { data: trustedPartners = [], isLoading: partnersLoading } = usePartners(2);
+  const { data: escrowedAssets = [], isLoading: escrowLoading } = useEscrowedAssets(4);
+  const { data: auctions = [], isLoading: auctionsLoading } = useAuctions();
+
+  // Transform auctions to the format expected by UpcomingAuctions
+  const upcomingAuctions = auctions
+    .filter(a => a.status === 'scheduled' || a.status === 'live')
+    .slice(0, 2)
+    .map(auction => ({
+      id: auction.id,
+      company: auction.title,
+      countryCode: 'CL', // Default, could be derived from org location
+      verified: true,
+      volume: auction.reserve_price ? Math.floor(auction.reserve_price / 1000) : 60,
+      product: auction.description || 'Lithium Product',
+      pricePerMT: auction.reserve_price ?? 66500,
+    }));
 
   // UI layout determines which tabs/breadcrumbs to show - this is cosmetic, not authorization
   const tabs = uiLayoutPreference === 'supplier' 
@@ -200,6 +198,14 @@ export default function Dashboard() {
                 lotType="Carbonate & Hydroxide"
                 verifiedBidders={21}
               />
+            ) : partnersLoading ? (
+              <div className="glass-panel rounded-xl p-6">
+                <Skeleton className="h-6 w-40 mb-4" />
+                <div className="space-y-3">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              </div>
             ) : (
               <TrustedPartners partners={trustedPartners} />
             )}
@@ -212,13 +218,36 @@ export default function Dashboard() {
               grossMerchandise={52.1}
               stackedData={52}
               verificationMedia={17}
-              escrowedAssets={escrowedAssets}
+              escrowedAssets={escrowLoading ? [] : escrowedAssets}
             />
             
             {uiLayoutPreference === 'supplier' ? (
-              <UpcomingAuctions auctions={upcomingAuctions} />
+              auctionsLoading ? (
+                <div className="glass-panel rounded-xl p-6">
+                  <Skeleton className="h-6 w-40 mb-4" />
+                  <div className="space-y-3">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                </div>
+              ) : (
+                <UpcomingAuctions auctions={upcomingAuctions.length > 0 ? upcomingAuctions : [
+                  { id: '1', company: 'No upcoming auctions', countryCode: 'XX', verified: false, volume: 0, product: '-', pricePerMT: 0 }
+                ]} />
+              )
+            ) : auditLoading ? (
+              <div className="glass-panel rounded-xl p-6">
+                <Skeleton className="h-6 w-40 mb-4" />
+                <div className="space-y-3">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              </div>
             ) : (
-              <AuditLog entries={auditEntries} />
+              <AuditLog entries={auditEntries.length > 0 ? auditEntries : [
+                { id: '0', type: 'approved', title: 'No recent activity', description: 'Activity will appear here', timestamp: 'NOW', action: 'VIEW' }
+              ]} />
             )}
           </div>
         </div>

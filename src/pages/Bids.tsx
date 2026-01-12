@@ -15,6 +15,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { useBids } from "@/hooks/useBids";
+import { AwardDealButton } from "@/components/bid/AwardDealButton";
 import type { Bid } from "@/services/bids.service";
 
 function formatCurrency(value: number): string {
@@ -97,8 +98,21 @@ export default function Bids() {
     {
       key: 'is_withdrawn',
       header: 'Status',
-      className: 'text-right',
       render: (bid: Bid) => <StatusPill status={bid.is_withdrawn ? 'withdrawn' : 'active'} />
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      className: 'text-right',
+      render: (bid: Bid) => !bid.is_withdrawn ? (
+        <AwardDealButton
+          bidId={bid.id}
+          supplierId={bid.supplier_id}
+          rfqId={bid.rfq_id}
+          bidPrice={bid.price}
+          bidQuantity={bid.quantity ?? undefined}
+        />
+      ) : null
     }
   ];
 
