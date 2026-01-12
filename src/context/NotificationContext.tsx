@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useCallback, useMemo } from 'react';
-import { useNotifications as useNotificationsQuery, useMarkNotificationRead } from '@/hooks/useNotifications';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/context/AuthContext';
+import { getNotifications, markNotificationRead } from '@/services/notifications.service';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import type { Database } from '@/integrations/supabase/types';
 
 type DbNotification = Database['public']['Tables']['notifications']['Row'];
@@ -85,8 +88,34 @@ function transformNotification(dbNotification: DbNotification): Notification {
 }
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const { data: dbNotifications = [], isLoading } = useNotificationsQuery();
-  const markReadMutation = useMarkNotificationRead();
+  const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Only subscribe to realtime when authenticated
+  useRealtimeSubscription({
+    table: 'notifications',
+    event: '*',
+    queryKey: ['notifications'],
+    enabled: isAuthenticated,
+  });
+
+  // Only query notifications when authenticated
+  const { data: dbNotifications = [], isLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const { data, error } = await getNotifications();
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: isAuthenticated, // Only run when authenticated
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
 
   // Transform DB notifications to UI format
   const notifications = useMemo(() => 
