@@ -1,5 +1,5 @@
 -- =========================================
--- Security Fixes for Lovable Security Scan
+-- Security Fixes for Frontend Security Scan
 -- Date: 2024-12-24
 -- =========================================
 
