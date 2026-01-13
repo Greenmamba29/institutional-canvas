@@ -91,40 +91,45 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Section - SEO Optimized */}
       <section className="relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-6">
         <div className="max-w-7xl mx-auto text-center relative z-10">
           {/* Enterprise Badge */}
           <Badge className="mb-8 px-4 py-2 text-sm font-medium bg-accent/10 text-accent border-accent/30 hover:bg-accent/20">
             <Sparkles className="w-4 h-4 mr-2" />
-            Enterprise 2.0 — Now Available
+            #1 Platform to Buy Lithium Online
           </Badge>
 
-          {/* Massive Typography */}
+          {/* SEO H1 - Primary Keywords */}
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
-            <span className="apple-text-gradient">Intelligence</span>
+            <span className="apple-text-gradient">Buy Lithium</span>
             <br />
-            <span className="gold-text-gradient">Verified.</span>
+            <span className="gold-text-gradient">From Verified Suppliers</span>
           </h1>
 
+          {/* SEO Subheading with Keywords */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10">
-            The first procurement platform powered by a{' '}
-            <span className="text-primary font-medium">Neural Trust Layer</span> and{' '}
-            <span className="text-accent font-medium">real-time negotiation intelligence</span>.
+            The world's largest <strong className="text-foreground">lithium marketplace</strong> with{' '}
+            <span className="text-primary font-medium">312+ verified lithium suppliers</span>.{' '}
+            Buy <span className="text-accent font-medium">lithium carbonate</span>,{' '}
+            <span className="text-accent font-medium">lithium hydroxide</span>, and{' '}
+            battery-grade lithium at the best prices.
           </p>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons with SEO Text */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             <Link to="/auth">
               <Button size="lg" className="neon-btn-cyan text-lg px-8 py-6">
-                Start Trading
+                Buy Lithium Now
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-6 glass-basic">
-              <Video className="w-5 h-5 mr-2" />
-              Watch Demo
-            </Button>
+            <Link to="/marketplace">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6 glass-basic">
+                <Globe2 className="w-5 h-5 mr-2" />
+                Browse Lithium Suppliers
+              </Button>
+            </Link>
           </div>
 
           {/* 3D Tablet Frame with Hero Image */}
@@ -139,7 +144,7 @@ export default function Landing() {
                 <div className="relative rounded-2xl overflow-hidden border border-border/50">
                   <img 
                     src={telebuyImg} 
-                    alt="LithiumBuy Platform Interface" 
+                    alt="Buy lithium online - LithiumBuy marketplace interface showing verified lithium suppliers and real-time lithium prices" 
                     className="w-full h-auto"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
@@ -149,32 +154,32 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Floating Stats */}
+        {/* Floating Stats - SEO Trust Signals */}
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-8 md:gap-16">
           <div className="text-center">
             <div className="text-3xl md:text-4xl font-bold text-primary">$2.4B+</div>
-            <div className="text-sm text-muted-foreground">Transaction Volume</div>
+            <div className="text-sm text-muted-foreground">Lithium Traded</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-accent">127</div>
-            <div className="text-sm text-muted-foreground">Enterprise Buyers</div>
+            <div className="text-3xl md:text-4xl font-bold text-accent">312</div>
+            <div className="text-sm text-muted-foreground">Verified Suppliers</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-success">99.9%</div>
-            <div className="text-sm text-muted-foreground">Uptime SLA</div>
+            <div className="text-3xl md:text-4xl font-bold text-success">47</div>
+            <div className="text-sm text-muted-foreground">Countries</div>
           </div>
         </div>
       </section>
 
-      {/* Trusted By Section */}
-      <section className="py-16 border-y border-border/30">
+      {/* Trusted By Section - SEO Social Proof */}
+      <section className="py-16 border-y border-border/30" aria-label="Lithium buyers trust LithiumBuy">
         <div className="max-w-7xl mx-auto px-6">
           <p className="text-center text-sm text-muted-foreground mb-8 tracking-widest uppercase">
-            Trusted by Industry Leaders
+            Where EV Battery Manufacturers Buy Lithium
           </p>
           <div className="flex flex-wrap items-center justify-center gap-12 opacity-50">
             {['Tesla', 'CATL', 'Panasonic', 'BYD', 'Samsung SDI', 'LG Energy'].map((name) => (
-              <div key={name} className="text-xl font-semibold text-muted-foreground">
+              <div key={name} className="text-xl font-semibold text-muted-foreground" aria-label={`${name} buys lithium on LithiumBuy`}>
                 {name}
               </div>
             ))}
@@ -182,16 +187,16 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features Bento Grid */}
-      <section id="features" className="py-24 px-6">
+      {/* Features Bento Grid - SEO H2s */}
+      <section id="features" className="py-24 px-6" aria-label="Lithium trading platform features">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/30">Features</Badge>
+            <Badge className="mb-4 bg-primary/10 text-primary border-primary/30">Why Buy Lithium on LithiumBuy</Badge>
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              Built for <span className="text-gradient-primary">Enterprise</span>
+              The Best Place to <span className="text-gradient-primary">Buy Lithium Online</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Every feature designed for billion-dollar procurement workflows
+              Enterprise lithium procurement with verified suppliers, real-time lithium prices, and AI-powered matching
             </p>
           </div>
 
@@ -256,39 +261,39 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* SPOT.ai Card */}
+            {/* SPOT.ai Card - SEO Lithium Price */}
             <div className="glass-basic rounded-3xl p-6 spotlight-sweep relative overflow-hidden">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
                   <BarChart3 className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold">SPOT.ai</h3>
+                <h3 className="text-xl font-bold">Real-Time Lithium Prices</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Real-time lithium price forecasting powered by market intelligence.
+                Live lithium carbonate price per ton. Track lithium hydroxide prices and market trends.
               </p>
               <div className="glass-inset rounded-xl p-4">
                 <div className="flex items-end gap-2 mb-2">
                   <span className="text-2xl font-bold text-primary font-mono">$24,500</span>
-                  <span className="text-sm text-muted-foreground">/MT</span>
+                  <span className="text-sm text-muted-foreground">/metric ton</span>
                 </div>
                 <div className="flex items-center gap-2 text-success">
                   <TrendingUp className="w-4 h-4" />
-                  <span className="text-sm font-medium">+3.2% vs yesterday</span>
+                  <span className="text-sm font-medium">Lithium carbonate spot price</span>
                 </div>
               </div>
             </div>
 
-            {/* Global Coverage Card */}
+            {/* Global Lithium Suppliers Card */}
             <div className="glass-basic rounded-3xl p-6 relative overflow-hidden">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-success/20 flex items-center justify-center">
                   <Globe2 className="w-5 h-5 text-success" />
                 </div>
-                <h3 className="text-xl font-bold">Global Coverage</h3>
+                <h3 className="text-xl font-bold">Global Lithium Suppliers</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Access verified suppliers across 47 countries and 6 continents.
+                Buy lithium from verified suppliers in Chile, Australia, China, Argentina and 43 more countries.
               </p>
               <div className="flex items-center gap-4">
                 <div className="text-center">
@@ -297,11 +302,11 @@ export default function Landing() {
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold">312</div>
-                  <div className="text-xs text-muted-foreground">Suppliers</div>
+                  <div className="text-xs text-muted-foreground">Lithium Suppliers</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold">24/7</div>
-                  <div className="text-xs text-muted-foreground">Support</div>
+                  <div className="text-xs text-muted-foreground">Trading</div>
                 </div>
               </div>
             </div>
@@ -417,16 +422,16 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-6">
+      {/* Pricing Section - SEO */}
+      <section id="pricing" className="py-24 px-6" aria-label="Lithium trading platform pricing">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/30">Pricing</Badge>
+            <Badge className="mb-4 bg-primary/10 text-primary border-primary/30">Lithium Trading Plans</Badge>
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              Simple, <span className="text-gradient-primary">Transparent</span> Pricing
+              Start Buying Lithium <span className="text-gradient-primary">Today</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Start free, upgrade when you're ready
+              From startup battery labs to Fortune 500 manufacturers — buy lithium at every scale
             </p>
           </div>
 
@@ -532,28 +537,28 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 px-6">
+      {/* CTA Section - SEO */}
+      <section className="py-24 px-6" aria-label="Start buying lithium">
         <div className="max-w-4xl mx-auto text-center glass-frosted rounded-3xl p-12 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
           <div className="relative z-10">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Ready to transform your procurement?
+              Ready to Buy Lithium from Verified Suppliers?
             </h2>
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join 127+ enterprise buyers already using LithiumBuy for their critical supply chain needs.
+              Join 847+ companies buying lithium carbonate and lithium hydroxide on the world's #1 lithium marketplace.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/auth">
                 <Button size="lg" className="neon-btn-gold text-lg px-8">
                   <Building2 className="w-5 h-5 mr-2" />
-                  Start Enterprise Trial
+                  Buy Lithium Now
                 </Button>
               </Link>
-              <Link to="/auth">
+              <Link to="/marketplace">
                 <Button size="lg" variant="outline" className="text-lg px-8 glass-basic">
-                  <Users className="w-5 h-5 mr-2" />
-                  Schedule Demo
+                  <Globe2 className="w-5 h-5 mr-2" />
+                  View Lithium Suppliers
                 </Button>
               </Link>
             </div>
@@ -561,23 +566,63 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-16 px-6 border-t border-border/30">
+      {/* Footer - SEO */}
+      <footer className="py-16 px-6 border-t border-border/30" role="contentinfo">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <Zap className="w-5 h-5 text-primary-foreground" />
+          <div className="grid md:grid-cols-4 gap-8 mb-12">
+            {/* Brand */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <span className="text-xl font-bold">LithiumBuy</span>
               </div>
-              <span className="text-xl font-bold">LithiumBuy</span>
+              <p className="text-sm text-muted-foreground">
+                The #1 marketplace to buy lithium online. Verified lithium carbonate and lithium hydroxide suppliers worldwide.
+              </p>
             </div>
             
-            <p className="text-muted-foreground text-center">
-              Designed for the future of procurement.
-            </p>
+            {/* Buy Lithium */}
+            <div>
+              <h4 className="font-semibold mb-4">Buy Lithium</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/marketplace" className="hover:text-foreground transition-colors">Lithium Carbonate</Link></li>
+                <li><Link to="/marketplace" className="hover:text-foreground transition-colors">Lithium Hydroxide</Link></li>
+                <li><Link to="/marketplace" className="hover:text-foreground transition-colors">Battery Grade Lithium</Link></li>
+                <li><Link to="/marketplace" className="hover:text-foreground transition-colors">Lithium Suppliers</Link></li>
+              </ul>
+            </div>
             
+            {/* Resources */}
+            <div>
+              <h4 className="font-semibold mb-4">Lithium Prices</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#features" className="hover:text-foreground transition-colors">Lithium Price Today</a></li>
+                <li><a href="#features" className="hover:text-foreground transition-colors">Lithium Price per Ton</a></li>
+                <li><a href="#features" className="hover:text-foreground transition-colors">Lithium Market Intelligence</a></li>
+                <li><a href="#features" className="hover:text-foreground transition-colors">Lithium Trading</a></li>
+              </ul>
+            </div>
+            
+            {/* Company */}
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition-colors">About LithiumBuy</a></li>
+                <li><Link to="/auth" className="hover:text-foreground transition-colors">Sign In</Link></li>
+                <li><a href="mailto:sales@lithiumbuy.com" className="hover:text-foreground transition-colors">Contact Sales</a></li>
+                <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 border-t border-border/30">
             <p className="text-sm text-muted-foreground">
-              © 2026 LithiumBuy. All rights reserved.
+              © 2026 LithiumBuy. The world's #1 lithium marketplace. All rights reserved.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Buy lithium carbonate • Buy lithium hydroxide • Lithium suppliers • Lithium price • Battery lithium
             </p>
           </div>
         </div>
