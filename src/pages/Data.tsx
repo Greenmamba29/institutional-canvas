@@ -3,12 +3,31 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Database, Download, FileSpreadsheet, BarChart3, Lock } from "lucide-react";
+import { useIsAdmin, useRole } from "@/context/RoleContext";
 
 export default function Data() {
-  // TODO: Implement subscription gating via useSubscription hook
-  const isPro = false; // Mock - will be replaced with actual subscription check
+  // Server-validated admin check (from org_members table)
+  const isAdmin = useIsAdmin();
+  const { isLoadingRole } = useRole();
+  
+  // TODO: Implement actual subscription check via useSubscription hook
+  const isPro = false; // Mock - will be replaced with subscription tier check
+  
+  // Grant access if user is admin OR has pro subscription
+  const hasAccess = isAdmin || isPro;
 
-  if (!isPro) {
+  // Show loading state while checking role
+  if (isLoadingRole) {
+    return (
+      <LayoutShell>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin h-8 w-8 border-4 border-accent border-t-transparent rounded-full" />
+        </div>
+      </LayoutShell>
+    );
+  }
+
+  if (!hasAccess) {
     return (
       <LayoutShell>
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
