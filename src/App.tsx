@@ -12,6 +12,20 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CompareFloatingBar } from "@/components/compare/CompareFloatingBar";
 import { GlobalSearchCommand } from "@/components/search/GlobalSearchCommand";
+import { useAuth } from "@/context/AuthContext";
+
+// Authenticated-only global features
+function AuthenticatedFeatures() {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return null;
+  
+  return (
+    <>
+      <GlobalSearchCommand />
+      <CompareFloatingBar />
+    </>
+  );
+}
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -62,8 +76,7 @@ const App = () => {
                     <Toaster />
                     <Sonner />
                     <BrowserRouter>
-                      <GlobalSearchCommand />
-                      <CompareFloatingBar />
+                      <AuthenticatedFeatures />
                       <Routes>
                     {/* Public routes */}
                     <Route path="/" element={<Landing />} />
