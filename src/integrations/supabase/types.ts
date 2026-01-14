@@ -705,6 +705,42 @@ export type Database = {
           },
         ]
       }
+      compliance_checks: {
+        Row: {
+          check_date: string | null
+          check_id: string
+          check_type: string | null
+          created_at: string | null
+          documents: string[] | null
+          findings: string | null
+          resolved: boolean | null
+          status: string | null
+          supplier_id: string | null
+        }
+        Insert: {
+          check_date?: string | null
+          check_id?: string
+          check_type?: string | null
+          created_at?: string | null
+          documents?: string[] | null
+          findings?: string | null
+          resolved?: boolean | null
+          status?: string | null
+          supplier_id?: string | null
+        }
+        Update: {
+          check_date?: string | null
+          check_id?: string
+          check_type?: string | null
+          created_at?: string | null
+          documents?: string[] | null
+          findings?: string | null
+          resolved?: boolean | null
+          status?: string | null
+          supplier_id?: string | null
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           conversation: Json | null
@@ -2528,6 +2564,48 @@ export type Database = {
           },
         ]
       }
+      soe_organizations: {
+        Row: {
+          category: string | null
+          country: string | null
+          created_at: string | null
+          enhanced_supplier_access: boolean | null
+          government_entity: string | null
+          government_id_documents: string[] | null
+          jurisdiction: string | null
+          name: string
+          soe_id: string
+          updated_at: string | null
+          verification_status: string | null
+        }
+        Insert: {
+          category?: string | null
+          country?: string | null
+          created_at?: string | null
+          enhanced_supplier_access?: boolean | null
+          government_entity?: string | null
+          government_id_documents?: string[] | null
+          jurisdiction?: string | null
+          name: string
+          soe_id?: string
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Update: {
+          category?: string | null
+          country?: string | null
+          created_at?: string | null
+          enhanced_supplier_access?: boolean | null
+          government_entity?: string | null
+          government_id_documents?: string[] | null
+          jurisdiction?: string | null
+          name?: string
+          soe_id?: string
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string | null
@@ -2985,6 +3063,36 @@ export type Database = {
           role?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_id: string
+          event_type: string
+          payload: Json | null
+          status: string | null
+          trigger_date: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_id?: string
+          event_type: string
+          payload?: Json | null
+          status?: string | null
+          trigger_date?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_id?: string
+          event_type?: string
+          payload?: Json | null
+          status?: string | null
+          trigger_date?: string | null
         }
         Relationships: []
       }
