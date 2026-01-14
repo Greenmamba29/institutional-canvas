@@ -4,12 +4,16 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * UI layout preference - ONLY for switching between UI layouts/views.
+ * Organization type from database - determines which navigation/dashboard to show.
+ * This is SERVER-VALIDATED and should be used for navigation gating.
+ */
+export type OrgType = 'admin' | 'supplier' | 'buyer' | 'soe' | null;
+
+/**
+ * UI layout preference - ONLY for admin override/testing.
+ * @deprecated For navigation gating, use orgType from organization context.
  * This is stored in localStorage and can be manipulated by users.
- * 
- * @warning DO NOT use this for authorization decisions.
- * Use serverRole (fetched from database) for any security-related logic.
- * This is purely cosmetic - determines which dashboard/navigation to show.
+ * Regular users should NOT use this - only admins for testing different views.
  */
 export type UILayoutPreference = 'admin' | 'supplier' | 'buyer' | 'soe';
 
@@ -22,19 +26,30 @@ export type ServerRole = 'owner' | 'admin' | 'member' | null;
 
 interface RoleContextType {
   /**
-   * UI layout preference - for switching between different UI layouts.
-   * @warning NOT for security/authorization. Use serverRole instead.
-   * This is a user-controlled cosmetic preference stored in localStorage.
+   * Organization type from database - determines navigation layout.
+   * Use this for navigation gating (what tabs to show).
+   */
+  orgType: OrgType;
+  
+  /**
+   * UI layout preference - ONLY for admin override/testing.
+   * @deprecated For regular users, navigation should use orgType.
+   * Only admins can use this to test different dashboard views.
    */
   uiLayoutPreference: UILayoutPreference;
   setUILayoutPreference: (layout: UILayoutPreference) => void;
   
   /**
-   * Server-validated role from org_members table.
+   * Server-validated role from org_members table (owner/admin/member).
    * Use this for all authorization-related UI decisions.
    */
   serverRole: ServerRole;
   isLoadingRole: boolean;
+  
+  /**
+   * Whether the current user can switch layouts (admin org only).
+   */
+  canSwitchLayouts: boolean;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
@@ -43,9 +58,14 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, user } = useAuth();
   const { currentOrg } = useOrganization();
   
-  // UI layout preference - stored in localStorage for UI preference only
-  // WARNING: This is user-controlled and should NEVER be used for authorization
-  // It only determines which dashboard layout and navigation to display
+  // Derive orgType from current organization's org_type field
+  const orgType: OrgType = currentOrg?.org_type as OrgType ?? null;
+  
+  // Only admin org_type users can switch layouts (for testing purposes)
+  const canSwitchLayouts = orgType === 'admin';
+  
+  // UI layout preference - stored in localStorage for admin override only
+  // WARNING: This should ONLY be used by admins for testing different views
   const [uiLayoutPreference, setUILayoutPreference] = useState<UILayoutPreference>(() => {
     const stored = localStorage.getItem('lithium-lux-ui-layout');
     if (stored === 'admin' || stored === 'supplier' || stored === 'buyer' || stored === 'soe') {
@@ -108,10 +128,12 @@ export function RoleProvider({ children }: { children: ReactNode }) {
 
   return (
     <RoleContext.Provider value={{ 
+      orgType,
       uiLayoutPreference, 
       setUILayoutPreference,
       serverRole,
       isLoadingRole,
+      canSwitchLayouts,
     }}>
       {children}
     </RoleContext.Provider>
@@ -144,4 +166,21 @@ export function useIsOwner(): boolean {
   const { serverRole, isLoadingRole } = useRole();
   if (isLoadingRole) return false;
   return serverRole === 'owner';
+}
+
+/**
+ * Helper to get the effective layout type for navigation.
+ * For admin orgs, respects uiLayoutPreference for testing.
+ * For all other orgs, uses the actual org_type.
+ */
+export function useEffectiveLayout(): OrgType {
+  const { orgType, uiLayoutPreference, canSwitchLayouts } = useRole();
+  
+  // Admin orgs can use the UI switcher for testing different views
+  if (canSwitchLayouts) {
+    return uiLayoutPreference as OrgType;
+  }
+  
+  // All other orgs use their actual org_type
+  return orgType;
 }

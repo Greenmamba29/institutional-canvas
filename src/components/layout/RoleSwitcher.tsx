@@ -2,9 +2,12 @@ import { useRole, UILayoutPreference } from '@/context/RoleContext';
 import { cn } from '@/lib/utils';
 
 /**
- * UI Layout Switcher - allows users to switch between different dashboard layouts.
+ * UI Layout Switcher - ADMIN ONLY.
+ * Allows admin org users to switch between different dashboard layouts for testing.
  * This is purely cosmetic and does NOT affect authorization.
- * All authorization decisions use serverRole from RoleContext.
+ * 
+ * @note This component should only be rendered for admin org_type users.
+ * Regular buyers, suppliers, and SOE users should NOT see this component.
  */
 const layoutOptions: { value: UILayoutPreference; label: string }[] = [
   { value: 'admin', label: 'ADMIN' },
@@ -14,10 +17,15 @@ const layoutOptions: { value: UILayoutPreference; label: string }[] = [
 ];
 
 export function RoleSwitcher() {
-  const { uiLayoutPreference, setUILayoutPreference } = useRole();
+  const { uiLayoutPreference, setUILayoutPreference, canSwitchLayouts } = useRole();
+
+  // Only render for admin orgs
+  if (!canSwitchLayouts) {
+    return null;
+  }
 
   return (
-    <div className="flex items-center bg-secondary/50 rounded-lg p-1 border border-border/50">
+    <div className="flex items-center bg-secondary/50 rounded-lg p-1 border border-warning/30" title="Admin View Switcher (Testing Only)">
       {layoutOptions.map((option) => (
         <button
           key={option.value}
