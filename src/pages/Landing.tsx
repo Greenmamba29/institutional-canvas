@@ -13,9 +13,11 @@ import {
   CheckCircle2,
   Sparkles,
   Building2,
-  TrendingUp
+  TrendingUp,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 // Lazy load images for performance
 const lithiumHeroImg = '/logo.png'; // Fallback to logo for now
@@ -52,6 +54,7 @@ PricingFeature.displayName = 'PricingFeature';
 
 export default function Landing() {
   const [scrolled, setScrolled] = useState(false);
+  const { isAuthenticated, signOut, user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -87,16 +90,35 @@ export default function Landing() {
           </div>
           
           <div className="flex items-center gap-2 sm:gap-4">
-            <Link to="/auth">
-              <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Sign In</Button>
-            </Link>
-            <Link to="/auth">
-              <Button size="sm" className="bg-primary hover:bg-primary/90">
-                <span className="hidden sm:inline">Get Access</span>
-                <span className="sm:hidden">Start</span>
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link to="/dashboard">
+                  <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Dashboard</Button>
+                </Link>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={signOut}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <LogOut className="w-4 h-4 mr-1" />
+                  <span className="hidden sm:inline">Sign Out</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Sign In</Button>
+                </Link>
+                <Link to="/auth">
+                  <Button size="sm" className="bg-primary hover:bg-primary/90">
+                    <span className="hidden sm:inline">Get Access</span>
+                    <span className="sm:hidden">Start</span>
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
