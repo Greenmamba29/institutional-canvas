@@ -8,6 +8,7 @@ import { NotificationDropdown } from "./NotificationDropdown";
 import { CountBadge } from "@/components/shared/CountBadge";
 import { OrgSwitcher } from "@/components/org/OrgSwitcher";
 import { VerificationBadge } from "@/components/shared/VerificationBadge";
+import { UserMenu } from "@/components/auth/UserMenu";
 import {
   Store,
   FileText,
@@ -378,14 +379,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
               <NotificationDropdown />
 
               {/* User Profile */}
-              <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-border/50">
-                <div className="text-right">
-                  <p className="text-sm font-semibold">Admin User</p>
-                  <p className="text-[10px] text-muted-foreground">VERIFIED • GOLD TIER</p>
-                </div>
-                <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
-                  AU
-                </div>
+              <div className="pl-3 border-l border-border/50">
+                <UserMenu />
               </div>
             </div>
           </div>
