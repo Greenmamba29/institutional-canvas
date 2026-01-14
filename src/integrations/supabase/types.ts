@@ -878,6 +878,7 @@ export type Database = {
       }
       deals: {
         Row: {
+          airtable_id: string | null
           buyer_user_id: string
           created_at: string
           id: string
@@ -892,6 +893,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          airtable_id?: string | null
           buyer_user_id: string
           created_at?: string
           id?: string
@@ -906,6 +908,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          airtable_id?: string | null
           buyer_user_id?: string
           created_at?: string
           id?: string
@@ -1703,6 +1706,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          airtable_id: string | null
           created_at: string
           email: string | null
           government_id: string | null
@@ -1717,6 +1721,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          airtable_id?: string | null
           created_at?: string
           email?: string | null
           government_id?: string | null
@@ -1731,6 +1736,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          airtable_id?: string | null
           created_at?: string
           email?: string | null
           government_id?: string | null
@@ -2390,6 +2396,7 @@ export type Database = {
       }
       rfqs: {
         Row: {
+          airtable_id: string | null
           created_at: string
           created_by: string
           delivery_location: string | null
@@ -2405,6 +2412,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          airtable_id?: string | null
           created_at?: string
           created_by: string
           delivery_location?: string | null
@@ -2420,6 +2428,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          airtable_id?: string | null
           created_at?: string
           created_by?: string
           delivery_location?: string | null
@@ -2723,6 +2732,7 @@ export type Database = {
       }
       suppliers: {
         Row: {
+          airtable_id: string | null
           capabilities: Json | null
           claim_status: string | null
           claim_token_hash: string | null
@@ -2734,6 +2744,7 @@ export type Database = {
           verification_tier: string | null
         }
         Insert: {
+          airtable_id?: string | null
           capabilities?: Json | null
           claim_status?: string | null
           claim_token_hash?: string | null
@@ -2745,6 +2756,7 @@ export type Database = {
           verification_tier?: string | null
         }
         Update: {
+          airtable_id?: string | null
           capabilities?: Json | null
           claim_status?: string | null
           claim_token_hash?: string | null
@@ -3327,6 +3339,7 @@ export type Database = {
       create_deal: {
         Args: { p_rfq_id: string; p_supplier_id: string; p_title: string }
         Returns: {
+          airtable_id: string | null
           buyer_user_id: string
           created_at: string
           id: string
@@ -3356,6 +3369,7 @@ export type Database = {
               p_phone?: string
             }
             Returns: {
+              airtable_id: string | null
               created_at: string
               email: string | null
               government_id: string | null
@@ -3388,6 +3402,7 @@ export type Database = {
               p_soe_category?: string
             }
             Returns: {
+              airtable_id: string | null
               created_at: string
               email: string | null
               government_id: string | null
@@ -3539,6 +3554,7 @@ export type Database = {
           p_title: string
         }
         Returns: {
+          airtable_id: string | null
           created_at: string
           created_by: string
           delivery_location: string | null
@@ -3694,6 +3710,7 @@ export type Database = {
       get_my_organizations: {
         Args: never
         Returns: {
+          airtable_id: string | null
           created_at: string
           email: string | null
           government_id: string | null
@@ -3925,6 +3942,7 @@ export type Database = {
       list_rfqs: {
         Args: never
         Returns: {
+          airtable_id: string | null
           created_at: string
           created_by: string
           delivery_location: string | null
@@ -3996,6 +4014,7 @@ export type Database = {
           p_note: string
         }
         Returns: {
+          airtable_id: string | null
           buyer_user_id: string
           created_at: string
           id: string
@@ -4101,6 +4120,7 @@ export type Database = {
           p_status: Database["public"]["Enums"]["deal_status"]
         }
         Returns: {
+          airtable_id: string | null
           buyer_user_id: string
           created_at: string
           id: string
