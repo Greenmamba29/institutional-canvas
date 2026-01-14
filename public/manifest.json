@@ -1,7 +1,7 @@
 {
-  "name": "LithiumBuy - Lithium & Recycling Marketplace",
+  "name": "LithiumBuy - B2B Lithium Trading",
   "short_name": "LithiumBuy",
-  "description": "The world's leading marketplace for institutional Lithium procurement and advanced Lithium Recycling. Connecting the global EV supply chain.",
+  "description": "The world's leading B2B marketplace for institutional lithium trading. Connect with verified suppliers, manage RFQs, and execute deals securely.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0f1a",
@@ -9,7 +9,7 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
-  "categories": ["business", "finance", "productivity", "sustainability"],
+  "categories": ["business", "finance", "productivity"],
   "icons": [
     {
       "src": "/favicon.svg",
@@ -28,21 +28,32 @@
       "type": "image/png"
     }
   ],
+  "screenshots": [
+    {
+      "src": "/screenshot-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "LithiumBuy Dashboard - Real-time lithium trading metrics"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "url": "/dashboard"
-    },
-    {
-      "name": "Recycling",
-      "short_name": "Recycling",
-      "url": "/recycling"
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "RFQs",
-      "short_name": "RFQs",
-      "url": "/rfqs"
+      "short_name": "RFQs", 
+      "url": "/rfqs",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Deals",
+      "short_name": "Deals",
+      "url": "/deals",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

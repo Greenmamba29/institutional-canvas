@@ -25,13 +25,13 @@
   <text x="200" y="335" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="url(#goldGrad)" text-anchor="middle">Li</text>
   
   <!-- Company Name -->
-  <text x="340" y="270" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#ffffff">LithiumBuy</text>
+  <text x="340" y="290" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#ffffff">LithiumBuy</text>
   
   <!-- Tagline -->
-  <text x="340" y="350" font-family="Arial, sans-serif" font-size="28" fill="#D4AF37">#1 Global Lithium &amp; Recycling Marketplace</text>
+  <text x="340" y="350" font-family="Arial, sans-serif" font-size="28" fill="#D4AF37">B2B Lithium Trading Platform</text>
   
   <!-- Features -->
-  <text x="340" y="420" font-family="Arial, sans-serif" font-size="20" fill="#888888">✓ Primary Lithium Supply  •  ✓ Advanced Lithium Recycling  •  ✓ Circular Economy  •  ✓ Verified Global Scale</text>
+  <text x="340" y="420" font-family="Arial, sans-serif" font-size="20" fill="#888888"> Verified Suppliers  "   Secure Escrow  "   Real-time Bidding  "   Global Coverage</text>
   
   <!-- Bottom URL -->
   <text x="600" y="580" font-family="Arial, sans-serif" font-size="24" fill="#D4AF37" text-anchor="middle">lithiumbuy.com</text>
