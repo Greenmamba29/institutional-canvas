@@ -4007,6 +4007,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remove_org_member: {
+        Args: { p_org_id: string; p_user_id: string }
+        Returns: boolean
+      }
       respond_to_offer: {
         Args: {
           p_deal_id: string
@@ -4149,6 +4153,10 @@ export type Database = {
           p_tags?: string[]
         }
         Returns: Json
+      }
+      update_member_role: {
+        Args: { p_new_role: string; p_org_id: string; p_user_id: string }
+        Returns: boolean
       }
       update_purchase_status: {
         Args: { p_purchase_id: string; p_status: string }

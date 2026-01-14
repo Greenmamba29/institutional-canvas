@@ -34,7 +34,9 @@ import {
   Target,
   Landmark,
   ClipboardCheck,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
 
@@ -97,6 +99,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { uiLayoutPreference } = useRole();
+  const { signOut } = useAuth();
 
   const isActive = (path: string) => location.pathname.startsWith(path);
   // UI layout determines which navigation to show - this is cosmetic, not authorization
@@ -270,15 +273,25 @@ export function LayoutShell({ children }: LayoutShellProps) {
               {sidebarOpen && <span className="font-medium">{item.label}</span>}
             </Link>
           ))}
+          
+          {/* Sign Out Button */}
+          <button
+            onClick={signOut}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full text-left text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          >
+            <LogOut className="h-5 w-5 shrink-0" />
+            {sidebarOpen && <span className="font-medium">Sign Out</span>}
+          </button>
+          
           {sidebarOpen && (
             <div className="pt-3 mt-3 border-t border-border/30">
-            <p className="text-[10px] text-muted-foreground text-center tracking-widest">
-                  {uiLayoutPreference === 'supplier' 
-                    ? 'LITHIUMBUY • SUPPLIER TERMINAL' 
-                    : uiLayoutPreference === 'soe'
-                    ? 'LITHIUMBUY • GOVERNMENT PORTAL'
-                    : 'LITHIUMBUY • MISSION CONTROL'}
-                </p>
+              <p className="text-[10px] text-muted-foreground text-center tracking-widest">
+                {uiLayoutPreference === 'supplier' 
+                  ? 'LITHIUMBUY • SUPPLIER TERMINAL' 
+                  : uiLayoutPreference === 'soe'
+                  ? 'LITHIUMBUY • GOVERNMENT PORTAL'
+                  : 'LITHIUMBUY • MISSION CONTROL'}
+              </p>
             </div>
           )}
         </div>
@@ -311,7 +324,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
             <X className="h-5 w-5" />
           </Button>
         </div>
-        <nav className="p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -332,6 +345,38 @@ export function LayoutShell({ children }: LayoutShellProps) {
             </Link>
           ))}
         </nav>
+        
+        {/* Mobile Bottom nav with Sign Out */}
+        <div className="p-3 border-t border-border/50 space-y-1">
+          {bottomNavItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={() => setMobileMenuOpen(false)}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
+                isActive(item.path)
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="font-medium">{item.label}</span>
+            </Link>
+          ))}
+          
+          {/* Mobile Sign Out Button */}
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              signOut();
+            }}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full text-left text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="font-medium">Sign Out</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main content */}
