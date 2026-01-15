@@ -65,8 +65,8 @@ export default function Auctions() {
     <LayoutShell>
       <div className="space-y-6 animate-fade-in">
         <PageHeader
-          title="Auctions"
-          description="Weekly spot auctions for lithium and battery metals"
+          title="Lithium & Recycling Auctions"
+          description="Weekly spot auctions for primary lithium and battery recycling materials"
           icon={Gavel}
         />
 

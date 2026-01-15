@@ -14,7 +14,7 @@
 - **Main Contributors**: 
   - gpt-engineer-app[bot]: 66 commits
   - Greenmamba29: 26 commits
-  - Lovable: 1 commit
+  - Frontend: 1 commit
 
 ---
 

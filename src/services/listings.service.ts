@@ -1,5 +1,5 @@
 /**
- * Listings Service - Lithium & Lux RPC Layer
+ * Listings Service - LithiumBuy RPC Layer
  * 
  * Uses list_listings and get_listing RPCs
  */

@@ -1,5 +1,5 @@
 /**
- * Market Service - Lithium & Lux RPC Layer
+ * Market Service - LithiumBuy RPC Layer
  * 
  * Uses get_price_indicators RPC
  */

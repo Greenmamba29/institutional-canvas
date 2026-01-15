@@ -316,7 +316,7 @@ revoke insert, update, delete on public.auction_bids from anon, authenticated;
 revoke insert, update, delete on public.notifications from anon, authenticated;
 
 -- -----------------------------
--- RPC Functions (SECURITY DEFINER) — Lovable calls these, not direct mutations
+-- RPC Functions (SECURITY DEFINER) — Frontend calls these, not direct mutations
 -- -----------------------------
 
 -- RFQs

@@ -18,9 +18,9 @@
 
 ---
 
-### Phase 1: Auth + Organization Context (Lovable) - 2 hours
+### Phase 1: Auth + Organization Context (Frontend) - 2 hours
 **CRITICAL**: Everything else depends on this  
-**Owner**: Lovable Agent
+**Owner**: Frontend Agent
 
 #### Part A: Auth0 Integration (45 min)
 1. Install `@auth0/auth0-react`
@@ -124,9 +124,9 @@
 
 ---
 
-### Phase 2: Organization Onboarding (Lovable) - 1.5 hours
+### Phase 2: Organization Onboarding (Frontend) - 1.5 hours
 **BLOCKS**: All feature work (users need org first)  
-**Owner**: Lovable Agent
+**Owner**: Frontend Agent
 
 #### Tasks:
 1. Create `src/pages/Onboarding.tsx`:
@@ -186,9 +186,9 @@
 
 ---
 
-### Phase 3: Purchases (Lovable) - 1.5 hours
+### Phase 3: Purchases (Frontend) - 1.5 hours
 **NEW FEATURE**: Purchase order management  
-**Owner**: Lovable Agent
+**Owner**: Frontend Agent
 
 #### Tasks:
 1. Create `src/services/purchases.service.ts`:
@@ -255,9 +255,9 @@
 
 ---
 
-### Phase 4: Team Management (Lovable) - 1 hour
+### Phase 4: Team Management (Frontend) - 1 hour
 **NEW FEATURE**: Org member management  
-**Owner**: Lovable Agent
+**Owner**: Frontend Agent
 
 #### Tasks:
 1. Create `src/pages/Settings/Team.tsx`:
@@ -285,9 +285,9 @@
 
 ---
 
-### Phase 5: Update Existing Features for Multi-Tenancy (Lovable) - 2 hours
+### Phase 5: Update Existing Features for Multi-Tenancy (Frontend) - 2 hours
 **CRITICAL**: Make all features org-scoped  
-**Owner**: Lovable Agent
+**Owner**: Frontend Agent
 
 #### Tasks:
 1. Update all RPC calls to use authenticated client with org context
@@ -333,7 +333,7 @@
 
 ---
 
-### Phase 6: Action Forms (Lovable) - 1.5 hours
+### Phase 6: Action Forms (Frontend) - 1.5 hours
 **SAME AS BEFORE**: CRUD forms for RFQs, Bids, Deals
 
 #### Tasks:
@@ -347,7 +347,7 @@
 
 ---
 
-### Phase 7: Polish & Cleanup (Lovable) - 30 min
+### Phase 7: Polish & Cleanup (Frontend) - 30 min
 **SAME AS BEFORE**: Archive legacy, fix errors, deploy
 
 ---
@@ -357,13 +357,13 @@
 | Phase | Duration | Owner | Blocker? |
 |-------|----------|-------|----------|
 | 0: Backend | ✅ DONE | Warp | - |
-| 1: Auth + Org Context | 2 hours | Lovable | CRITICAL |
-| 2: Onboarding | 1.5 hours | Lovable | Phase 1 |
-| 3: Purchases | 1.5 hours | Lovable | Phase 1 |
-| 4: Team Management | 1 hour | Lovable | Phase 1 |
-| 5: Multi-Tenant Features | 2 hours | Lovable | Phase 1 |
-| 6: Action Forms | 1.5 hours | Lovable | Phase 5 |
-| 7: Cleanup | 30 min | Lovable | Phase 6 |
+| 1: Auth + Org Context | 2 hours | Frontend | CRITICAL |
+| 2: Onboarding | 1.5 hours | Frontend | Phase 1 |
+| 3: Purchases | 1.5 hours | Frontend | Phase 1 |
+| 4: Team Management | 1 hour | Frontend | Phase 1 |
+| 5: Multi-Tenant Features | 2 hours | Frontend | Phase 1 |
+| 6: Action Forms | 1.5 hours | Frontend | Phase 5 |
+| 7: Cleanup | 30 min | Frontend | Phase 6 |
 
 **Total**: ~10 hours (no parallelization due to org dependency)  
 **Can Parallelize**: Phases 3 & 4 can run parallel after Phase 1
@@ -377,7 +377,7 @@
 - [x] Seed data script ready
 - [x] SKILLS.md updated
 
-### Frontend (Lovable)
+### Frontend (Frontend)
 - [ ] Auth0 working
 - [ ] OrganizationContext provides currentOrg
 - [ ] Org onboarding flow (create/claim)
@@ -447,7 +447,7 @@ Phase 1 (Auth + Org Context)
 
 ## 🚀 Next Action
 
-**START PHASE 1** in Lovable:
+**START PHASE 1** in Frontend:
 1. Install `@auth0/auth0-react`
 2. Create AuthContext
 3. Create organizations.service.ts

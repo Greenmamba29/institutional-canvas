@@ -1,5 +1,5 @@
 /**
- * Services Index - Lithium & Lux RPC-Only Architecture
+ * Services Index - LithiumBuy RPC-Only Architecture
  */
 
 // Core RPC wrapper
@@ -8,7 +8,7 @@ export { callRpc, supabase } from '@/lib/supabase/rpc';
 // Organization helpers
 export * from './org.helper';
 
-// Lithium & Lux Domain Services
+// LithiumBuy Domain Services
 export * from './rfqs.service';
 export * from './bids.service';
 export * from './deals.service';

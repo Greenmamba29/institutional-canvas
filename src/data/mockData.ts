@@ -1,4 +1,4 @@
-// Lithium & Lux - Institutional Mock Data
+// LithiumBuy - Institutional Mock Data
 // Realistic commodities trading data for battery metals
 
 export interface Supplier {
@@ -561,6 +561,30 @@ export const auctions: Auction[] = [
 
 // PRICE INDICATORS
 export const priceIndicators: PriceIndicator[] = [
+  {
+    commodity: 'Lithium Carbonate (Recycled)',
+    spotPrice: 16500,
+    change24h: 150,
+    changePercent: 0.92,
+    high52w: 65000,
+    low52w: 12000,
+    volume24h: 1200,
+    unit: 'MT',
+    currency: 'USD',
+    lastUpdated: '2024-01-18T15:30:00Z'
+  },
+  {
+    commodity: 'Black Mass (High Ni/Li)',
+    spotPrice: 8200,
+    change24h: 450,
+    changePercent: 5.8,
+    high52w: 12000,
+    low52w: 4500,
+    volume24h: 8500,
+    unit: 'MT',
+    currency: 'USD',
+    lastUpdated: '2024-01-18T15:30:00Z'
+  },
   {
     commodity: 'Lithium Hydroxide (Battery)',
     spotPrice: 24350,

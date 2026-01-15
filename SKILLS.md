@@ -4,9 +4,9 @@
 **Lithium Buy** is an institutional trading platform for lithium and battery materials procurement. The platform enables buyers to create RFQs, manage supplier relationships, execute deals, and participate in auctions.
 
 **Tech Stack:**
-- Frontend: React 18 + TypeScript + Vite (managed in Lovable)
+- Frontend: React 18 + TypeScript + Vite (managed in Frontend)
 - Backend: Supabase (Postgres + Edge Functions)
-- Auth: Auth0 with JWT claims for `org_id` multi-tenancy
+- Auth: Supabase Auth with JWT claims for `org_id` multi-tenancy
 - Repository: https://github.com/Greenmamba29/institutional-canvas.git
 - Supabase Project: `vuekwckknfjivjighhfd`
 
@@ -14,8 +14,8 @@
 
 ## Division of Responsibilities
 
-### Lovable (Frontend)
-**What Lovable Does:**
+### Frontend (Frontend)
+**What Frontend Does:**
 - Build all React components and UI
 - Implement routing and navigation
 - Handle form validation and user interactions
@@ -24,14 +24,14 @@
 - Manage client-side state with Zustand/Context
 - Style with Tailwind CSS
 
-**What Lovable Does NOT Do:**
+**What Frontend Does NOT Do:**
 - Create or modify database schemas
 - Write SQL migrations
 - Create Edge Functions
 - Modify RLS policies
 - Generate TypeScript types from database
 
-**Lovable's Data Access Pattern:**
+**Frontend's Data Access Pattern:**
 ```typescript
 // ✅ CORRECT - Call RPC functions
 const { data, error } = await supabase.rpc('create_rfq', {
@@ -87,12 +87,13 @@ const { data } = await supabase.from('rfqs').insert({ ... });
 9. **price_indicators** - Market intelligence data
 
 ### Authentication Pattern
-**Auth0 JWT Claims:**
+**Supabase Auth JWT Claims:**
 ```json
 {
-  "org_id": "uuid-of-organization",
-  "user_id": "uuid-of-user",
-  "https://lithiumbuy.com/org_id": "uuid-of-organization"
+  "sub": "uuid-of-user",
+  "user_metadata": {
+    "org_id": "uuid-of-organization"
+  }
 }
 ```
 
@@ -297,7 +298,7 @@ type notification_type =
 
 ### 1. Creating an RFQ (Buyer Flow)
 ```typescript
-// In Lovable component
+// In Frontend component
 const CreateRFQForm = () => {
   const [formData, setFormData] = useState({ ... });
   
@@ -576,7 +577,7 @@ supabase secrets set SPOT_AI_API_KEY=xxx
 
 ## Testing Checklist
 
-### Before Lovable Starts Building UI
+### Before Frontend Starts Building UI
 - [ ] All RPC functions exist and are tested
 - [ ] TypeScript types generated and committed
 - [ ] RLS policies verified (test with different org_ids)
@@ -604,7 +605,7 @@ select * from create_rfq(
 select * from notifications where org_id = 'test-org-uuid-here';
 ```
 
-### Testing in Lovable
+### Testing in Frontend
 ```typescript
 // Add to component for debugging
 console.log('Calling create_rfq with:', params);
@@ -659,7 +660,7 @@ git push
 ## Communication Protocol
 
 ### When Frontend Needs New Functionality
-**Lovable asks Warp:**
+**Frontend asks Warp:**
 > "I need to implement [feature]. Can you create an RPC function that [does X] and returns [Y]?"
 
 **Warp responds:**
@@ -670,10 +671,10 @@ git push
 5. Replies: "✅ Function `function_name(params)` ready. Returns `Type`. Pull latest and import from `src/integrations/supabase/types.ts`"
 
 ### When Backend Schema Changes
-**Warp notifies Lovable:**
+**Warp notifies Frontend:**
 > "⚠️ Breaking change: Renamed column `old_name` to `new_name` in table X. Please update your queries."
 
-**Lovable:**
+**Frontend:**
 1. Pulls latest from GitHub
 2. Updates component imports/types
 3. Tests affected components
@@ -696,10 +697,10 @@ Co-Authored-By: Warp <agent@warp.dev>"
 git push origin main
 ```
 
-### Lovable Commits
+### Frontend Commits
 ```bash
-# Lovable's internal git workflow (automatic)
-# User commits via Lovable UI
+# Frontend's internal git workflow (automatic)
+# User commits via Frontend UI
 # Changes pushed to GitHub automatically
 ```
 
@@ -710,10 +711,10 @@ git push origin main
 ```
 institutional-canvas/
 ├── src/
-│   ├── components/          # React components (Lovable)
-│   ├── pages/              # Route pages (Lovable)
-│   ├── hooks/              # Custom hooks (Lovable)
-│   ├── lib/                # Utilities (Lovable)
+│   ├── components/          # React components (Frontend)
+│   ├── pages/              # Route pages (Frontend)
+│   ├── hooks/              # Custom hooks (Frontend)
+│   ├── lib/                # Utilities (Frontend)
 │   └── integrations/
 │       └── supabase/
 │           ├── client.ts   # Supabase client setup
@@ -730,7 +731,7 @@ institutional-canvas/
 
 ## Quick Reference
 
-### Lovable's Supabase Cheat Sheet
+### Frontend's Supabase Cheat Sheet
 ```typescript
 // ✅ Always use RPC functions
 await supabase.rpc('function_name', { params });
@@ -773,7 +774,7 @@ revoke insert, update, delete on public.table_name from anon, authenticated;
 ## Success Metrics
 
 **You know the orchestration is working when:**
-- [ ] Lovable can call any RPC function without errors
+- [ ] Frontend can call any RPC function without errors
 - [ ] TypeScript provides autocomplete for all function params
 - [ ] RLS correctly isolates data by org_id
 - [ ] Notifications are created automatically on key events

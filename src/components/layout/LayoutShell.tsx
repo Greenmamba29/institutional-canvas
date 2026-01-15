@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useRole, useEffectiveLayout } from "@/context/RoleContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { GMVSummaryPanel } from "./GMVSummaryPanel";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { CountBadge } from "@/components/shared/CountBadge";
 import { OrgSwitcher } from "@/components/org/OrgSwitcher";
 import { VerificationBadge } from "@/components/shared/VerificationBadge";
-import { UserMenu } from "@/components/auth/UserMenu";
 import {
   Store,
   FileText,
@@ -21,6 +20,7 @@ import {
   X,
   Search,
   Settings,
+  Sparkles,
   ShieldCheck,
   Users,
   Package,
@@ -32,23 +32,20 @@ import {
   Database,
   CreditCard,
   Target,
-  Landmark,
-  ClipboardCheck,
-  LogOut,
 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
 
 interface LayoutShellProps {
   children: React.ReactNode;
 }
 
-// Admin Navigation - Full platform management view
+// Buyer/Admin Navigation - MVP locked ordering
+// TODO: Realtime publish later: subscribe to bid events + notification events
 const adminNavItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Marketplace', path: '/marketplace', icon: Store },
   { label: 'Auctions', path: '/auctions', icon: Gavel, count: 14 },
+  { label: 'Recycling', path: '/recycling', icon: Activity, count: 3 },
   { label: 'Bids', path: '/bids', icon: Target, count: 5 },
   { label: 'RFQs', path: '/rfqs', icon: FileText, count: 8 },
   { label: 'Deals', path: '/deals', icon: Handshake },
@@ -61,23 +58,11 @@ const adminNavItems = [
   { label: 'Analytics', path: '/analytics', icon: TrendingUp },
 ];
 
-// Buyer Navigation - Procurement-focused view
-const buyerNavItems = [
-  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Marketplace', path: '/marketplace', icon: Store },
-  { label: 'RFQs', path: '/rfqs', icon: FileText, count: 8 },
-  { label: 'Auctions', path: '/auctions', icon: Gavel, count: 14 },
-  { label: 'Bids', path: '/bids', icon: Target, count: 5 },
-  { label: 'Deals', path: '/deals', icon: Handshake },
-  { label: 'Orders', path: '/orders', icon: Package, count: 3 },
-  { label: 'TeleBuy', path: '/telebuy', icon: Video },
-  { label: 'Messages', path: '/messages', icon: MessageSquare, count: 3 },
-  { label: 'Analytics', path: '/analytics', icon: TrendingUp },
-];
-
-// Supplier Navigation - Sales-focused view
+// Supplier Navigation - MVP locked ordering
+// TODO: Realtime publish later: subscribe to bid events + notification events
 const supplierNavItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Recycling', path: '/recycling', icon: Activity, count: 2 },
   { label: 'RFQs', path: '/rfqs', icon: FileText, count: 15 },
   { label: 'Auctions', path: '/auctions', icon: Gavel, count: 2 },
   { label: 'Bid Activity', path: '/bids', icon: Target, count: 3 },
@@ -86,19 +71,6 @@ const supplierNavItems = [
   { label: 'TeleBuy', path: '/telebuy', icon: Video },
   { label: 'Messages', path: '/messages', icon: MessageSquare, count: 3 },
   { label: 'Analytics', path: '/analytics', icon: TrendingUp },
-];
-
-// SOE Navigation - Government-focused view
-const soeNavItems = [
-  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Strategic Procurement', path: '/rfqs', icon: FileText, count: 8 },
-  { label: 'National Reserves', path: '/data', icon: Database },
-  { label: 'Supplier Registry', path: '/marketplace', icon: Store },
-  { label: 'Contracts', path: '/deals', icon: Handshake },
-  { label: 'Orders', path: '/orders', icon: Package, count: 3 },
-  { label: 'TeleBuy', path: '/telebuy', icon: Video },
-  { label: 'Compliance', path: '/verification', icon: ClipboardCheck, count: 5 },
-  { label: 'Reports', path: '/analytics', icon: TrendingUp },
 ];
 
 const bottomNavItems = [
@@ -110,30 +82,10 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { canSwitchLayouts } = useRole();
-  const { signOut } = useAuth();
-  
-  // Use effective layout (respects admin override, otherwise uses org_type)
-  const effectiveLayout = useEffectiveLayout();
+  const { viewMode } = useOrganization();
 
   const isActive = (path: string) => location.pathname.startsWith(path);
-  
-  // Determine navigation based on effective layout (server-validated org_type or admin override)
-  const navItems = effectiveLayout === 'supplier' 
-    ? supplierNavItems 
-    : effectiveLayout === 'soe'
-    ? soeNavItems
-    : effectiveLayout === 'buyer'
-    ? buyerNavItems
-    : adminNavItems; // Default for admin orgs
-
-  const layoutLabel = effectiveLayout === 'supplier' 
-    ? 'Supplier Terminal' 
-    : effectiveLayout === 'soe'
-    ? 'Government Portal'
-    : effectiveLayout === 'buyer'
-    ? 'Buyer Dashboard'
-    : 'Mission Control';
+  const navItems = viewMode === 'supplier' ? supplierNavItems : adminNavItems;
 
   return (
     <div className="min-h-screen bg-background flex w-full">
@@ -145,14 +97,19 @@ export function LayoutShell({ children }: LayoutShellProps) {
         )}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between p-4 border-b border-border/50 shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-border/50">
           <Link to="/" className="flex items-center gap-3">
-            <Logo 
-              size={sidebarOpen ? 'md' : 'sm'} 
-              showText={sidebarOpen} 
-              variant={sidebarOpen ? 'full' : 'icon'}
-              layoutLabel={layoutLabel}
-            />
+            <div className="p-2 rounded-lg bg-gradient-gold">
+              <Sparkles className="h-5 w-5 text-accent-foreground" />
+            </div>
+            {sidebarOpen && (
+              <div className="flex flex-col">
+                <span className="font-bold text-lg tracking-tight">LithiumBuy</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                  {viewMode === 'supplier' ? 'Recycling & Supply' : 'Mission Control'}
+                </span>
+              </div>
+            )}
           </Link>
           <Button
             variant="ghost"
@@ -164,9 +121,9 @@ export function LayoutShell({ children }: LayoutShellProps) {
           </Button>
         </div>
 
-        {/* Supplier Profile Card - shown for supplier orgs */}
-        {effectiveLayout === 'supplier' && sidebarOpen && (
-          <div className="p-4 border-b border-border/50 space-y-3 shrink-0">
+        {/* Supplier Profile Card */}
+        {viewMode === 'supplier' && sidebarOpen && (
+          <div className="p-4 border-b border-border/50 space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
                 LC
@@ -198,90 +155,53 @@ export function LayoutShell({ children }: LayoutShellProps) {
           </div>
         )}
 
-        {/* SOE Profile Card - shown for SOE orgs */}
-        {effectiveLayout === 'soe' && sidebarOpen && (
-          <div className="p-4 border-b border-border/50 space-y-3 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center text-success font-bold text-sm">
-                <Landmark className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">Government Entity</p>
-                <span className="text-[10px] text-success font-medium">VERIFIED SOE</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-muted-foreground">STRATEGIC RESERVES</span>
-              <span className="font-mono font-bold text-success">12,500 MT</span>
-            </div>
-            <div className="p-2 rounded-lg bg-success/5 border border-success/20">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Active Contracts</span>
-                <span className="font-semibold text-success">7</span>
-              </div>
-              <div className="flex items-center justify-between text-xs mt-1">
-                <span className="text-muted-foreground">Pending Review</span>
-                <span className="font-semibold text-warning">3</span>
-              </div>
-            </div>
-            <Button className="w-full bg-success hover:bg-success/90 text-success-foreground text-xs font-semibold">
-              <FileText className="h-3.5 w-3.5 mr-1" />
-              NEW PROCUREMENT RFQ
-            </Button>
-          </div>
+        {/* Navigation */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin">
+          {navItems.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                  active
+                    ? "bg-primary/10 text-primary border border-primary/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className={cn("h-5 w-5 shrink-0", active && "text-primary")} />
+                  {sidebarOpen && (
+                    <span className="font-medium truncate">{item.label}</span>
+                  )}
+                </div>
+                {sidebarOpen && item.count && (
+                  <CountBadge count={item.count} variant={active ? 'default' : 'accent'} />
+                )}
+                {!sidebarOpen && (
+                  <span className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+                    {item.label}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* GMV Summary for Admin */}
+        {viewMode !== 'supplier' && sidebarOpen && (
+          <GMVSummaryPanel
+            gmvYTD={15200000}
+            changePercent={12.4}
+            suppliersVerified={147}
+            buyersVerified={17402}
+            sparklineData={[10, 15, 12, 18, 22, 19, 25, 28, 24, 30]}
+          />
         )}
 
-        {/* Scrollable content area - contains nav and GMV panel */}
-        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-          <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin">
-            {navItems.map((item) => {
-              const active = isActive(item.path);
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
-                    active
-                      ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon className={cn("h-5 w-5 shrink-0", active && "text-primary")} />
-                    {sidebarOpen && (
-                      <span className="font-medium truncate">{item.label}</span>
-                    )}
-                  </div>
-                  {sidebarOpen && item.count && (
-                    <CountBadge count={item.count} variant={active ? 'default' : 'accent'} />
-                  )}
-                  {!sidebarOpen && (
-                    <span className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
-                      {item.label}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-            
-            {/* GMV Summary - inside scrollable area for buyers/admins */}
-            {(effectiveLayout === 'buyer' || effectiveLayout === 'admin' || !effectiveLayout) && sidebarOpen && (
-              <div className="mt-4 pt-4 border-t border-border/30">
-                <GMVSummaryPanel
-                  gmvYTD={15200000}
-                  changePercent={12.4}
-                  suppliersVerified={147}
-                  buyersVerified={17402}
-                  sparklineData={[10, 15, 12, 18, 22, 19, 25, 28, 24, 30]}
-                />
-              </div>
-            )}
-          </nav>
-        </div>
-
-        {/* Bottom nav - always visible, never shrinks */}
-        <div className="p-3 border-t border-border/50 space-y-1 shrink-0">
+        {/* Bottom nav */}
+        <div className="p-3 border-t border-border/50 space-y-1">
           {bottomNavItems.map((item) => (
             <Link
               key={item.path}
@@ -297,26 +217,10 @@ export function LayoutShell({ children }: LayoutShellProps) {
               {sidebarOpen && <span className="font-medium">{item.label}</span>}
             </Link>
           ))}
-          
-          {/* Sign Out Button */}
-          <button
-            onClick={signOut}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full text-left text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          >
-            <LogOut className="h-5 w-5 shrink-0" />
-            {sidebarOpen && <span className="font-medium">Sign Out</span>}
-          </button>
-          
           {sidebarOpen && (
             <div className="pt-3 mt-3 border-t border-border/30">
               <p className="text-[10px] text-muted-foreground text-center tracking-widest">
-                {effectiveLayout === 'supplier' 
-                  ? 'LITHIUMBUY • SUPPLIER TERMINAL' 
-                  : effectiveLayout === 'soe'
-                  ? 'LITHIUMBUY • GOVERNMENT PORTAL'
-                  : effectiveLayout === 'buyer'
-                  ? 'LITHIUMBUY • BUYER DASHBOARD'
-                  : 'LITHIUMBUY • MISSION CONTROL'}
+                {viewMode === 'supplier' ? 'SUPPLIER TERMINAL V4.1' : 'MISSION CONTROL CENTER • CONNECTED'}
               </p>
             </div>
           )}
@@ -334,13 +238,19 @@ export function LayoutShell({ children }: LayoutShellProps) {
       {/* Mobile sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-border transform transition-transform duration-300 lg:hidden flex flex-col",
+          "fixed inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-border transform transition-transform duration-300 lg:hidden",
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex items-center justify-between p-4 border-b border-border/50 shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-border/50">
           <Link to="/" className="flex items-center gap-3">
-            <Logo size="md" layoutLabel={layoutLabel} />
+            <div className="p-2 rounded-lg bg-gradient-gold">
+              <Sparkles className="h-5 w-5 text-accent-foreground" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-lg">LithiumBuy</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Recycling & Supply</span>
+            </div>
           </Link>
           <Button
             variant="ghost"
@@ -350,9 +260,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
             <X className="h-5 w-5" />
           </Button>
         </div>
-        
-        {/* Mobile scrollable nav */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="p-3 space-y-1">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -373,44 +281,12 @@ export function LayoutShell({ children }: LayoutShellProps) {
             </Link>
           ))}
         </nav>
-        
-        {/* Mobile Bottom nav with Sign Out - always visible */}
-        <div className="p-3 border-t border-border/50 space-y-1 shrink-0">
-          {bottomNavItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              onClick={() => setMobileMenuOpen(false)}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
-                isActive(item.path)
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              )}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="font-medium">{item.label}</span>
-            </Link>
-          ))}
-          
-          {/* Mobile Sign Out Button */}
-          <button
-            onClick={() => {
-              setMobileMenuOpen(false);
-              signOut();
-            }}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full text-left text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="font-medium">Sign Out</span>
-          </button>
-        </div>
       </aside>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 h-16 border-b border-border/50 bg-background/80 backdrop-blur-xl shrink-0">
+        <header className="sticky top-0 z-30 h-16 border-b border-border/50 bg-background/80 backdrop-blur-xl">
           <div className="h-full px-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Button
@@ -440,8 +316,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
               {/* Organization Switcher */}
               <OrgSwitcher />
 
-              {/* Role Switcher - only for admin orgs (testing purposes) */}
-              {canSwitchLayouts && <RoleSwitcher />}
+              {/* Role Switcher */}
+              <RoleSwitcher />
 
               {/* Live indicator */}
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20">
@@ -452,8 +328,14 @@ export function LayoutShell({ children }: LayoutShellProps) {
               <NotificationDropdown />
 
               {/* User Profile */}
-              <div className="pl-3 border-l border-border/50">
-                <UserMenu />
+              <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-border/50">
+                <div className="text-right">
+                  <p className="text-sm font-semibold">Admin User</p>
+                  <p className="text-[10px] text-muted-foreground">VERIFIED • GOLD TIER</p>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
+                  AU
+                </div>
               </div>
             </div>
           </div>

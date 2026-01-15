@@ -9,7 +9,7 @@ Generated: Thu Dec 25 21:57:25 EST 2025
 
 - gpt-engineer-app[bot]: 66 commits
 - Greenmamba29: 26 commits
-- Lovable: 1 commits
+- Frontend: 1 commits
 
 ## Recent Commits (Last 50)
 
@@ -34,9 +34,9 @@ Generated: Thu Dec 25 21:57:25 EST 2025
 | be35ab0 | Greenmamba29 | 2025-12-24 | Add comprehensive deployment and PicaOS workflow documentation |
 | 00dda5e | gpt-engineer-app[bot] | 2025-12-25 | Add org_id to core tables |
 | 14cd375 | gpt-engineer-app[bot] | 2025-12-25 | Changes |
-| 73d5d31 | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
+| 73d5d31 | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
 | 2badd1d | gpt-engineer-app[bot] | 2025-12-25 | Changes |
-| 86da7a1 | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
+| 86da7a1 | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
 | 769a750 | gpt-engineer-app[bot] | 2025-12-25 | Changes |
 | 5170358 | gpt-engineer-app[bot] | 2025-12-25 | Improve auth redirect handling |
 | 850f277 | gpt-engineer-app[bot] | 2025-12-25 | Changes |
@@ -50,17 +50,17 @@ Generated: Thu Dec 25 21:57:25 EST 2025
 | d4c0fb5 | gpt-engineer-app[bot] | 2025-12-25 | Changes |
 | 6862c62 | gpt-engineer-app[bot] | 2025-12-25 | Improve warn-level validation |
 | 766a32e | gpt-engineer-app[bot] | 2025-12-25 | Changes |
-| 8b28495 | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
+| 8b28495 | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
 | 9ec2cf0 | gpt-engineer-app[bot] | 2025-12-25 | Changes |
-| bc41933 | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
+| bc41933 | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
 | 1955ed4 | gpt-engineer-app[bot] | 2025-12-25 | Changes |
 | 520bce0 | gpt-engineer-app[bot] | 2025-12-25 | Refactor warn issues to viewMode |
 | 2568cc4 | gpt-engineer-app[bot] | 2025-12-25 | Changes |
-| e82f2e5 | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
+| e82f2e5 | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
 | 6851249 | gpt-engineer-app[bot] | 2025-12-25 | Changes |
 | 77fc06e | gpt-engineer-app[bot] | 2025-12-25 | Fix security issues from scan |
 | 0f32c8f | gpt-engineer-app[bot] | 2025-12-25 | Changes |
-| f77624c | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
+| f77624c | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
 | c3bca5c | gpt-engineer-app[bot] | 2025-12-25 | Changes |
 | 5dcd936 | gpt-engineer-app[bot] | 2025-12-24 | Switch to suppliers_public view |
 | 2a27a44 | gpt-engineer-app[bot] | 2025-12-24 | Changes |
@@ -77,20 +77,20 @@ Generated: Thu Dec 25 21:57:25 EST 2025
 | 4616d21 | gpt-engineer-app[bot] | 2025-12-26 | Redirect to onboarding for new users |
 | bd7639b | gpt-engineer-app[bot] | 2025-12-25 | Fix deal response enums and realtime typings |
 | 00dda5e | gpt-engineer-app[bot] | 2025-12-25 | Add org_id to core tables |
-| 73d5d31 | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
-| 86da7a1 | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
+| 73d5d31 | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
+| 86da7a1 | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
 | 5170358 | gpt-engineer-app[bot] | 2025-12-25 | Improve auth redirect handling |
 | 75cd5b4 | gpt-engineer-app[bot] | 2025-12-25 | Fix Auth0 redirect logic |
 | b98817b | gpt-engineer-app[bot] | 2025-12-25 | Hardcode prod redirect URI |
 | 5e2dd60 | gpt-engineer-app[bot] | 2025-12-25 | Fix Auth0 redirect config |
 | e27f3e3 | gpt-engineer-app[bot] | 2025-12-25 | Enhance auth flow with multi-login |
 | 6862c62 | gpt-engineer-app[bot] | 2025-12-25 | Improve warn-level validation |
-| 8b28495 | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
-| bc41933 | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
+| 8b28495 | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
+| bc41933 | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
 | 520bce0 | gpt-engineer-app[bot] | 2025-12-25 | Refactor warn issues to viewMode |
-| e82f2e5 | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
+| e82f2e5 | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
 | 77fc06e | gpt-engineer-app[bot] | 2025-12-25 | Fix security issues from scan |
-| f77624c | gpt-engineer-app[bot] | 2025-12-25 | Lovable update |
+| f77624c | gpt-engineer-app[bot] | 2025-12-25 | Frontend update |
 | 5dcd936 | gpt-engineer-app[bot] | 2025-12-24 | Switch to suppliers_public view |
 | 006bde6 | gpt-engineer-app[bot] | 2025-12-24 | Migrate security fixes |
 | bec0c28 | gpt-engineer-app[bot] | 2025-12-24 | Fix auth0 dep and CSS order |

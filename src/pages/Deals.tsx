@@ -36,8 +36,8 @@ export default function Deals() {
     return (
       <LayoutShell>
         <PageHeader
-          title="Deals"
-          description="Active negotiations and closed agreements"
+          title="Lithium & Recycling Deals"
+          description="Active supply negotiations and closed recycling agreements"
         />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6">
           {[...Array(6)].map((_, i) => (
@@ -51,8 +51,8 @@ export default function Deals() {
   return (
     <LayoutShell>
       <PageHeader
-        title="Deals"
-        description="Active negotiations and closed agreements"
+        title="Lithium & Recycling Deals"
+        description="Active supply negotiations and closed recycling agreements"
       />
 
       {deals.length === 0 ? (

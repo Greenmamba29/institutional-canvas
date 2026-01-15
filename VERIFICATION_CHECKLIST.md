@@ -132,10 +132,10 @@ Common issues:
 
 ## Integration Testing
 
-Once verification passes, test with Lovable:
+Once verification passes, test with Frontend:
 
 ```typescript
-// Example: Create RFQ from Lovable
+// Example: Create RFQ from Frontend
 import { supabase } from "@/integrations/supabase/client";
 
 const { data, error } = await supabase.rpc('create_rfq', {
@@ -168,8 +168,8 @@ Co-Authored-By: Warp <agent@warp.dev>"
    git push origin main
    ```
 
-3. **Update Lovable:**
-   - Pull latest from GitHub in Lovable
+3. **Update Frontend:**
+   - Pull latest from GitHub in Frontend
    - Start using RPC functions in components
    - Test end-to-end workflows
 
@@ -178,7 +178,7 @@ Co-Authored-By: Warp <agent@warp.dev>"
 - [x] Schema created
 - [ ] Tests run and passed
 - [ ] Types regenerated
-- [ ] Lovable integration tested
+- [ ] Frontend integration tested
 - [ ] End-to-end workflows verified
 
 ---
