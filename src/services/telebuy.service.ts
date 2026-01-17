@@ -44,6 +44,7 @@ export async function createTelebuySession(
 
 /**
  * Update session status
+ * Uses direct table update since RPC function doesn't exist
  */
 export async function updateSessionStatus(
   client: SupabaseClient<Database>,
@@ -51,11 +52,45 @@ export async function updateSessionStatus(
 ): Promise<{ data: TelebuySession | null; error: Error | null }> {
   try {
     const validated = validateInput(updateSessionStatusSchema, params);
-    return callAuthenticatedRpc<TelebuySession>(client, 'update_telebuy_session_status', validated);
+    
+    // Use direct update instead of RPC since update_telebuy_session_status doesn't exist
+    const { data, error } = await client
+      .from('telebuy_sessions')
+      .update({ status: validated.p_status })
+      .eq('id', validated.p_session_id)
+      .select()
+      .single();
+    
+    if (error) {
+      return { data: null, error: new Error(error.message) };
+    }
+    
+    return { data: data as TelebuySession, error: null };
   } catch (err) {
     const error = err instanceof Error ? err : new Error('Validation failed');
     return { data: null, error };
   }
+}
+
+/**
+ * Update session notes
+ */
+export async function updateTelebuyNotes(
+  sessionId: string,
+  notes: string
+): Promise<{ data: TelebuySession | null; error: Error | null }> {
+  const { data, error } = await supabase
+    .from('telebuy_sessions')
+    .update({ notes })
+    .eq('id', sessionId)
+    .select()
+    .single();
+  
+  if (error) {
+    return { data: null, error: new Error(error.message) };
+  }
+  
+  return { data: data as TelebuySession, error: null };
 }
 
 /**

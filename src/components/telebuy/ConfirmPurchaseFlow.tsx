@@ -63,7 +63,7 @@ export function ConfirmPurchaseFlow({
         p_rfq_id: currentOrgId, // Using org as placeholder since rfq_id is required
       });
 
-      const newDealId = dealResult?.data?.id;
+      const newDealId = dealResult?.id;
 
       // Step 2: Create purchase linked to deal
       const purchaseResult = await createPurchase.mutateAsync({

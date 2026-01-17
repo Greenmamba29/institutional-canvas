@@ -37,8 +37,8 @@ import {
   useTelebuySessions,
   useUpcomingSessions,
   useUpdateSessionStatus,
-  type TelebuySession,
 } from "@/hooks/useTelebuy";
+import type { TelebuySession } from "@/services/telebuy.service";
 import { cn } from "@/lib/utils";
 
 // Status badge configurations

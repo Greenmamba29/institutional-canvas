@@ -29,35 +29,15 @@ async function getOrgSubscription(
 ): Promise<SubscriptionData | null> {
   if (!orgId) return null;
 
-  const client = createAuthenticatedClient(accessToken);
-  
-  // Fetch subscription fields from organizations table
-  // Note: These columns may not exist until migration is applied
-  const { data, error } = await client
-    .from('organizations')
-    .select('subscription_tier, subscription_status, stripe_customer_id, stripe_subscription_id')
-    .eq('id', orgId)
-    .single();
-
-  if (error) {
-    // If columns don't exist yet, return default free tier
-    if (error.code === 'PGRST116' || error.message?.includes('column') || error.message?.includes('does not exist')) {
-      return {
-        subscription_tier: 'free',
-        subscription_status: 'active',
-        stripe_customer_id: null,
-        stripe_subscription_id: null,
-      };
-    }
-    console.error('Error fetching subscription:', error);
-    return null;
-  }
-
+  // TODO: Update when database migration adds subscription columns
+  // For now, return default free tier since subscription columns don't exist yet
+  // The columns subscription_tier, subscription_status, stripe_customer_id, 
+  // stripe_subscription_id need to be added to the organizations table
   return {
-    subscription_tier: (data?.subscription_tier as 'free' | 'pro' | 'enterprise') || 'free',
-    subscription_status: data?.subscription_status || 'active',
-    stripe_customer_id: data?.stripe_customer_id || null,
-    stripe_subscription_id: data?.stripe_subscription_id || null,
+    subscription_tier: 'free',
+    subscription_status: 'active',
+    stripe_customer_id: null,
+    stripe_subscription_id: null,
   };
 }
 
