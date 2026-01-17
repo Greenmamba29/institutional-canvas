@@ -32,6 +32,7 @@ import {
   Database,
   CreditCard,
   Target,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 

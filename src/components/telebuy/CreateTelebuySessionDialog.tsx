@@ -134,8 +134,8 @@ export function CreateTelebuySessionDialog({ trigger }: CreateTelebuySessionDial
                   </div>
                 ) : (
                   suppliers.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
+                    <SelectItem key={supplier.org_id} value={supplier.org_id}>
+                      {supplier.display_name}
                     </SelectItem>
                   ))
                 )}

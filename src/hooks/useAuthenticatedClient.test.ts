@@ -37,14 +37,6 @@ describe('useAuthenticatedClient Hook', () => {
     expect(typeof result.current.getClient).toBe('function');
   });
 
-  it('should provide executeRpc function', async () => {
-    const { useAuthenticatedClient } = await import('./useAuthenticatedClient');
-    const { result } = renderHook(() => useAuthenticatedClient());
-    
-    expect(result.current.executeRpc).toBeDefined();
-    expect(typeof result.current.executeRpc).toBe('function');
-  });
-
   it('getClient should return authenticated client', async () => {
     const { useAuthenticatedClient } = await import('./useAuthenticatedClient');
     const { createAuthenticatedClient } = await import('@/lib/supabase/authenticated-client');

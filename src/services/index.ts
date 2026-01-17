@@ -41,7 +41,6 @@ export {
 export {
   createTelebuySession,
   updateSessionStatus,
-  updateTelebuyNotes,
   addSessionTranscript,
   getTelebuySessions,
   getSessionById,
@@ -49,7 +48,6 @@ export {
   getSessionDocuments,
   type TelebuySession,
   type TelebuyDocument,
-  type CreateTelebuySessionParams
 } from './telebuy.service';
 
 // ElevenLabs services - avoid duplicate export by re-exporting specific items

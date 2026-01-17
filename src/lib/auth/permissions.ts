@@ -86,10 +86,9 @@ export function getPermissions(viewMode: ViewMode): RolePermissions {
  */
 export function canAccessFeature(
   viewMode: ViewMode,
-  feature: 'marketplace' | 'messages' | 'analytics' | 'ai_studio' | 'data_hub',
-  orgType?: string | null
+  feature: 'marketplace' | 'messages' | 'analytics' | 'ai_studio' | 'data_hub'
 ): boolean {
-  const permissions = getPermissions(viewMode, orgType);
+  const permissions = getPermissions(viewMode);
 
   switch (feature) {
     case 'marketplace':

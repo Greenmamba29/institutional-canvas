@@ -136,17 +136,20 @@ describe('Validation Schemas', () => {
   describe('createDealSchema', () => {
     it('should accept valid deal data', () => {
       const validDeal = {
-        p_bid_id: '123e4567-e89b-12d3-a456-426614174000',
-        p_notes: 'Awarding deal to best bidder',
+        p_supplier_id: '123e4567-e89b-12d3-a456-426614174000',
+        p_rfq_id: '123e4567-e89b-12d3-a456-426614174000',
+        p_title: 'Test Deal',
       };
       
       const result = createDealSchema.parse(validDeal);
-      expect(result.p_bid_id).toBe(validDeal.p_bid_id);
+      expect(result.p_supplier_id).toBe(validDeal.p_supplier_id);
     });
 
-    it('should reject deal with invalid bid ID', () => {
+    it('should reject deal with invalid supplier ID', () => {
       const invalidDeal = {
-        p_bid_id: 'not-a-uuid',
+        p_supplier_id: 'not-a-uuid',
+        p_rfq_id: '123e4567-e89b-12d3-a456-426614174000',
+        p_title: 'Test Deal',
       };
       
       expect(() => createDealSchema.parse(invalidDeal)).toThrow();
