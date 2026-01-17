@@ -117,8 +117,9 @@ serve(async (req) => {
         status: 200,
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Sync error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
 
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       try {
@@ -126,7 +127,7 @@ serve(async (req) => {
         await supabase.from('webhook_events').insert({
           event_type: 'airtable_sync_error',
           source: 'sync-to-airtable',
-          payload: { error: error.message },
+          payload: { error: errorMessage },
           status: 'error',
         });
       } catch (logError) {
@@ -137,7 +138,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: errorMessage,
       }),
       {
         headers: {

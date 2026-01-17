@@ -152,10 +152,11 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Checkout session creation error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to create checkout session';
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to create checkout session' }),
+      JSON.stringify({ error: message }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
