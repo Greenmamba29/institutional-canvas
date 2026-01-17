@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Optimize for production
-    minify: 'terser',
+    // Optimize for production (esbuild is built-in, no extra dep needed)
+    minify: 'esbuild',
     sourcemap: mode !== 'production',
     rollupOptions: {
       output: {
