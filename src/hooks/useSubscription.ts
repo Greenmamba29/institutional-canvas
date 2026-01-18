@@ -1,6 +1,5 @@
 import { useOrganization } from '@/context/OrganizationContext';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 
 export interface Subscription {
   tier: 'free' | 'pro' | 'enterprise';
@@ -16,22 +15,14 @@ export function useSubscription() {
     queryFn: async () => {
       if (!currentOrg) return null;
       
-      // Check org metadata for subscription tier
-      const { data } = await supabase
-        .from('organizations')
-        .select('metadata')
-        .eq('id', currentOrg.id)
-        .single();
-      
-      // Parse metadata (JSONB field)
-      const metadata = data?.metadata as any;
-      const tier = metadata?.subscription_tier || 'free';
-      const features = metadata?.features || [];
+      // For demo, return a mock subscription based on org status
+      // In production, would query a subscriptions table
+      const isProOrg = currentOrg.status === 'active';
       
       return {
-        tier,
-        features,
-        expires_at: metadata?.subscription_expires || null
+        tier: isProOrg ? 'pro' : 'free',
+        features: isProOrg ? ['ai_studio', 'telebuy', 'analytics'] : [],
+        expires_at: null
       };
     },
     enabled: !!currentOrg,

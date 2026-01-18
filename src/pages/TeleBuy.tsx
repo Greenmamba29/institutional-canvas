@@ -71,8 +71,8 @@ function SessionCard({ session }: { session: TelebuySession }) {
       // Mark as in_progress when joining
       if (session.status === 'scheduled') {
         updateStatus.mutate({
-          p_session_id: session.id,
-          p_status: 'in_progress',
+          sessionId: session.id,
+          status: 'in_progress',
         });
       }
     }
@@ -80,15 +80,15 @@ function SessionCard({ session }: { session: TelebuySession }) {
 
   const handleComplete = () => {
     updateStatus.mutate({
-      p_session_id: session.id,
-      p_status: 'completed',
+      sessionId: session.id,
+      status: 'completed',
     });
   };
 
   const handleCancel = () => {
     updateStatus.mutate({
-      p_session_id: session.id,
-      p_status: 'cancelled',
+      sessionId: session.id,
+      status: 'cancelled',
     });
   };
 

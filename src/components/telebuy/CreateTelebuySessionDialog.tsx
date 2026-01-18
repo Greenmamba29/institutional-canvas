@@ -72,10 +72,10 @@ export function CreateTelebuySessionDialog({ trigger }: CreateTelebuySessionDial
     scheduledAt.setHours(hours, minutes, 0, 0);
 
     await createSession.mutateAsync({
-      p_supplier_id: data.supplierId,
-      p_scheduled_at: scheduledAt.toISOString(),
-      p_meeting_url: data.meetingUrl || undefined,
-      p_notes: data.notes,
+      supplierId: data.supplierId,
+      scheduledAt: scheduledAt.toISOString(),
+      meetingUrl: data.meetingUrl || '',
+      notes: data.notes,
     });
 
     setOpen(false);
