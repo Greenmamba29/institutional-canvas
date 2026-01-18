@@ -2,10 +2,15 @@
  * TeleBuy Service - RPC wrappers for TeleBuy session operations
  * 
  * Uses create_telebuy_session, update_session_status, update_telebuy_notes RPCs
+ * Integrates with Daily.co for video calling
  */
 
 import { callRpc, supabase } from '@/lib/supabase/rpc';
 import type { Tables } from '@/integrations/supabase/types';
+
+// Daily.co configuration
+const DAILY_API_KEY = import.meta.env.VITE_DAILY_API_KEY;
+const DAILY_DOMAIN = import.meta.env.VITE_DAILY_DOMAIN || 'lithiumbuy.daily.co';
 
 export type TelebuySession = Tables<'telebuy_sessions'>;
 export type TelebuyDocument = Tables<'telebuy_documents'>;
@@ -138,4 +143,139 @@ export async function getSessionDocuments(sessionId: string) {
     .order('created_at', { ascending: false });
   
   return { data, error };
+}
+
+// ============================================
+// DAILY.CO VIDEO CALLING INTEGRATION
+// ============================================
+
+export interface DailyRoomConfig {
+  name?: string;
+  privacy?: 'public' | 'private';
+  properties?: {
+    start_video_off?: boolean;
+    start_audio_off?: boolean;
+    enable_recording?: string;
+    max_participants?: number;
+  };
+}
+
+/**
+ * Create a Daily.co room for TeleBuy session
+ */
+export async function createDailyRoom(config?: DailyRoomConfig): Promise<{
+  url: string;
+  name: string;
+  error?: Error;
+}> {
+  if (!DAILY_API_KEY) {
+    console.error('Daily.co API key not configured');
+    return {
+      url: '',
+      name: '',
+      error: new Error('Daily.co API key not configured. Add VITE_DAILY_API_KEY to .env'),
+    };
+  }
+
+  try {
+    const roomName = config?.name || `lithiumbuy-${Date.now()}`;
+    
+    const response = await fetch('https://api.daily.co/v1/rooms', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DAILY_API_KEY}`,
+      },
+      body: JSON.stringify({
+        name: roomName,
+        privacy: config?.privacy || 'private',
+        properties: {
+          start_video_off: false,
+          start_audio_off: false,
+          max_participants: 10,
+          ...config?.properties,
+          // Note: enable_recording requires paid Daily.co plan
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Failed to create Daily.co room:', errorData);
+      throw new Error(`Daily.co API error: ${errorData.error || response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+      url: data.url,
+      name: data.name,
+    };
+  } catch (error) {
+    console.error('Error creating Daily.co room:', error);
+    return {
+      url: '',
+      name: '',
+      error: error instanceof Error ? error : new Error('Unknown error creating room'),
+    };
+  }
+}
+
+/**
+ * Delete a Daily.co room
+ */
+export async function deleteDailyRoom(roomName: string): Promise<{ success: boolean; error?: Error }> {
+  if (!DAILY_API_KEY) {
+    return { success: false, error: new Error('Daily.co API key not configured') };
+  }
+
+  try {
+    const response = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${DAILY_API_KEY}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete room: ${response.statusText}`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting Daily.co room:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error : new Error('Unknown error deleting room'),
+    };
+  }
+}
+
+/**
+ * Get Daily.co room details
+ */
+export async function getDailyRoomInfo(roomName: string) {
+  if (!DAILY_API_KEY) {
+    return { data: null, error: new Error('Daily.co API key not configured') };
+  }
+
+  try {
+    const response = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+      headers: {
+        'Authorization': `Bearer ${DAILY_API_KEY}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get room info: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error getting Daily.co room info:', error);
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Unknown error getting room info'),
+    };
+  }
 }

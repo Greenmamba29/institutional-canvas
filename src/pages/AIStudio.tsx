@@ -1,20 +1,26 @@
+import { useState } from 'react';
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Brain, TrendingUp, Target, Sparkles, Lock } from "lucide-react";
 import { useIsAdmin, useRole } from "@/context/RoleContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PriceForecast } from "@/components/ai-studio/PriceForecast";
+import { SupplierMatcher } from "@/components/ai-studio/SupplierMatcher";
+import { RiskAnalysis } from "@/components/ai-studio/RiskAnalysis";
 
 export default function AIStudio() {
+  const [activeTab, setActiveTab] = useState('price-forecast');
+  
   // Server-validated admin check (from org_members table)
   const isAdmin = useIsAdmin();
   const { isLoadingRole } = useRole();
+  const { data: subscription } = useSubscription();
   
-  // TODO: Implement actual subscription check via useSubscription hook
-  const isPro = false; // Mock - will be replaced with subscription tier check
-  
-  // Grant access if user is admin OR has pro subscription
-  const hasAccess = isAdmin || isPro;
+  // Grant access if user is admin OR has Enterprise subscription
+  const hasAccess = isAdmin || subscription?.tier === 'enterprise';
 
   // Show loading state while checking role
   if (isLoadingRole) {
@@ -64,52 +70,37 @@ export default function AIStudio() {
     <LayoutShell>
       <PageHeader
         title="AI Studio"
-        description="SPOT.ai market intelligence and price forecasting"
+        description="SPOT.ai market intelligence powered by advanced analytics"
       />
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-accent" />
-              Price Forecast
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              AI-powered lithium price predictions based on market data.
-            </p>
-          </CardContent>
-        </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+        <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsTrigger value="price-forecast">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Price Forecast
+          </TabsTrigger>
+          <TabsTrigger value="supplier-match">
+            <Target className="h-4 w-4 mr-2" />
+            Supplier Match
+          </TabsTrigger>
+          <TabsTrigger value="risk-analysis">
+            <Brain className="h-4 w-4 mr-2" />
+            Risk Analysis
+          </TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-accent" />
-              Supplier Matching
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Find the best suppliers for your specific requirements.
-            </p>
-          </CardContent>
-        </Card>
+        <TabsContent value="price-forecast" className="mt-6">
+          <PriceForecast />
+        </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-accent" />
-              Risk Analysis
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Evaluate deal risks and market volatility.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="supplier-match" className="mt-6">
+          <SupplierMatcher />
+        </TabsContent>
+
+        <TabsContent value="risk-analysis" className="mt-6">
+          <RiskAnalysis />
+        </TabsContent>
+      </Tabs>
     </LayoutShell>
   );
 }
