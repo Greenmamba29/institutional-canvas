@@ -8,14 +8,9 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
-// Use environment variables for consistency and credential rotation support
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// Validate environment variables are present
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('Missing required Supabase environment variables: VITE_SUPABASE_URL and/or VITE_SUPABASE_ANON_KEY');
-}
+// Hardcoded values - VITE_* env vars are not supported in Lovable
+const SUPABASE_URL = 'https://vuekwckknfjivjighhfd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1ZWt3Y2trbmZqaXZqaWdoaGZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MTczNTcsImV4cCI6MjA2Nzk5MzM1N30.9NqjmpF9qqaTALfP2VAAii13vjZTI9IKOf_CSRT9lbo';
 
 /**
  * Creates an authenticated Supabase client with the Supabase Auth access token
