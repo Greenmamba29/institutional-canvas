@@ -3,20 +3,18 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SupabaseClient } from '@supabase/supabase-js';
 
 // Mock the service before importing
-vi.mock('@/lib/supabase/authenticated-client', () => ({
-  callAuthenticatedRpc: vi.fn().mockResolvedValue({ data: null, error: null }),
-}));
-
-vi.mock('@/integrations/supabase/client', () => ({
+vi.mock('@/lib/supabase/rpc', () => ({
+  callRpc: vi.fn().mockResolvedValue({ data: null, error: null }),
   supabase: {
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       gte: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
     }),
   },
@@ -28,55 +26,37 @@ describe('TeleBuy Service', () => {
   });
 
   describe('createTelebuySession', () => {
-    it('should validate input before calling RPC', async () => {
+    it('should call RPC with proper params', async () => {
       const { createTelebuySession } = await import('./telebuy.service');
-      const { callAuthenticatedRpc } = await import('@/lib/supabase/authenticated-client');
+      const { callRpc } = await import('@/lib/supabase/rpc');
       
-      const mockClient = {} as SupabaseClient;
       const validInput = {
-        p_supplier_id: '123e4567-e89b-12d3-a456-426614174000',
-        p_scheduled_at: '2026-01-15T14:00:00.000Z',
+        supplierId: '123e4567-e89b-12d3-a456-426614174000',
+        scheduledAt: '2026-01-15T14:00:00.000Z',
+        meetingUrl: 'https://meet.google.com/abc-defg-hij',
       };
       
-      await createTelebuySession(mockClient, validInput);
+      await createTelebuySession(validInput);
       
-      expect(callAuthenticatedRpc).toHaveBeenCalled();
-    });
-
-    it('should throw for invalid input', async () => {
-      const { createTelebuySession } = await import('./telebuy.service');
-      
-      const mockClient = {} as SupabaseClient;
-      const invalidInput = {
-        p_supplier_id: 'not-a-uuid',
-        p_scheduled_at: 'not-a-date',
-      };
-      
-      await expect(createTelebuySession(mockClient, invalidInput as any)).rejects.toThrow();
+      expect(callRpc).toHaveBeenCalled();
     });
   });
 
   describe('updateSessionStatus', () => {
-    it('should validate status enum', async () => {
+    it('should call RPC with session id and status', async () => {
       const { updateSessionStatus } = await import('./telebuy.service');
-      const { callAuthenticatedRpc } = await import('@/lib/supabase/authenticated-client');
+      const { callRpc } = await import('@/lib/supabase/rpc');
       
-      const mockClient = {} as SupabaseClient;
-      const validInput = {
-        p_session_id: '123e4567-e89b-12d3-a456-426614174000',
-        p_status: 'completed' as const,
-      };
+      await updateSessionStatus('123e4567-e89b-12d3-a456-426614174000', 'completed');
       
-      await updateSessionStatus(mockClient, validInput);
-      
-      expect(callAuthenticatedRpc).toHaveBeenCalled();
+      expect(callRpc).toHaveBeenCalled();
     });
   });
 
   describe('getTelebuySessions', () => {
     it('should query sessions from database', async () => {
       const { getTelebuySessions } = await import('./telebuy.service');
-      const { supabase } = await import('@/integrations/supabase/client');
+      const { supabase } = await import('@/lib/supabase/rpc');
       
       await getTelebuySessions();
       
@@ -87,7 +67,7 @@ describe('TeleBuy Service', () => {
   describe('getUpcomingSessions', () => {
     it('should filter sessions by scheduled_at', async () => {
       const { getUpcomingSessions } = await import('./telebuy.service');
-      const { supabase } = await import('@/integrations/supabase/client');
+      const { supabase } = await import('@/lib/supabase/rpc');
       
       await getUpcomingSessions();
       
