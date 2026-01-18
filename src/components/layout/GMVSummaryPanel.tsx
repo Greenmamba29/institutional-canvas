@@ -32,12 +32,12 @@ export function GMVSummaryPanel({
         
         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/30">
           <div>
-            <p className="text-[10px] text-muted-foreground">SUPPLIERS</p>
+            <p className="text-[10px] text-muted-foreground">PARTNERS</p>
             <p className="text-xs font-semibold">{suppliersVerified} <span className="text-success">VERIFIED</span></p>
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground">BUYERS</p>
-            <p className="text-xs font-semibold">{buyersVerified.toLocaleString()} <span className="text-success">VERIFIED</span></p>
+            <p className="text-[10px] text-muted-foreground">NETWORKS</p>
+            <p className="text-xs font-semibold">{buyersVerified.toLocaleString()} <span className="text-success">ACTIVE</span></p>
           </div>
         </div>
       </div>

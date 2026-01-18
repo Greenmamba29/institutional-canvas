@@ -92,7 +92,7 @@ export function CreateRFQDialog() {
         p_delivery_location: formData.delivery_location.trim(),
       });
 
-      if (!result || !result.data) {
+      if (!result) {
         throw new Error('RFQ was not saved. Please try again.');
       }
 

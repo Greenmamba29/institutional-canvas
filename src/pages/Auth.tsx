@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Shield, Zap, Globe, Loader2, KeyRound, AlertCircle } from 'lucide-react';
-import { Logo } from '@/components/shared/Logo';
+import { Sparkles, Shield, Zap, Globe, Loader2, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Auth() {
@@ -18,87 +17,62 @@ export default function Auth() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [session, setSession] = useState<any>(null);
-  const [authError, setAuthError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
-  // Check for URL hash errors and recovery tokens
+  // Check for existing session and detect PASSWORD_RECOVERY event
   useEffect(() => {
-    // Parse URL hash for Supabase auth responses
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const errorDescription = hashParams.get('error_description');
-    const errorCode = hashParams.get('error_code');
-    const accessToken = hashParams.get('access_token');
-    const type = hashParams.get('type');
+    // Helper function to check if URL contains recovery token
+    const checkRecoveryToken = (): boolean => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      return hashParams.get('type') === 'recovery';
+    };
 
-    // Handle error from Supabase redirect (e.g., expired link)
-    if (errorDescription) {
-      setAuthError(errorDescription.replace(/\+/g, ' '));
-      toast({
-        title: 'Authentication Error',
-        description: errorDescription.replace(/\+/g, ' '),
-        variant: 'destructive',
-        duration: 8000,
-      });
-      // Clear the hash to prevent showing error again on refresh
-      window.history.replaceState(null, '', window.location.pathname);
-      return;
-    }
-
-    // Check for recovery flow - Supabase sends type=recovery in hash
-    const isRecoveryFlow = type === 'recovery' && accessToken;
+    // Check URL hash for password recovery token BEFORE checking session
+    // Supabase includes recovery tokens in the hash: #access_token=...&type=recovery
+    const isRecoveryFlow = checkRecoveryToken();
     
     if (isRecoveryFlow) {
-      console.log('[Auth] Recovery flow detected, showing password update form');
+      // Set password update mode immediately to prevent redirect
       setIsUpdatePasswordMode(true);
-      // Don't clear hash yet - Supabase needs to process the token
     }
 
-    // Set up auth state listener
+    // Set up auth state listener FIRST to catch PASSWORD_RECOVERY event
+    // This must be registered before getSession() to catch the event
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[Auth] Auth state changed:', event, session?.user?.email);
       setSession(session);
       
-      // Detect password recovery flow
+      // Detect password recovery flow from reset link
       if (event === 'PASSWORD_RECOVERY') {
-        console.log('[Auth] PASSWORD_RECOVERY event received');
         setIsUpdatePasswordMode(true);
+        // Stay on auth page to update password - don't redirect
         return;
       }
-
-      // Handle successful sign in after email confirmation
-      if (event === 'SIGNED_IN' && !isUpdatePasswordMode) {
-        // Check if this is from email confirmation (not recovery)
-        const hashType = new URLSearchParams(window.location.hash.substring(1)).get('type');
-        if (hashType !== 'recovery') {
-          toast({
-            title: 'Welcome!',
-            description: 'You have been signed in successfully.',
-          });
-        }
-      }
       
-      // Only redirect if authenticated, not in password update mode, and not recovery
-      if (session && !isUpdatePasswordMode && type !== 'recovery') {
+      // Only redirect if not in update password mode and not a recovery flow
+      // Check URL hash directly to avoid race conditions with state updates
+      if (session && !isUpdatePasswordMode && !checkRecoveryToken()) {
         const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       }
     });
 
-    // Check for existing session
+    // Check for existing session AFTER setting up the listener
+    // This ensures PASSWORD_RECOVERY event is handled before redirect
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       // Don't redirect if we're in a recovery flow
-      if (session && !isRecoveryFlow && !isUpdatePasswordMode) {
+      // Check URL hash directly (not state) to avoid race conditions with async state updates
+      // The state variable in closure might be stale, but URL hash is always current
+      if (session && !checkRecoveryToken()) {
         const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, location, toast]);
+  }, [navigate, location, isUpdatePasswordMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,28 +140,10 @@ export default function Auth() {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
-      
-      // Parse Supabase error messages into user-friendly ones
-      let errorTitle = isResetMode ? 'Reset failed' : isSignUp ? 'Sign up failed' : 'Sign in failed';
-      let errorMessage = error.message || 'Please check your credentials and try again.';
-      
-      // Handle specific error cases
-      if (error.message?.includes('Invalid login credentials')) {
-        errorMessage = 'Invalid email or password. Please check your credentials or use "Forgot password" to reset.';
-      } else if (error.message?.includes('User already registered')) {
-        errorMessage = 'This email is already registered. Please sign in instead or use "Forgot password" to reset your password.';
-        setIsSignUp(false); // Switch to sign in mode
-      } else if (error.message?.includes('Email not confirmed')) {
-        errorMessage = 'Please check your inbox and click the confirmation link we sent you.';
-      } else if (error.message?.includes('rate limit')) {
-        errorMessage = 'Too many attempts. Please wait a few minutes and try again.';
-      }
-      
       toast({
-        title: errorTitle,
-        description: errorMessage,
+        title: isResetMode ? 'Reset failed' : isSignUp ? 'Sign up failed' : 'Sign in failed',
+        description: error.message || 'Please check your credentials and try again.',
         variant: 'destructive',
-        duration: 8000,
       });
     } finally {
       setIsLoading(false);
@@ -255,8 +211,8 @@ export default function Auth() {
     },
     {
       icon: Zap,
-      title: 'Real-Time Trading',
-      description: 'Live auctions, instant RFQs, and AI-powered price discovery',
+      title: 'Lithium Recycling',
+      description: 'Advanced marketplace for black mass and closed-loop battery materials',
     },
     {
       icon: Globe,
@@ -281,20 +237,25 @@ export default function Auth() {
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <div>
-            <div className="mb-4">
-              <Logo size="lg" layoutLabel="B2B Trading Platform" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 rounded-xl bg-gradient-gold">
+                <Sparkles className="h-6 w-6 text-accent-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">LithiumBuy</h1>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest">Lithium & Recycling Marketplace</p>
+              </div>
             </div>
           </div>
 
           <div className="space-y-8">
             <div>
               <h2 className="text-4xl font-bold leading-tight mb-4">
-                The Future of<br />
-                <span className="text-gradient-primary">Lithium Trading</span>
+                The Global Authority in<br />
+                <span className="text-gradient-primary">Lithium & Recycling</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-md">
-                Institutional-grade marketplace for battery metals. Secure transactions, 
-                verified suppliers, and AI-powered market intelligence.
+                The world's leading institutional marketplace for primary lithium procurement and advanced battery recycling.
               </p>
             </div>
 
@@ -324,28 +285,17 @@ export default function Auth() {
       {/* Right Panel - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center justify-center mb-12">
-            <Logo size="lg" layoutLabel="Trading Platform" />
+          <div className="lg:hidden flex items-center justify-center gap-3 mb-12">
+            <div className="p-3 rounded-xl bg-gradient-gold">
+              <Sparkles className="h-6 w-6 text-accent-foreground" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">LithiumBuy</h1>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest">Lithium & Recycling</p>
+            </div>
           </div>
 
           <div className="glass-panel rounded-2xl p-8 space-y-6">
-            {/* Show auth error banner if present */}
-            {authError && (
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
-                <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Authentication Error</p>
-                  <p className="text-xs opacity-80">{authError}</p>
-                </div>
-                <button 
-                  onClick={() => setAuthError(null)}
-                  className="text-xs hover:underline"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
-
             {isUpdatePasswordMode ? (
               <>
                 <div className="text-center space-y-2">
@@ -433,7 +383,7 @@ export default function Auth() {
                       ? 'Enter your email to receive a reset link'
                       : isSignUp 
                         ? 'Enter your details to get started' 
-                        : 'Sign in to access your trading dashboard'}
+                        : 'Sign in to the Lithium & Recycling console'}
                   </p>
                 </div>
 

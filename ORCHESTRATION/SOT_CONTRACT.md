@@ -2,7 +2,7 @@
 
 > **Version:** 1.0.0  
 > **Last Updated:** 2024-12-21  
-> **Owners:** Backend (Replit) + Frontend (Lovable)
+> **Owners:** Backend (Replit) + Frontend (Frontend)
 
 ---
 
@@ -16,7 +16,7 @@
 | **RLS Policies** | Supabase | Row-level security enforcement |
 | **RPC Functions** | Supabase | Business logic, validation, audit logging |
 | **Edge Functions** | Supabase | External API integrations, webhooks |
-| **Frontend UI** | Lovable | Components, routing, state management |
+| **Frontend UI** | Frontend | Components, routing, state management |
 | **TypeScript Types** | Auto-generated | `src/integrations/supabase/types.ts` |
 
 ### 1.2 Golden Rules
@@ -51,7 +51,7 @@ This is **non-negotiable**. The mandatory workflow is:
 
 **Never skip step 1.** The OpenAPI spec is the contract handshake.
 
-### 2.1 Frontend (Lovable) — READ + RPC ONLY
+### 2.1 Frontend (Frontend) — READ + RPC ONLY
 
 ```typescript
 // ✅ ALLOWED: Direct reads
@@ -108,7 +108,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │   Frontend  │────▶│  Supabase   │────▶│   Backend   │
-│  (Lovable)  │     │  Triggers   │     │  (Replit)   │
+│  (Frontend)  │     │  Triggers   │     │  (Replit)   │
 └─────────────┘     └─────────────┘     └─────────────┘
                            │
                            ▼
@@ -220,7 +220,7 @@ _None currently._
 
 - **Supabase Project ID:** `vuekwckknfjivjighhfd`
 - **Supabase URL:** `https://vuekwckknfjivjighhfd.supabase.co`
-- **GitHub Repo:** (linked via Lovable)
+- **GitHub Repo:** (linked via Frontend)
 
 ## Appendix B: Changelog
 

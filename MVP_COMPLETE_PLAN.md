@@ -121,7 +121,7 @@
 - [x] Seed data ready
 - [x] Setup docs complete
 
-### Frontend Tasks (Lovable)
+### Frontend Tasks (Frontend)
 #### 1.1 Install Dependencies (2 min)
 ```bash
 npm install @auth0/auth0-react

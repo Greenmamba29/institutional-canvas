@@ -1,275 +1,179 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { StatusPill } from "@/components/shared/StatusPill";
+import { TrustBadge } from "@/components/shared/TrustBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MarketplaceGridSkeleton } from "@/components/ui/skeleton-loaders";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Store,
   Search,
+  Filter,
   Grid3X3,
   List,
-  ChevronLeft,
-  ChevronRight,
-  AlertCircle,
-  RefreshCw,
+  MapPin,
+  Package,
+  ArrowUpRight
 } from "lucide-react";
-import { useProducts, type ProductFilters } from "@/hooks/useProducts";
-import { SupplierFilters, type FilterState } from "@/components/marketplace/SupplierFilters";
-import { ProductCard } from "@/components/marketplace/ProductCard";
-import { ProductList } from "@/components/marketplace/ProductList";
-import { FeaturedSuppliers } from "@/components/marketplace/FeaturedSuppliers";
-import { useDebounce } from "@/hooks/useDebounce";
-
-const DEFAULT_FILTERS: FilterState = {
-  verificationTier: [],
-  productType: [],
-  purityLevel: [],
-  priceRange: [0, 100000],
-  availability: [],
-};
+import { listings, formatCurrency, formatVolume } from "@/data/mockData";
 
 export default function Marketplace() {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
-  const [page, setPage] = useState(1);
-  const [sortBy, setSortBy] = useState<"created_at" | "price_per_unit" | "name">("created_at");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  const debouncedSearch = useDebounce(searchQuery, 300);
-
-  const productFilters: ProductFilters = useMemo(
-    () => ({
-      productType: filters.productType.length > 0 ? filters.productType : undefined,
-      purityLevel: filters.purityLevel.length > 0 ? filters.purityLevel : undefined,
-      availability: filters.availability.length > 0 ? filters.availability : undefined,
-      priceRange:
-        filters.priceRange[0] > 0 || filters.priceRange[1] < 100000
-          ? filters.priceRange
-          : undefined,
-      search: debouncedSearch.length >= 2 ? debouncedSearch : undefined,
-      page,
-      limit: 20,
-      sortBy,
-      sortOrder,
-    }),
-    [filters, debouncedSearch, page, sortBy, sortOrder]
+  const filteredListings = listings.filter(listing =>
+    listing.commodity.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    listing.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    listing.origin.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const { data, isLoading, error, refetch } = useProducts(productFilters);
-
-  const handleFiltersChange = useCallback((newFilters: FilterState) => {
-    setFilters(newFilters);
-    setPage(1); // Reset to first page when filters change
-  }, []);
-
-  const handleResetFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTERS);
-    setSearchQuery("");
-    setPage(1);
-  }, []);
-
-  const handleSortChange = (value: string) => {
-    const [field, order] = value.split("-") as [typeof sortBy, typeof sortOrder];
-    setSortBy(field);
-    setSortOrder(order);
-    setPage(1);
-  };
 
   return (
     <LayoutShell>
       <div className="space-y-6 animate-fade-in">
         <PageHeader
-          title="Marketplace"
-          description="Browse verified lithium products from trusted suppliers"
+          title="Lithium & Recycling Marketplace"
+          description="Browse verified listings for primary lithium and advanced battery recycling materials"
           icon={Store}
         />
 
-        {/* Search and Sort Bar */}
+        {/* Filters bar */}
         <div className="glass-panel rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search products..."
+                placeholder="Search by commodity, supplier, origin..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 bg-secondary/50 border-border/50"
               />
             </div>
-            <SupplierFilters
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              onReset={handleResetFilters}
-            />
+            <Button variant="outline" size="icon" className="shrink-0">
+              <Filter className="h-4 w-4" />
+            </Button>
           </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <Select value={`${sortBy}-${sortOrder}`} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="created_at-desc">Newest First</SelectItem>
-                <SelectItem value="created_at-asc">Oldest First</SelectItem>
-                <SelectItem value="price_per_unit-asc">Price: Low to High</SelectItem>
-                <SelectItem value="price_per_unit-desc">Price: High to Low</SelectItem>
-                <SelectItem value="name-asc">Name: A to Z</SelectItem>
-                <SelectItem value="name-desc">Name: Z to A</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="flex items-center gap-1">
-              <Button
-                variant={viewMode === "grid" ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => setViewMode("list")}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground mr-2">{filteredListings.length} listings</span>
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="icon"
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="icon"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
-        {/* Featured Suppliers Section */}
-        <FeaturedSuppliers />
+        {/* Listings grid */}
+        {viewMode === 'grid' ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredListings.map((listing) => (
+              <Link
+                key={listing.id}
+                to={`/marketplace/${listing.id}`}
+                className="card-premium p-5 group hover:border-primary/30 transition-all duration-300 border-glow"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <span className="text-xs font-mono text-muted-foreground">{listing.id}</span>
+                  <StatusPill status={listing.status} />
+                </div>
 
-        {/* Main Content */}
-        <div className="flex gap-6">
-          {/* Desktop Sidebar - shown by SupplierFilters component */}
-          <SupplierFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onReset={handleResetFilters}
-          />
+                <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+                  {listing.commodity}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">{listing.supplierName}</p>
 
-          {/* Product Grid/List */}
-          <div className="flex-1 space-y-4">
-            {/* Results Count */}
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>
-                {isLoading
-                  ? "Loading..."
-                  : `${data?.total || 0} products found`}
-              </span>
-              {data && data.totalPages > 1 && (
-                <span>
-                  Page {data.page} of {data.totalPages}
-                </span>
-              )}
-            </div>
-
-            {/* Loading State */}
-            {isLoading && <MarketplaceGridSkeleton count={6} />}
-
-            {/* Error State */}
-            {error && (
-              <div className="glass-panel rounded-xl p-8 text-center">
-                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Failed to load products</h3>
-                <p className="text-muted-foreground mb-4">
-                  There was an error loading the marketplace. Please try again.
-                </p>
-                <Button onClick={() => refetch()} variant="outline">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Retry
-                </Button>
-              </div>
-            )}
-
-            {/* Empty State */}
-            {!isLoading && !error && data?.products.length === 0 && (
-              <div className="glass-panel rounded-xl p-8 text-center">
-                <Store className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No products found</h3>
-                <p className="text-muted-foreground mb-4">
-                  Try adjusting your filters or search query.
-                </p>
-                <Button onClick={handleResetFilters} variant="outline">
-                  Clear All Filters
-                </Button>
-              </div>
-            )}
-
-            {/* Products Display */}
-            {!isLoading && !error && data && data.products.length > 0 && (
-              <>
-                {viewMode === "grid" ? (
-                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {data.products.map((product) => (
-                      <ProductCard key={product.id} product={product} />
-                    ))}
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Grade</span>
+                    <span className="font-medium">{listing.grade}</span>
                   </div>
-                ) : (
-                  <ProductList products={data.products} />
-                )}
-
-                {/* Pagination */}
-                {data.totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 pt-4">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-
-                    {Array.from({ length: Math.min(5, data.totalPages) }, (_, i) => {
-                      let pageNum: number;
-                      if (data.totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (page <= 3) {
-                        pageNum = i + 1;
-                      } else if (page >= data.totalPages - 2) {
-                        pageNum = data.totalPages - 4 + i;
-                      } else {
-                        pageNum = page - 2 + i;
-                      }
-
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={page === pageNum ? "default" : "outline"}
-                          size="icon"
-                          onClick={() => setPage(pageNum)}
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
-                      disabled={page === data.totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Purity</span>
+                    <span className="font-mono">{listing.purity}</span>
                   </div>
-                )}
-              </>
-            )}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Volume</span>
+                    <span className="font-mono font-bold">{formatVolume(listing.volume, listing.unit)}</span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-border/50 flex items-center justify-between">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {listing.origin}
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-xl font-bold text-gradient-primary">
+                      {formatCurrency(listing.pricePerUnit)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">per {listing.unit}</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
-        </div>
+        ) : (
+          <div className="glass-panel rounded-xl overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border/50">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase">Listing</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase">Supplier</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase">Grade</th>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase">Volume</th>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase">Price</th>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {filteredListings.map((listing) => (
+                  <tr key={listing.id} className="table-row-interactive">
+                    <td className="py-4 px-4">
+                      <Link to={`/marketplace/${listing.id}`} className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <Package className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium hover:text-primary transition-colors">{listing.commodity}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{listing.id}</p>
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="py-4 px-4">
+                      <p className="font-medium">{listing.supplierName}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> {listing.origin}
+                      </p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <p className="font-medium">{listing.grade}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{listing.purity}</p>
+                    </td>
+                    <td className="py-4 px-4 text-right font-mono font-bold">
+                      {formatVolume(listing.volume, listing.unit)}
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <p className="font-mono font-bold text-primary">{formatCurrency(listing.pricePerUnit)}</p>
+                      <p className="text-xs text-muted-foreground">/{listing.unit}</p>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <StatusPill status={listing.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </LayoutShell>
   );

@@ -588,6 +588,57 @@ export type Database = {
           },
         ]
       }
+      bounties: {
+        Row: {
+          claimed_at: string | null
+          claimed_by: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          h3_zone: string | null
+          id: string
+          metadata: Json | null
+          required_reputation: number | null
+          required_stake: number | null
+          reward_amount: number
+          status: string | null
+          title: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_by?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          h3_zone?: string | null
+          id?: string
+          metadata?: Json | null
+          required_reputation?: number | null
+          required_stake?: number | null
+          reward_amount: number
+          status?: string | null
+          title: string
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_by?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          h3_zone?: string | null
+          id?: string
+          metadata?: Json | null
+          required_reputation?: number | null
+          required_stake?: number | null
+          reward_amount?: number
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           certificate_url: string | null
@@ -798,6 +849,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      customer_handoffs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          customer_id: string | null
+          github_repo_url: string | null
+          handoff_status: string | null
+          id: string
+          scc_scan_results: Json | null
+          scc_scan_status: string | null
+          secret_manager_path: string | null
+          template_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          github_repo_url?: string | null
+          handoff_status?: string | null
+          id?: string
+          scc_scan_results?: Json | null
+          scc_scan_status?: string | null
+          secret_manager_path?: string | null
+          template_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          github_repo_url?: string | null
+          handoff_status?: string | null
+          id?: string
+          scc_scan_results?: Json | null
+          scc_scan_status?: string | null
+          secret_manager_path?: string | null
+          template_id?: string | null
+        }
+        Relationships: []
       }
       deal_signatures: {
         Row: {
@@ -1704,6 +1794,48 @@ export type Database = {
           },
         ]
       }
+      organization_members: {
+        Row: {
+          created_at: string | null
+          id: string
+          organization_id: string
+          role: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          organization_id: string
+          role: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          organization_id?: string
+          role?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           airtable_id: string | null
@@ -1976,6 +2108,7 @@ export type Database = {
           preferences: Json | null
           purchase: string | null
           seats: number | null
+          stripe_customer_id: string | null
           tier: string | null
           updated_at: string | null
           username: string | null
@@ -1993,6 +2126,7 @@ export type Database = {
           preferences?: Json | null
           purchase?: string | null
           seats?: number | null
+          stripe_customer_id?: string | null
           tier?: string | null
           updated_at?: string | null
           username?: string | null
@@ -2010,6 +2144,7 @@ export type Database = {
           preferences?: Json | null
           purchase?: string | null
           seats?: number | null
+          stripe_customer_id?: string | null
           tier?: string | null
           updated_at?: string | null
           username?: string | null
@@ -2525,6 +2660,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      secret_access_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown
+          layer: string | null
+          secret_id: string
+          success: boolean | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          layer?: string | null
+          secret_id: string
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          layer?: string | null
+          secret_id?: string
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       smart_folders: {
         Row: {
@@ -3042,6 +3213,48 @@ export type Database = {
           tokens_used?: number | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_authz_cache: {
+        Row: {
+          approved_zone: string | null
+          created_at: string | null
+          id: string
+          last_verified_at: string | null
+          reputation_score: number | null
+          role: string
+          subscription_status: string | null
+          tier: number | null
+          updated_at: string | null
+          user_id: string | null
+          verified_endpoint: boolean | null
+        }
+        Insert: {
+          approved_zone?: string | null
+          created_at?: string | null
+          id?: string
+          last_verified_at?: string | null
+          reputation_score?: number | null
+          role: string
+          subscription_status?: string | null
+          tier?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          verified_endpoint?: boolean | null
+        }
+        Update: {
+          approved_zone?: string | null
+          created_at?: string | null
+          id?: string
+          last_verified_at?: string | null
+          reputation_score?: number | null
+          role?: string
+          subscription_status?: string | null
+          tier?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          verified_endpoint?: boolean | null
         }
         Relationships: []
       }
@@ -4007,6 +4220,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remove_org_member: {
+        Args: { p_org_id: string; p_user_id: string }
+        Returns: boolean
+      }
       respond_to_offer: {
         Args: {
           p_deal_id: string
@@ -4149,6 +4366,10 @@ export type Database = {
           p_tags?: string[]
         }
         Returns: Json
+      }
+      update_member_role: {
+        Args: { p_new_role: string; p_org_id: string; p_user_id: string }
+        Returns: boolean
       }
       update_purchase_status: {
         Args: { p_purchase_id: string; p_status: string }

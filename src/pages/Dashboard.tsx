@@ -1,22 +1,19 @@
 import { useState } from "react";
 import { LayoutShell } from "@/components/layout/LayoutShell";
-import { useRole } from "@/context/RoleContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
 import { TabBar } from "@/components/shared/TabBar";
 import { SystemAlert } from "@/components/shared/SystemAlert";
 import { SparklineChart } from "@/components/shared/SparklineChart";
 import { GMVChart } from "@/components/dashboard/GMVChart";
-import { AuditLog } from "@/components/dashboard/AuditLog";
-import { TrustedPartners } from "@/components/dashboard/TrustedPartners";
+import { AuditLog, AuditLogEntry } from "@/components/dashboard/AuditLog";
+import { TrustedPartners, TrustedPartner } from "@/components/dashboard/TrustedPartners";
 import { MetricsReview } from "@/components/dashboard/MetricsReview";
 import { BottomKPIs } from "@/components/dashboard/BottomKPIs";
 import { WeeklyAuctionSnapshot } from "@/components/supplier/WeeklyAuctionSnapshot";
 import { UpcomingAuctions } from "@/components/supplier/UpcomingAuctions";
+import { TrendingUp, DollarSign, Activity, Lock } from "lucide-react";
 import { useDashboardStats, usePriceTicker } from "@/hooks/useDashboardStats";
-import { useAuditLog } from "@/hooks/useAuditLog";
-import { usePartners } from "@/hooks/usePartners";
-import { useEscrowedAssets } from "@/hooks/useEscrowedAssets";
-import { useAuctions } from "@/hooks/useAuctions";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const chartData = [
@@ -28,46 +25,49 @@ const chartData = [
   { date: 'Oct 26', value: 66300 },
 ];
 
+const auditEntries: AuditLogEntry[] = [
+  { id: '1', type: 'approved', title: 'Lithium Recycling Certificate', description: 'Batch #R-2025-99 verified', timestamp: '12M AGO', action: 'VIEW CREDENTIALS' },
+  { id: '2', type: 'cancelled', title: 'Black Mass Trade Cancelled', description: 'Order #77421 - Logistics delay', timestamp: '2H AGO', action: 'DETAILS' },
+  { id: '3', type: 'flagged', title: 'Recycling Purity Flag', description: 'Secondary Li-Carbonate below 99.5%', timestamp: '5M AGO', action: 'REVIEW' },
+  { id: '4', type: 'withdrawal', title: 'Sustainable Source Verified', description: 'Closed-loop certification active', timestamp: '6H AGO', action: 'CERTIFICATE' },
+];
+
+const trustedPartners: TrustedPartner[] = [
+  { id: '1', name: 'Lithium Recycling Global', verified: true, verificationTier: 'gold', ytdRevenue: 3750000, product: 'Recycled Lithium', pricePerMT: 83250, responseTime: '4.2H' },
+  { id: '2', name: 'EcoBattery Solutions', verified: true, verificationTier: 'gold', ytdRevenue: 5200000, product: 'Black Mass (Co/Ni/Li)', pricePerMT: 24500, responseTime: '2.1H' },
+];
+
+const upcomingAuctions = [
+  { id: '1', company: 'LithiumRecycle', countryCode: 'DE', verified: true, volume: 60, product: 'Recycled Carbonate', pricePerMT: 66500 },
+  { id: '2', company: 'GreenLi Tech', countryCode: 'CA', verified: true, volume: 120, product: 'Black Mass', pricePerMT: 2850 },
+];
+
+const escrowedAssets = [
+  { description: 'Recycled Li-Hydroxide', remainder: '4.2k', gain: 1.2 },
+  { description: 'Black Mass Concentrate', remainder: '1.8k', gain: -0.4 },
+  { description: 'Spodumene Conc.', remainder: '12.4k', gain: 5.6 },
+  { description: 'Secondary Carbonate', remainder: '0.9k', gain: 0.1 },
+];
+
 export default function Dashboard() {
-  const { uiLayoutPreference } = useRole();
-  const [activeTab, setActiveTab] = useState(uiLayoutPreference === 'supplier' ? 'overview' : 'dashboard');
+  const { viewMode } = useOrganization();
+  const [activeTab, setActiveTab] = useState(viewMode === 'supplier' ? 'overview' : 'dashboard');
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: priceData } = usePriceTicker();
-  
-  // Real data hooks
-  const { data: auditEntries = [], isLoading: auditLoading } = useAuditLog(4);
-  const { data: trustedPartners = [], isLoading: partnersLoading } = usePartners(2);
-  const { data: escrowedAssets = [], isLoading: escrowLoading } = useEscrowedAssets(4);
-  const { data: auctions = [], isLoading: auctionsLoading } = useAuctions();
 
-  // Transform auctions to the format expected by UpcomingAuctions
-  const upcomingAuctions = auctions
-    .filter(a => a.status === 'scheduled' || a.status === 'live')
-    .slice(0, 2)
-    .map(auction => ({
-      id: auction.id,
-      company: auction.title,
-      countryCode: 'CL', // Default, could be derived from org location
-      verified: true,
-      volume: auction.reserve_price ? Math.floor(auction.reserve_price / 1000) : 60,
-      product: auction.description || 'Lithium Product',
-      pricePerMT: auction.reserve_price ?? 66500,
-    }));
-
-  // UI layout determines which tabs/breadcrumbs to show - this is cosmetic, not authorization
-  const tabs = uiLayoutPreference === 'supplier' 
+  const tabs = viewMode === 'supplier' 
     ? [{ id: 'overview', label: 'OVERVIEW' }, { id: 'listings', label: 'MY LISTINGS' }, { id: 'financials', label: 'FINANCIALS' }]
     : [{ id: 'dashboard', label: 'DASHBOARD' }, { id: 'auctions', label: 'AUCTION LISTINGS' }, { id: 'performance', label: 'PERFORMANCE' }];
 
-  const breadcrumbs = uiLayoutPreference === 'supplier'
-    ? [{ label: 'PLATFORM' }, { label: 'SUPPLIER DESK' }, { label: 'DASHBOARD' }]
-    : [{ label: 'PLATFORM' }, { label: 'TRADING DESK' }, { label: 'OVERVIEW' }];
+  const breadcrumbs = viewMode === 'supplier'
+    ? [{ label: 'PLATFORM' }, { label: 'RECYCLING & SUPPLY' }, { label: 'DASHBOARD' }]
+    : [{ label: 'PLATFORM' }, { label: 'RECYCLING CONSOLE' }, { label: 'OVERVIEW' }];
 
-  const title = uiLayoutPreference === 'supplier' ? 'Supplier Performance Terminal' : 'Institutional Trading Console';
+  const title = viewMode === 'supplier' ? 'Lithium & Recycling Supply Terminal' : 'Global Lithium & Recycling Console';
 
   const renderTabContent = () => {
-    // Supplier layout tabs - UI preference only
-    if (uiLayoutPreference === 'supplier') {
+    // Supplier tabs
+    if (viewMode === 'supplier') {
       if (activeTab === 'listings') {
         return (
           <div className="glass-panel rounded-xl p-8 text-center">
@@ -190,7 +190,7 @@ export default function Dashboard() {
           <div className="lg:col-span-2 space-y-6">
             <GMVChart data={chartData} />
             
-            {uiLayoutPreference === 'supplier' ? (
+            {viewMode === 'supplier' ? (
               <WeeklyAuctionSnapshot
                 totalBids={475000}
                 changePercent={12.4}
@@ -198,14 +198,6 @@ export default function Dashboard() {
                 lotType="Carbonate & Hydroxide"
                 verifiedBidders={21}
               />
-            ) : partnersLoading ? (
-              <div className="glass-panel rounded-xl p-6">
-                <Skeleton className="h-6 w-40 mb-4" />
-                <div className="space-y-3">
-                  <Skeleton className="h-16 w-full" />
-                  <Skeleton className="h-16 w-full" />
-                </div>
-              </div>
             ) : (
               <TrustedPartners partners={trustedPartners} />
             )}
@@ -218,36 +210,13 @@ export default function Dashboard() {
               grossMerchandise={52.1}
               stackedData={52}
               verificationMedia={17}
-              escrowedAssets={escrowLoading ? [] : escrowedAssets}
+              escrowedAssets={escrowedAssets}
             />
             
-            {uiLayoutPreference === 'supplier' ? (
-              auctionsLoading ? (
-                <div className="glass-panel rounded-xl p-6">
-                  <Skeleton className="h-6 w-40 mb-4" />
-                  <div className="space-y-3">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
-                  </div>
-                </div>
-              ) : (
-                <UpcomingAuctions auctions={upcomingAuctions.length > 0 ? upcomingAuctions : [
-                  { id: '1', company: 'No upcoming auctions', countryCode: 'XX', verified: false, volume: 0, product: '-', pricePerMT: 0 }
-                ]} />
-              )
-            ) : auditLoading ? (
-              <div className="glass-panel rounded-xl p-6">
-                <Skeleton className="h-6 w-40 mb-4" />
-                <div className="space-y-3">
-                  <Skeleton className="h-16 w-full" />
-                  <Skeleton className="h-16 w-full" />
-                  <Skeleton className="h-16 w-full" />
-                </div>
-              </div>
+            {viewMode === 'supplier' ? (
+              <UpcomingAuctions auctions={upcomingAuctions} />
             ) : (
-              <AuditLog entries={auditEntries.length > 0 ? auditEntries : [
-                { id: '0', type: 'approved', title: 'No recent activity', description: 'Activity will appear here', timestamp: 'NOW', action: 'VIEW' }
-              ]} />
+              <AuditLog entries={auditEntries} />
             )}
           </div>
         </div>

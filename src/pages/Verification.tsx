@@ -19,11 +19,11 @@ interface VerificationRequest {
 }
 
 const mockVerifications: VerificationRequest[] = [
-  { id: 'VER-001', company: 'Santiago Lithium S.A.', type: 'supplier', tier: 'gold', status: 'pending', submittedAt: '2024-01-15', documents: 8 },
-  { id: 'VER-002', company: 'CleanTech Ventures', type: 'buyer', tier: 'standard', status: 'open', submittedAt: '2024-01-14', documents: 5 },
-  { id: 'VER-003', company: 'Pacific Mining Corp', type: 'supplier', tier: 'gold', status: 'verified', submittedAt: '2024-01-12', documents: 12 },
-  { id: 'VER-004', company: 'EV Battery Solutions', type: 'buyer', tier: 'basic', status: 'closed', submittedAt: '2024-01-10', documents: 3 },
-  { id: 'VER-005', company: 'Atacama Resources', type: 'supplier', tier: 'standard', status: 'pending', submittedAt: '2024-01-09', documents: 6 },
+  { id: 'VER-001', company: 'Atacama Lithium Recycling', type: 'supplier', tier: 'gold', status: 'pending', submittedAt: '2024-01-15', documents: 8 },
+  { id: 'VER-002', company: 'CleanTech Battery Recovery', type: 'buyer', tier: 'standard', status: 'open', submittedAt: '2024-01-14', documents: 5 },
+  { id: 'VER-003', company: 'Pacific Lithium Supply', type: 'supplier', tier: 'gold', status: 'verified', submittedAt: '2024-01-12', documents: 12 },
+  { id: 'VER-004', company: 'EV Battery Loop', type: 'buyer', tier: 'basic', status: 'closed', submittedAt: '2024-01-10', documents: 3 },
+  { id: 'VER-005', company: 'Atacama Primary Resources', type: 'supplier', tier: 'standard', status: 'pending', submittedAt: '2024-01-09', documents: 6 },
 ];
 
 const columns = [
@@ -114,7 +114,7 @@ export default function Verification() {
         <BreadcrumbNav items={breadcrumbs} />
         
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Verification Center</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Lithium & Recycling Verification</h1>
           <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
             <ShieldCheck className="h-4 w-4 mr-2" />
             New Verification

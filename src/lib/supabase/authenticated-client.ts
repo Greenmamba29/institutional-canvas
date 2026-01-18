@@ -1,20 +1,24 @@
 /**
  * Authenticated Supabase Client Factory
  * 
- * Creates a Supabase client with Auth0 JWT token injected for RLS enforcement.
+ * Creates a Supabase client with Supabase Auth JWT token injected for RLS enforcement.
+ * This ensures Row-Level Security policies can access jwt_user_id() and jwt_org_id().
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
-// Supabase project configuration
-// NOTE: Lovable preview does not provide runtime .env injection, so we inline the public project URL + anon key.
-// This is safe to ship as long as RLS is correctly enforced.
-const SUPABASE_URL = "https://vuekwckknfjivjighhfd.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1ZWt3Y2trbmZqaXZqaWdoaGZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MTczNTcsImV4cCI6MjA2Nzk5MzM1N30.9NqjmpF9qqaTALfP2VAAii13vjZTI9IKOf_CSRT9lbo";
+// Use environment variables for consistency and credential rotation support
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Validate environment variables are present
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Missing required Supabase environment variables: VITE_SUPABASE_URL and/or VITE_SUPABASE_ANON_KEY');
+}
 
 /**
- * Creates an authenticated Supabase client with the Auth0 access token
+ * Creates an authenticated Supabase client with the Supabase Auth access token
  */
 export function createAuthenticatedClient(accessToken: string): SupabaseClient<Database> {
   return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {

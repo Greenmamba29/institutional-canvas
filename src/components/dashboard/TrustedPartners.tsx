@@ -23,8 +23,8 @@ export function TrustedPartners({ partners }: TrustedPartnersProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold tracking-wider">TRUSTED PARTNERS</h3>
-          <p className="text-[10px] text-muted-foreground">GOLD VERIFIEDS</p>
+          <h3 className="text-sm font-semibold tracking-wider">GLOBAL PARTNERS</h3>
+          <p className="text-[10px] text-muted-foreground">LITHIUM & RECYCLING VERIFIED</p>
         </div>
         <div className="text-right">
           <p className="text-sm font-semibold">Advanced Sourcing Analytics</p>

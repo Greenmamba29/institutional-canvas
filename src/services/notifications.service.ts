@@ -1,5 +1,5 @@
 /**
- * Notifications Service - Lithium & Lux RPC Layer
+ * Notifications Service - LithiumBuy RPC Layer
  * 
  * Uses get_notifications and mark_notification_read RPCs
  */

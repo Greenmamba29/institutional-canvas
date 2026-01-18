@@ -1,0 +1,59 @@
+{
+  "name": "LithiumBuy - B2B Lithium Trading",
+  "short_name": "LithiumBuy",
+  "description": "The world's leading B2B marketplace for institutional lithium trading. Connect with verified suppliers, manage RFQs, and execute deals securely.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#D4AF37",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "LithiumBuy Dashboard - Real-time lithium trading metrics"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "RFQs",
+      "short_name": "RFQs", 
+      "url": "/rfqs",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Deals",
+      "short_name": "Deals",
+      "url": "/deals",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

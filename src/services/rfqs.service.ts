@@ -1,33 +1,41 @@
 /**
- * RFQs Service - Lithium & Lux RPC Layer
+ * RFQs Service - LithiumBuy RPC Layer
  * 
- * Uses create_rfq and list_rfqs RPCs with input validation
+ * Uses create_rfq and list_rfqs RPCs with input validation.
+ * All write operations require an authenticated Supabase client.
  */
 
-import { callRpc, supabase } from '@/lib/supabase/rpc';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { callAuthenticatedRpc } from '@/lib/supabase/authenticated-client';
 import { createRfqSchema, validateInput, type CreateRfqInput } from '@/lib/validation/schemas';
-import type { Tables } from '@/integrations/supabase/types';
+import type { Tables, Database } from '@/integrations/supabase/types';
 
 export type RFQ = Tables<'rfqs'>;
 
 /**
- * List all RFQs for the current org
+ * List all RFQs for the current org (authenticated)
  */
-export async function listRfqs() {
-  return callRpc<RFQ[]>('list_rfqs');
+export async function listRfqs(
+  client: SupabaseClient<Database>
+): Promise<{ data: RFQ[] | null; error: Error | null }> {
+  return callAuthenticatedRpc<RFQ[]>(client, 'list_rfqs');
 }
 
 /**
- * Create a new RFQ with validated input
+ * Create a new RFQ with validated input (authenticated)
  */
-export async function createRfq(params: CreateRfqInput) {
+export async function createRfq(
+  client: SupabaseClient<Database>,
+  params: CreateRfqInput
+): Promise<{ data: RFQ | null; error: Error | null }> {
   // Validate input before sending to RPC
   const validated = validateInput(createRfqSchema, params);
-  return callRpc<RFQ>('create_rfq', validated);
+  return callAuthenticatedRpc<RFQ>(client, 'create_rfq', validated);
 }
 
 /**
- * Get a single RFQ by ID (direct read)
+ * Get a single RFQ by ID (direct read - RLS protected)
  */
 export async function getRfqById(rfqId: string) {
   const { data, error } = await supabase
@@ -36,5 +44,5 @@ export async function getRfqById(rfqId: string) {
     .eq('id', rfqId)
     .single();
   
-  return { data, error };
+  return { data, error: error ? new Error(error.message) : null };
 }

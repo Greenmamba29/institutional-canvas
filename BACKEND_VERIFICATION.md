@@ -145,8 +145,7 @@ Grant Types: Authorization Code, Refresh Token, Implicit
 ### Callback URLs
 ```
 Development: http://localhost:5173/callback ✅
-Production: https://lithiumbuy.com/callback ✅
-            https://lithiumbuy.com/* (wildcard for all routes)
+Production: https://lithiumbuy.com/callback
             https://www.lithiumbuy.com/callback
 ```
 
@@ -226,19 +225,15 @@ INSERT INTO rfqs (org_id, created_by, title, description, target_quantity, targe
 
 ## 🧪 Testing Checklist
 
-### Phase 1-4 Verification (Production: lithiumbuy.com)
-- [ ] Visit https://lithiumbuy.com
-- [ ] Click "Login" → Redirects to Auth0
-- [ ] Login with your credentials
-- [ ] Should redirect to `/callback` → then `/dashboard`
-- [ ] Verify authentication works
-- [ ] Check that user can access protected routes
-- [ ] Logout → Redirects to landing
-
-### Local Development Testing
+### Phase 1-4 Verification (Frontend Complete)
 - [ ] Start dev server: `npm run dev`
 - [ ] Visit http://localhost:5173
-- [ ] Test login flow locally
+- [ ] Click "Login" → Redirects to Auth0
+- [ ] Login with `buyer@test.com` / `Test123!@#`
+- [ ] Should redirect to `/callback` → then `/dashboard`
+- [ ] Verify org name shows in header (Tesla)
+- [ ] Check that no org switcher appears (single org user)
+- [ ] Logout → Redirects to landing
 
 ### Multi-Org User Test
 - [ ] Login with `multi@test.com` / `Test123!@#`
@@ -376,7 +371,7 @@ ORDER BY routine_name;
 2. Get their Auth0 user IDs (sub values)
 3. Insert test organizations + org_members in Supabase (2 minutes)
 4. Test login flow with all 3 users (5 minutes)
-5. Proceed to Phase 5 implementation with Lovable
+5. Proceed to Phase 5 implementation with Frontend
 
 **Total Setup Time**: ~15 minutes
 

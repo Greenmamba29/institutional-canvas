@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Background Circle with Gradient -->
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F5D16C;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#D4AF37;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#AA8C2C;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="darkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f0f1a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main Circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#darkGradient)" stroke="url(#goldGradient)" stroke-width="2"/>
+  
+  <!-- Lithium "Li" Symbol -->
+  <text x="32" y="38" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="url(#goldGradient)" text-anchor="middle">Li</text>
+  
+  <!-- Sparkle/Trading indicator -->
+  <path d="M48 16 L50 20 L54 20 L51 23 L52 27 L48 24 L44 27 L45 23 L42 20 L46 20 Z" fill="#D4AF37" opacity="0.9"/>
+</svg>

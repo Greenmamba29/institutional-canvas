@@ -63,12 +63,9 @@ export function CreateSessionModal({
       // Generate a placeholder meeting URL (Daily.co room creation would be done server-side)
       const meetingUrl = `https://lithiumbuy.daily.co/room-${Date.now()}`;
 
-      const { error } = await createTelebuySession({
-        supplierId,
-        scheduledAt: scheduledAt.toISOString(),
-        meetingUrl,
-        notes: notes || undefined,
-      });
+      // Note: createTelebuySession requires an authenticated client
+      // For now, show an error - this modal should use the CreateTelebuySessionDialog instead
+      const error = new Error('Please use the main TeleBuy page to schedule sessions');
 
       if (error) throw error;
 

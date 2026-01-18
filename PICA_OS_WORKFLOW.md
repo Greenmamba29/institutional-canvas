@@ -7,7 +7,7 @@
 
 ## 🚀 What is PicaOS?
 
-PicaOS is an AI-powered development acceleration platform that orchestrates multiple AI agents (Lovable, Warp, Cursor, etc.) to work together seamlessly, dramatically speeding up development cycles.
+PicaOS is an AI-powered development acceleration platform that orchestrates multiple AI agents (Frontend, Warp, Cursor, etc.) to work together seamlessly, dramatically speeding up development cycles.
 
 **Benefits**:
 - **10x faster development**: Parallel task execution across multiple AI agents
@@ -28,7 +28,7 @@ PicaOS is an AI-powered development acceleration platform that orchestrates mult
 └────────────┬──────────────┬──────────────┬─────────────┘
              │              │              │
       ┌──────▼──────┐ ┌────▼─────┐ ┌─────▼──────┐
-      │   Lovable   │ │   Warp   │ │   Cursor   │
+      │   Frontend   │ │   Warp   │ │   Cursor   │
       │  (Frontend) │ │ (Backend)│ │ (Complex)  │
       └─────────────┘ └──────────┘ └────────────┘
              │              │              │
@@ -43,7 +43,7 @@ PicaOS is an AI-powered development acceleration platform that orchestrates mult
 
 ### Agent Responsibilities
 
-**Lovable** (Frontend Speed):
+**Frontend** (Frontend Speed):
 - React component creation
 - UI/UX implementation
 - Tailwind CSS styling
@@ -75,7 +75,7 @@ PicaOS is an AI-powered development acceleration platform that orchestrates mult
 ```mermaid
 graph TD
     A[PicaOS: Start Phase 5] --> B{Task Type?}
-    B -->|Frontend| C[Lovable: UI Updates]
+    B -->|Frontend| C[Frontend: UI Updates]
     B -->|Backend| D[Warp: Verify RPCs]
     B -->|Complex| E[Cursor: Logic]
     
@@ -106,11 +106,11 @@ graph TD
    Task: Phase 5 Multi-Tenant Updates
    
    Subtasks:
-   1. Update NotificationContext → Lovable (Frontend)
-   2. Create useRealtimeSubscription → Lovable (Frontend)
+   1. Update NotificationContext → Frontend (Frontend)
+   2. Create useRealtimeSubscription → Frontend (Frontend)
    3. Verify RPC functions → Warp (Backend)
-   4. Add realtime to hooks → Lovable (Frontend)
-   5. Update Dashboard → Lovable (Frontend)
+   4. Add realtime to hooks → Frontend (Frontend)
+   5. Update Dashboard → Frontend (Frontend)
    6. Test integration → PicaOS (Automated)
    7. Deploy to Vercel → PicaOS (Automated)
    ```
@@ -119,13 +119,13 @@ graph TD
    ```
    [Time 0:00] PicaOS assigns tasks
    
-   [Time 0:01] Lovable starts NotificationContext update
+   [Time 0:01] Frontend starts NotificationContext update
                Warp verifies get_notifications() RPC
                
-   [Time 0:15] Lovable completes NotificationContext
+   [Time 0:15] Frontend completes NotificationContext
                Warp confirms RPC ready
                
-   [Time 0:16] Lovable creates useRealtimeSubscription
+   [Time 0:16] Frontend creates useRealtimeSubscription
                
    [Time 0:30] All tasks complete
                
@@ -155,7 +155,7 @@ pica context set PHASE_5_7_READY.md
 pica context set VERCEL_DEPLOYMENT.md
 
 # Connect agents
-pica agent connect lovable
+pica agent connect frontend
 pica agent connect warp
 pica agent connect cursor
 ```
@@ -167,7 +167,7 @@ pica agent connect cursor
 pica execute phase-5
 
 # Parallel task assignment
-pica parallel "Update NotificationContext" lovable \
+pica parallel "Update NotificationContext" frontend \
               "Verify RPC functions" warp
 
 # Run tests
@@ -193,7 +193,7 @@ pica progress
 pica health
 
 # View logs
-pica logs --agent lovable
+pica logs --agent frontend
 pica logs --agent warp
 ```
 
@@ -212,13 +212,13 @@ duration: 40min
 tasks:
   - id: 5.1
     name: Update NotificationContext
-    agent: lovable
+    agent: frontend
     time: 15min
     dependencies: []
     
   - id: 5.2
     name: Create useRealtimeSubscription
-    agent: lovable
+    agent: frontend
     time: 10min
     dependencies: []
     
@@ -231,13 +231,13 @@ tasks:
     
   - id: 5.4
     name: Add realtime to data hooks
-    agent: lovable
+    agent: frontend
     time: 15min
     dependencies: [5.2]
     
   - id: 5.5
     name: Update Dashboard
-    agent: lovable
+    agent: frontend
     time: 15min
     dependencies: [5.1, 5.4]
     
@@ -271,30 +271,30 @@ duration: 60min
 tasks:
   - id: 6.1
     name: Create CreateRFQDialog
-    agent: lovable
+    agent: frontend
     time: 15min
     
   - id: 6.2
     name: Create SubmitBidForm
-    agent: lovable
+    agent: frontend
     time: 15min
     parallel_with: [6.1]
     
   - id: 6.3
     name: Create DealResponseButtons
-    agent: lovable
+    agent: frontend
     time: 10min
     parallel_with: [6.1, 6.2]
     
   - id: 6.4
     name: Create AwardDealButton
-    agent: lovable
+    agent: frontend
     time: 10min
     parallel_with: [6.1, 6.2, 6.3]
     
   - id: 6.5
     name: Add buttons to pages
-    agent: lovable
+    agent: frontend
     time: 10min
     dependencies: [6.1, 6.2, 6.3, 6.4]
     
@@ -322,7 +322,7 @@ duration: 20min
 tasks:
   - id: 7.1
     name: Create PWA manifest + icons
-    agent: lovable
+    agent: frontend
     time: 5min
     
   - id: 7.2
@@ -363,7 +363,7 @@ project:
   framework: vite
 
 agents:
-  lovable:
+  frontend:
     role: frontend
     capabilities:
       - react-components
@@ -464,7 +464,7 @@ phases:
 
 ### Task Assignment
 
-**Route to Lovable**:
+**Route to Frontend**:
 - UI component creation
 - Styling with Tailwind
 - Form layouts
@@ -517,7 +517,7 @@ phases:
 **Community**: https://discord.gg/picaos
 
 **Integration Guides**:
-- [Lovable + PicaOS](https://picaos.dev/integrations/lovable)
+- [Frontend + PicaOS](https://picaos.dev/integrations/frontend)
 - [Warp + PicaOS](https://picaos.dev/integrations/warp)
 - [Cursor + PicaOS](https://picaos.dev/integrations/cursor)
 
@@ -543,7 +543,7 @@ pica init
 ### 3. Connect Agents
 
 ```bash
-pica agent add lovable --api-key YOUR_LOVABLE_KEY
+pica agent add frontend --api-key YOUR_LOVABLE_KEY
 pica agent add warp --integration warp-terminal
 pica agent add cursor --integration cursor-ide
 ```
@@ -576,7 +576,7 @@ pica run phase-5
 ## ✅ Integration Checklist
 
 - [ ] PicaOS CLI installed
-- [ ] Lovable connected
+- [ ] Frontend connected
 - [ ] Warp connected
 - [ ] Cursor connected
 - [ ] Context files added

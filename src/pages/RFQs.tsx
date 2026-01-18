@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LayoutShell } from "@/components/layout/LayoutShell";
-import { useRole } from "@/context/RoleContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
 import { TabBar } from "@/components/shared/TabBar";
 import { StatusPill } from "@/components/shared/StatusPill";
@@ -10,8 +10,8 @@ import { SupplierProfileSidebar } from "@/components/rfq/SupplierProfileSidebar"
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RFQListSkeleton } from "@/components/ui/skeleton-loaders";
-import { Search, Truck, Flag, AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search, Plus, Truck, Flag, AlertCircle } from "lucide-react";
 import { useRFQs } from "@/hooks/useRFQs";
 import type { RFQ } from "@/services/rfqs.service";
 import { CreateRFQDialog } from "@/components/rfq/CreateRFQDialog";
@@ -30,7 +30,7 @@ function formatVolume(volume: number, unit: string): string {
 }
 
 export default function RFQs() {
-  const { uiLayoutPreference } = useRole();
+  const { viewMode } = useOrganization();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<'all' | 'submitted' | 'closed' | 'awarded'>('all');
   const [activeTab, setActiveTab] = useState('live');
@@ -107,10 +107,10 @@ export default function RFQs() {
   return (
     <LayoutShell>
       <div className="space-y-6 animate-fade-in">
-        <BreadcrumbNav items={[{ label: 'PLATFORM' }, { label: 'TRADING DESK' }, { label: 'RFQs' }]} />
+        <BreadcrumbNav items={[{ label: 'PLATFORM' }, { label: 'SUPPLY CHAIN' }, { label: 'LITHIUM & RECYCLING RFQs' }]} />
         
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Live RFQs</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Lithium & Recycling RFQs</h1>
           <CreateRFQDialog />
         </div>
 
@@ -145,7 +145,11 @@ export default function RFQs() {
             </div>
 
             {isLoading ? (
-              <RFQListSkeleton count={5} />
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                ))}
+              </div>
             ) : filteredRfqs.length === 0 ? (
               <div className="glass-panel rounded-xl p-8 text-center">
                 <p className="text-muted-foreground">No RFQs found</p>
@@ -178,7 +182,7 @@ export default function RFQs() {
           </div>
 
           {/* Supplier Profile Sidebar */}
-          {uiLayoutPreference === 'supplier' && (
+          {viewMode === 'supplier' && (
             <div className="lg:col-span-1">
               <SupplierProfileSidebar
                 name="Diego Santos"

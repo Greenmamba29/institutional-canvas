@@ -34,9 +34,9 @@ export default function Data() {
           <div className="p-4 rounded-full bg-accent/10 mb-6">
             <Lock className="h-12 w-12 text-accent" />
           </div>
-          <h1 className="text-3xl font-bold mb-3">Market Data Hub</h1>
+          <h1 className="text-3xl font-bold mb-3">Lithium & Recycling Data Hub</h1>
           <p className="text-muted-foreground max-w-md mb-6">
-            Access comprehensive lithium market data, export reports, and analytics dashboards.
+            Access comprehensive data on lithium procurement, black mass recycling volumes, and sustainability reports.
           </p>
           <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
             Upgrade to Pro - $199/month

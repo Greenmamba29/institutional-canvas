@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useRole } from "@/context/RoleContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { GMVSummaryPanel } from "./GMVSummaryPanel";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { CountBadge } from "@/components/shared/CountBadge";
 import { OrgSwitcher } from "@/components/org/OrgSwitcher";
 import { VerificationBadge } from "@/components/shared/VerificationBadge";
-import { UserMenu } from "@/components/auth/UserMenu";
 import {
   Store,
   FileText,
@@ -21,6 +20,7 @@ import {
   X,
   Search,
   Settings,
+  Sparkles,
   ShieldCheck,
   Users,
   Package,
@@ -32,10 +32,8 @@ import {
   Database,
   CreditCard,
   Target,
-  Landmark,
-  ClipboardCheck,
+  Activity,
 } from "lucide-react";
-import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
 
 interface LayoutShellProps {
@@ -48,6 +46,7 @@ const adminNavItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Marketplace', path: '/marketplace', icon: Store },
   { label: 'Auctions', path: '/auctions', icon: Gavel, count: 14 },
+  { label: 'Recycling', path: '/recycling', icon: Activity, count: 3 },
   { label: 'Bids', path: '/bids', icon: Target, count: 5 },
   { label: 'RFQs', path: '/rfqs', icon: FileText, count: 8 },
   { label: 'Deals', path: '/deals', icon: Handshake },
@@ -64,6 +63,7 @@ const adminNavItems = [
 // TODO: Realtime publish later: subscribe to bid events + notification events
 const supplierNavItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Recycling', path: '/recycling', icon: Activity, count: 2 },
   { label: 'RFQs', path: '/rfqs', icon: FileText, count: 15 },
   { label: 'Auctions', path: '/auctions', icon: Gavel, count: 2 },
   { label: 'Bid Activity', path: '/bids', icon: Target, count: 3 },
@@ -72,19 +72,6 @@ const supplierNavItems = [
   { label: 'TeleBuy', path: '/telebuy', icon: Video },
   { label: 'Messages', path: '/messages', icon: MessageSquare, count: 3 },
   { label: 'Analytics', path: '/analytics', icon: TrendingUp },
-];
-
-// SOE Navigation - Government-focused ordering
-const soeNavItems = [
-  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Strategic Procurement', path: '/rfqs', icon: FileText, count: 8 },
-  { label: 'National Reserves', path: '/data', icon: Database },
-  { label: 'Supplier Registry', path: '/marketplace', icon: Store },
-  { label: 'Contracts', path: '/deals', icon: Handshake },
-  { label: 'Orders', path: '/orders', icon: Package, count: 3 },
-  { label: 'TeleBuy', path: '/telebuy', icon: Video },
-  { label: 'Compliance', path: '/verification', icon: ClipboardCheck, count: 5 },
-  { label: 'Reports', path: '/analytics', icon: TrendingUp },
 ];
 
 const bottomNavItems = [
@@ -96,21 +83,10 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { uiLayoutPreference } = useRole();
+  const { viewMode } = useOrganization();
 
   const isActive = (path: string) => location.pathname.startsWith(path);
-  // UI layout determines which navigation to show - this is cosmetic, not authorization
-  const navItems = uiLayoutPreference === 'supplier' 
-    ? supplierNavItems 
-    : uiLayoutPreference === 'soe'
-    ? soeNavItems
-    : adminNavItems;
-
-  const layoutLabel = uiLayoutPreference === 'supplier' 
-    ? 'Supplier Terminal' 
-    : uiLayoutPreference === 'soe'
-    ? 'Government Portal'
-    : 'Mission Control';
+  const navItems = viewMode === 'supplier' ? supplierNavItems : adminNavItems;
 
   return (
     <div className="min-h-screen bg-background flex w-full">
@@ -124,12 +100,17 @@ export function LayoutShell({ children }: LayoutShellProps) {
         {/* Logo */}
         <div className="flex items-center justify-between p-4 border-b border-border/50">
           <Link to="/" className="flex items-center gap-3">
-            <Logo 
-              size={sidebarOpen ? 'md' : 'sm'} 
-              showText={sidebarOpen} 
-              variant={sidebarOpen ? 'full' : 'icon'}
-              layoutLabel={layoutLabel}
-            />
+            <div className="p-2 rounded-lg bg-gradient-gold">
+              <Sparkles className="h-5 w-5 text-accent-foreground" />
+            </div>
+            {sidebarOpen && (
+              <div className="flex flex-col">
+                <span className="font-bold text-lg tracking-tight">LithiumBuy</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                  {viewMode === 'supplier' ? 'Recycling & Supply' : 'Mission Control'}
+                </span>
+              </div>
+            )}
           </Link>
           <Button
             variant="ghost"
@@ -141,8 +122,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
           </Button>
         </div>
 
-        {/* Supplier Profile Card - shown when user selects supplier layout */}
-        {uiLayoutPreference === 'supplier' && sidebarOpen && (
+        {/* Supplier Profile Card */}
+        {viewMode === 'supplier' && sidebarOpen && (
           <div className="p-4 border-b border-border/50 space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
@@ -171,39 +152,6 @@ export function LayoutShell({ children }: LayoutShellProps) {
             <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-xs font-semibold">
               <Plus className="h-3.5 w-3.5 mr-1" />
               LIST NEW MATERIAL
-            </Button>
-          </div>
-        )}
-
-        {/* SOE Profile Card - shown when user selects SOE layout */}
-        {uiLayoutPreference === 'soe' && sidebarOpen && (
-          <div className="p-4 border-b border-border/50 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center text-success font-bold text-sm">
-                <Landmark className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">Government Entity</p>
-                <span className="text-[10px] text-success font-medium">VERIFIED SOE</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-muted-foreground">STRATEGIC RESERVES</span>
-              <span className="font-mono font-bold text-success">12,500 MT</span>
-            </div>
-            <div className="p-2 rounded-lg bg-success/5 border border-success/20">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Active Contracts</span>
-                <span className="font-semibold text-success">7</span>
-              </div>
-              <div className="flex items-center justify-between text-xs mt-1">
-                <span className="text-muted-foreground">Pending Review</span>
-                <span className="font-semibold text-warning">3</span>
-              </div>
-            </div>
-            <Button className="w-full bg-success hover:bg-success/90 text-success-foreground text-xs font-semibold">
-              <FileText className="h-3.5 w-3.5 mr-1" />
-              NEW PROCUREMENT RFQ
             </Button>
           </div>
         )}
@@ -242,8 +190,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
           })}
         </nav>
 
-        {/* GMV Summary for Admin layout */}
-        {uiLayoutPreference !== 'supplier' && sidebarOpen && (
+        {/* GMV Summary for Admin */}
+        {viewMode !== 'supplier' && sidebarOpen && (
           <GMVSummaryPanel
             gmvYTD={15200000}
             changePercent={12.4}
@@ -272,13 +220,9 @@ export function LayoutShell({ children }: LayoutShellProps) {
           ))}
           {sidebarOpen && (
             <div className="pt-3 mt-3 border-t border-border/30">
-            <p className="text-[10px] text-muted-foreground text-center tracking-widest">
-                  {uiLayoutPreference === 'supplier' 
-                    ? 'LITHIUMBUY • SUPPLIER TERMINAL' 
-                    : uiLayoutPreference === 'soe'
-                    ? 'LITHIUMBUY • GOVERNMENT PORTAL'
-                    : 'LITHIUMBUY • MISSION CONTROL'}
-                </p>
+              <p className="text-[10px] text-muted-foreground text-center tracking-widest">
+                {viewMode === 'supplier' ? 'SUPPLIER TERMINAL V4.1' : 'MISSION CONTROL CENTER • CONNECTED'}
+              </p>
             </div>
           )}
         </div>
@@ -301,7 +245,13 @@ export function LayoutShell({ children }: LayoutShellProps) {
       >
         <div className="flex items-center justify-between p-4 border-b border-border/50">
           <Link to="/" className="flex items-center gap-3">
-            <Logo size="md" layoutLabel="Trading Platform" />
+            <div className="p-2 rounded-lg bg-gradient-gold">
+              <Sparkles className="h-5 w-5 text-accent-foreground" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-lg">LithiumBuy</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Recycling & Supply</span>
+            </div>
           </Link>
           <Button
             variant="ghost"
@@ -379,8 +329,14 @@ export function LayoutShell({ children }: LayoutShellProps) {
               <NotificationDropdown />
 
               {/* User Profile */}
-              <div className="pl-3 border-l border-border/50">
-                <UserMenu />
+              <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-border/50">
+                <div className="text-right">
+                  <p className="text-sm font-semibold">Admin User</p>
+                  <p className="text-[10px] text-muted-foreground">VERIFIED • GOLD TIER</p>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
+                  AU
+                </div>
               </div>
             </div>
           </div>
