@@ -14,11 +14,15 @@ const DAILY_DOMAIN = 'lithiumbuy.daily.co';
 export type TelebuySession = Tables<'telebuy_sessions'>;
 export type TelebuyDocument = Tables<'telebuy_documents'>;
 
+export type VideoProvider = 'daily' | 'google_meet';
+
 export interface CreateTelebuySessionParams {
   supplierId: string;
   scheduledAt: string;
   meetingUrl: string;
   notes?: string;
+  videoProvider?: VideoProvider;
+  googleMeetLink?: string;
 }
 
 /**
@@ -30,6 +34,8 @@ export async function createTelebuySession(params: CreateTelebuySessionParams) {
     p_scheduled_at: params.scheduledAt,
     p_meeting_url: params.meetingUrl,
     p_notes: params.notes || null,
+    p_video_provider: params.videoProvider || 'daily',
+    p_google_meet_link: params.googleMeetLink || null,
   });
 }
 
