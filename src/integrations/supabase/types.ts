@@ -3986,39 +3986,75 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      create_telebuy_session: {
-        Args: {
-          p_meeting_url: string
-          p_notes?: string
-          p_scheduled_at: string
-          p_supplier_id: string
-        }
-        Returns: {
-          created_at: string | null
-          ended_at: string | null
-          google_meet_link: string | null
-          id: string
-          meeting_id: string | null
-          meeting_url: string
-          notes: string | null
-          org_id: string | null
-          recording_url: string | null
-          scheduled_at: string
-          started_at: string | null
-          status: string
-          supplier_id: string
-          transcript: string | null
-          updated_at: string | null
-          user_id: string | null
-          video_provider: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "telebuy_sessions"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      create_telebuy_session:
+        | {
+            Args: {
+              p_meeting_url: string
+              p_notes?: string
+              p_scheduled_at: string
+              p_supplier_id: string
+            }
+            Returns: {
+              created_at: string | null
+              ended_at: string | null
+              google_meet_link: string | null
+              id: string
+              meeting_id: string | null
+              meeting_url: string
+              notes: string | null
+              org_id: string | null
+              recording_url: string | null
+              scheduled_at: string
+              started_at: string | null
+              status: string
+              supplier_id: string
+              transcript: string | null
+              updated_at: string | null
+              user_id: string | null
+              video_provider: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "telebuy_sessions"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_google_meet_link?: string
+              p_meeting_url: string
+              p_notes?: string
+              p_scheduled_at: string
+              p_supplier_id: string
+              p_video_provider?: string
+            }
+            Returns: {
+              created_at: string | null
+              ended_at: string | null
+              google_meet_link: string | null
+              id: string
+              meeting_id: string | null
+              meeting_url: string
+              notes: string | null
+              org_id: string | null
+              recording_url: string | null
+              scheduled_at: string
+              started_at: string | null
+              status: string
+              supplier_id: string
+              transcript: string | null
+              updated_at: string | null
+              user_id: string | null
+              video_provider: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "telebuy_sessions"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       current_sub: { Args: never; Returns: string }
       ensure_folder_path: {
         Args: { p_path: string; p_user: string }
