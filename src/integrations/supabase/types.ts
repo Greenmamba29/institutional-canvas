@@ -1036,6 +1036,114 @@ export type Database = {
           },
         ]
       }
+      direct_messages: {
+        Row: {
+          attachments: Json | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          read_at: string | null
+          sender_org_id: string
+          sender_user_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_org_id: string
+          sender_user_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_org_id?: string
+          sender_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "dm_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_sender_org_id_fkey"
+            columns: ["sender_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_sender_org_id_fkey"
+            columns: ["sender_org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dm_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string | null
+          org_a_id: string
+          org_b_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          org_a_id: string
+          org_b_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          org_a_id?: string
+          org_b_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_conversations_org_a_id_fkey"
+            columns: ["org_a_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_conversations_org_a_id_fkey"
+            columns: ["org_a_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_conversations_org_b_id_fkey"
+            columns: ["org_b_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_conversations_org_b_id_fkey"
+            columns: ["org_b_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       duplicate_group_files: {
         Row: {
           created_at: string | null
@@ -3020,6 +3128,7 @@ export type Database = {
         Row: {
           created_at: string | null
           ended_at: string | null
+          google_meet_link: string | null
           id: string
           meeting_id: string | null
           meeting_url: string
@@ -3033,10 +3142,12 @@ export type Database = {
           transcript: string | null
           updated_at: string | null
           user_id: string | null
+          video_provider: string
         }
         Insert: {
           created_at?: string | null
           ended_at?: string | null
+          google_meet_link?: string | null
           id?: string
           meeting_id?: string | null
           meeting_url: string
@@ -3050,10 +3161,12 @@ export type Database = {
           transcript?: string | null
           updated_at?: string | null
           user_id?: string | null
+          video_provider?: string
         }
         Update: {
           created_at?: string | null
           ended_at?: string | null
+          google_meet_link?: string | null
           id?: string
           meeting_id?: string | null
           meeting_url?: string
@@ -3067,6 +3180,7 @@ export type Database = {
           transcript?: string | null
           updated_at?: string | null
           user_id?: string | null
+          video_provider?: string
         }
         Relationships: [
           {
@@ -3258,6 +3372,62 @@ export type Database = {
         }
         Relationships: []
       }
+      user_follows: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          follower_org_id: string
+          following_org_id: string
+          id: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          follower_org_id: string
+          following_org_id: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          follower_org_id?: string
+          following_org_id?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_follows_follower_org_id_fkey"
+            columns: ["follower_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_follows_follower_org_id_fkey"
+            columns: ["follower_org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_follows_following_org_id_fkey"
+            columns: ["following_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_follows_following_org_id_fkey"
+            columns: ["following_org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           company_name: string | null
@@ -3287,6 +3457,27 @@ export type Database = {
           preferences?: Json | null
           role?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -3491,6 +3682,7 @@ export type Database = {
         Returns: {
           created_at: string | null
           ended_at: string | null
+          google_meet_link: string | null
           id: string
           meeting_id: string | null
           meeting_url: string
@@ -3504,6 +3696,7 @@ export type Database = {
           transcript: string | null
           updated_at: string | null
           user_id: string | null
+          video_provider: string
         }
         SetofOptions: {
           from: "*"
@@ -3526,6 +3719,10 @@ export type Database = {
       }
       check_ai_financial_isolation: {
         Args: { p_action: string; p_trigger_source: string }
+        Returns: boolean
+      }
+      check_mutual_follow: {
+        Args: { p_org_a: string; p_org_b: string }
         Returns: boolean
       }
       check_release_gate: {
@@ -3799,6 +3996,7 @@ export type Database = {
         Returns: {
           created_at: string | null
           ended_at: string | null
+          google_meet_link: string | null
           id: string
           meeting_id: string | null
           meeting_url: string
@@ -3812,6 +4010,7 @@ export type Database = {
           transcript: string | null
           updated_at: string | null
           user_id: string | null
+          video_provider: string
         }
         SetofOptions: {
           from: "*"
@@ -3825,6 +4024,7 @@ export type Database = {
         Args: { p_path: string; p_user: string }
         Returns: string
       }
+      follow_org: { Args: { p_target_org_id: string }; Returns: string }
       get_audit_logs: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: {
@@ -3881,6 +4081,16 @@ export type Database = {
           id: string
           user_id: string
           user_name: string
+        }[]
+      }
+      get_follow_status: {
+        Args: { p_target_org_id: string }
+        Returns: {
+          can_message: boolean
+          i_follow_them: boolean
+          my_follow_status: string
+          their_follow_status: string
+          they_follow_me: boolean
         }[]
       }
       get_latest_chat_document: {
@@ -3966,6 +4176,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_or_create_conversation: {
+        Args: { p_other_org_id: string }
+        Returns: string
+      }
       get_price_indicators: {
         Args: { p_limit?: number; p_region: string; p_symbol: string }
         Returns: Json
@@ -4019,8 +4233,25 @@ export type Database = {
         }
       }
       get_user_org_ids: { Args: never; Returns: string[] }
+      get_user_org_role: {
+        Args: { p_org_id?: string; p_user_id?: string }
+        Returns: {
+          member_role: string
+          org_id: string
+          org_name: string
+          org_type: string
+          subscription_tier: string
+        }[]
+      }
       has_org_role: {
         Args: { p_org_id: string; p_role: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
         Returns: boolean
       }
       increment_review_helpful: {
@@ -4224,6 +4455,10 @@ export type Database = {
         Args: { p_org_id: string; p_user_id: string }
         Returns: boolean
       }
+      respond_to_follow: {
+        Args: { p_accept: boolean; p_follow_id: string }
+        Returns: boolean
+      }
       respond_to_offer: {
         Args: {
           p_deal_id: string
@@ -4283,6 +4518,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      send_direct_message: {
+        Args: {
+          p_attachments?: Json
+          p_content: string
+          p_conversation_id: string
+        }
+        Returns: string
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
@@ -4400,6 +4643,7 @@ export type Database = {
         Returns: {
           created_at: string | null
           ended_at: string | null
+          google_meet_link: string | null
           id: string
           meeting_id: string | null
           meeting_url: string
@@ -4413,6 +4657,7 @@ export type Database = {
           transcript: string | null
           updated_at: string | null
           user_id: string | null
+          video_provider: string
         }
         SetofOptions: {
           from: "*"
@@ -4426,6 +4671,7 @@ export type Database = {
         Returns: {
           created_at: string | null
           ended_at: string | null
+          google_meet_link: string | null
           id: string
           meeting_id: string | null
           meeting_url: string
@@ -4439,6 +4685,7 @@ export type Database = {
           transcript: string | null
           updated_at: string | null
           user_id: string | null
+          video_provider: string
         }
         SetofOptions: {
           from: "*"
@@ -4450,6 +4697,7 @@ export type Database = {
       withdraw_bid: { Args: { p_bid_id: string }; Returns: boolean }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       auction_status: "scheduled" | "live" | "ended" | "cancelled"
       deal_status:
         | "pending"
@@ -4595,6 +4843,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       auction_status: ["scheduled", "live", "ended", "cancelled"],
       deal_status: [
         "pending",
