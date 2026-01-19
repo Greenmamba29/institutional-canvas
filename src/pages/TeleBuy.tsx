@@ -299,8 +299,8 @@ export default function TeleBuy() {
                 <div className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg">
                   AI-powered transcription and negotiation insights available with Pro subscription
                 </div>
-                <Button variant="outline" className="w-full" disabled>
-                  Upgrade to Pro
+                <Button variant="outline" className="w-full" asChild>
+                  <a href="/settings/billing">Upgrade to Pro</a>
                 </Button>
               </CardContent>
             </Card>

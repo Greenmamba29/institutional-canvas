@@ -6,7 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { OrganizationProvider, useOrganization } from "@/context/OrganizationContext";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { RoleProvider } from "@/context/RoleContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { RoleProtectedRoute } from "@/components/auth/RoleProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
@@ -73,7 +75,12 @@ const AppContent = () => {
           <Route path="/purchases" element={<Purchases />} />
           <Route path="/telebuy" element={<TeleBuy />} />
           <Route path="/telebuy/session/:id" element={<TeleBuy />} />
-          <Route path="/ai-studio" element={<AIStudio />} />
+          
+          {/* AI Studio - requires Pro subscription */}
+          <Route element={<RoleProtectedRoute requireSubscription="pro" />}>
+            <Route path="/ai-studio" element={<AIStudio />} />
+          </Route>
+          
           <Route path="/data" element={<Data />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
@@ -96,13 +103,15 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <OrganizationProvider>
-            <NotificationProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <AppContent />
-              </TooltipProvider>
-            </NotificationProvider>
+            <RoleProvider>
+              <NotificationProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <AppContent />
+                </TooltipProvider>
+              </NotificationProvider>
+            </RoleProvider>
           </OrganizationProvider>
         </AuthProvider>
       </QueryClientProvider>
