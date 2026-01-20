@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Brain, TrendingUp, Target, Sparkles, Lock } from "lucide-react";
-import { useIsAdmin, useRole } from "@/context/RoleContext";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useRole, useHasSubscription } from "@/context/RoleContext";
 import { PriceForecast } from "@/components/ai-studio/PriceForecast";
 import { SupplierMatcher } from "@/components/ai-studio/SupplierMatcher";
 import { RiskAnalysis } from "@/components/ai-studio/RiskAnalysis";
@@ -14,13 +13,9 @@ import { RiskAnalysis } from "@/components/ai-studio/RiskAnalysis";
 export default function AIStudio() {
   const [activeTab, setActiveTab] = useState('price-forecast');
   
-  // Server-validated admin check (from org_members table)
-  const isAdmin = useIsAdmin();
+  // Server-validated role from context
   const { isLoadingRole } = useRole();
-  const { data: subscription } = useSubscription();
-  
-  // Grant access if user is admin OR has Enterprise subscription
-  const hasAccess = isAdmin || subscription?.tier === 'enterprise';
+  const hasAccess = useHasSubscription('pro');
 
   // Show loading state while checking role
   if (isLoadingRole) {

@@ -2,24 +2,27 @@
  * TeleBuy Service - RPC wrappers for TeleBuy session operations
  * 
  * Uses create_telebuy_session, update_session_status, update_telebuy_notes RPCs
- * Integrates with Daily.co for video calling
+ * Integrates with Daily.co for video calling via Edge Function (secure)
  */
 
 import { callRpc, supabase } from '@/lib/supabase/rpc';
 import type { Tables } from '@/integrations/supabase/types';
 
-// Daily.co configuration
-const DAILY_API_KEY = import.meta.env.VITE_DAILY_API_KEY;
-const DAILY_DOMAIN = import.meta.env.VITE_DAILY_DOMAIN || 'lithiumbuy.daily.co';
+// Daily.co domain for URL construction (public config, not a secret)
+const DAILY_DOMAIN = 'lithiumbuy.daily.co';
 
 export type TelebuySession = Tables<'telebuy_sessions'>;
 export type TelebuyDocument = Tables<'telebuy_documents'>;
+
+export type VideoProvider = 'daily' | 'google_meet';
 
 export interface CreateTelebuySessionParams {
   supplierId: string;
   scheduledAt: string;
   meetingUrl: string;
   notes?: string;
+  videoProvider?: VideoProvider;
+  googleMeetLink?: string;
 }
 
 /**
@@ -31,6 +34,8 @@ export async function createTelebuySession(params: CreateTelebuySessionParams) {
     p_scheduled_at: params.scheduledAt,
     p_meeting_url: params.meetingUrl,
     p_notes: params.notes || null,
+    p_video_provider: params.videoProvider || 'daily',
+    p_google_meet_link: params.googleMeetLink || null,
   });
 }
 
@@ -147,6 +152,7 @@ export async function getSessionDocuments(sessionId: string) {
 
 // ============================================
 // DAILY.CO VIDEO CALLING INTEGRATION
+// All API calls go through secure Edge Function
 // ============================================
 
 export interface DailyRoomConfig {
@@ -161,51 +167,31 @@ export interface DailyRoomConfig {
 }
 
 /**
- * Create a Daily.co room for TeleBuy session
+ * Create a Daily.co room for TeleBuy session (via Edge Function)
+ * API key is kept server-side for security
  */
 export async function createDailyRoom(config?: DailyRoomConfig): Promise<{
   url: string;
   name: string;
   error?: Error;
 }> {
-  if (!DAILY_API_KEY) {
-    console.error('Daily.co API key not configured');
-    return {
-      url: '',
-      name: '',
-      error: new Error('Daily.co API key not configured. Add VITE_DAILY_API_KEY to .env'),
-    };
-  }
-
   try {
-    const roomName = config?.name || `lithiumbuy-${Date.now()}`;
-    
-    const response = await fetch('https://api.daily.co/v1/rooms', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DAILY_API_KEY}`,
+    const { data, error } = await supabase.functions.invoke('daily-rooms', {
+      body: {
+        action: 'create',
+        config,
       },
-      body: JSON.stringify({
-        name: roomName,
-        privacy: config?.privacy || 'private',
-        properties: {
-          start_video_off: false,
-          start_audio_off: false,
-          max_participants: 10,
-          ...config?.properties,
-          // Note: enable_recording requires paid Daily.co plan
-        },
-      }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Failed to create Daily.co room:', errorData);
-      throw new Error(`Daily.co API error: ${errorData.error || response.statusText}`);
+    if (error) {
+      console.error('Failed to create Daily.co room:', error);
+      return {
+        url: '',
+        name: '',
+        error: new Error(error.message || 'Failed to create room'),
+      };
     }
 
-    const data = await response.json();
     return {
       url: data.url,
       name: data.name,
@@ -221,23 +207,23 @@ export async function createDailyRoom(config?: DailyRoomConfig): Promise<{
 }
 
 /**
- * Delete a Daily.co room
+ * Delete a Daily.co room (via Edge Function)
  */
 export async function deleteDailyRoom(roomName: string): Promise<{ success: boolean; error?: Error }> {
-  if (!DAILY_API_KEY) {
-    return { success: false, error: new Error('Daily.co API key not configured') };
-  }
-
   try {
-    const response = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${DAILY_API_KEY}`,
+    const { error } = await supabase.functions.invoke('daily-rooms', {
+      body: {
+        action: 'delete',
+        roomName,
       },
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to delete room: ${response.statusText}`);
+    if (error) {
+      console.error('Failed to delete Daily.co room:', error);
+      return {
+        success: false,
+        error: new Error(error.message || 'Failed to delete room'),
+      };
     }
 
     return { success: true };
@@ -251,26 +237,26 @@ export async function deleteDailyRoom(roomName: string): Promise<{ success: bool
 }
 
 /**
- * Get Daily.co room details
+ * Get Daily.co room details (via Edge Function)
  */
 export async function getDailyRoomInfo(roomName: string) {
-  if (!DAILY_API_KEY) {
-    return { data: null, error: new Error('Daily.co API key not configured') };
-  }
-
   try {
-    const response = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
-      headers: {
-        'Authorization': `Bearer ${DAILY_API_KEY}`,
+    const { data, error } = await supabase.functions.invoke('daily-rooms', {
+      body: {
+        action: 'get',
+        roomName,
       },
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to get room info: ${response.statusText}`);
+    if (error) {
+      console.error('Failed to get Daily.co room info:', error);
+      return {
+        data: null,
+        error: new Error(error.message || 'Failed to get room info'),
+      };
     }
 
-    const data = await response.json();
-    return { data, error: null };
+    return { data: data.data, error: null };
   } catch (error) {
     console.error('Error getting Daily.co room info:', error);
     return {

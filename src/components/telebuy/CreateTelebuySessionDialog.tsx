@@ -40,7 +40,8 @@ const formSchema = z.object({
   supplierId: z.string().uuid('Please select a supplier'),
   scheduledDate: z.date({ required_error: 'Please select a date' }),
   scheduledTime: z.string().min(1, 'Please select a time'),
-  meetingUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  videoProvider: z.enum(['daily', 'google_meet']).default('daily'),
+  googleMeetLink: z.string().url('Invalid Google Meet URL').optional().or(z.literal('')),
   notes: z.string().max(2000).optional(),
 });
 
@@ -60,10 +61,13 @@ export function CreateTelebuySessionDialog({ trigger }: CreateTelebuySessionDial
     defaultValues: {
       supplierId: '',
       scheduledTime: '14:00',
-      meetingUrl: '',
+      videoProvider: 'daily',
+      googleMeetLink: '',
       notes: '',
     },
   });
+
+  const videoProvider = form.watch('videoProvider');
 
   const onSubmit = async (data: FormData) => {
     // Combine date and time
@@ -72,10 +76,12 @@ export function CreateTelebuySessionDialog({ trigger }: CreateTelebuySessionDial
     scheduledAt.setHours(hours, minutes, 0, 0);
 
     await createSession.mutateAsync({
-      p_supplier_id: data.supplierId,
-      p_scheduled_at: scheduledAt.toISOString(),
-      p_meeting_url: data.meetingUrl || undefined,
-      p_notes: data.notes,
+      supplierId: data.supplierId,
+      scheduledAt: scheduledAt.toISOString(),
+      meetingUrl: data.videoProvider === 'google_meet' ? (data.googleMeetLink || '') : '',
+      videoProvider: data.videoProvider,
+      googleMeetLink: data.videoProvider === 'google_meet' ? data.googleMeetLink : undefined,
+      notes: data.notes,
     });
 
     setOpen(false);
@@ -206,23 +212,42 @@ export function CreateTelebuySessionDialog({ trigger }: CreateTelebuySessionDial
             </div>
           </div>
 
-          {/* Meeting URL (optional) */}
+          {/* Video Provider Selection */}
           <div className="space-y-2">
-            <Label htmlFor="meetingUrl">Meeting URL (optional)</Label>
-            <Input
-              id="meetingUrl"
-              placeholder="https://meet.google.com/..."
-              {...form.register('meetingUrl')}
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave blank to generate a meeting link automatically
-            </p>
-            {form.formState.errors.meetingUrl && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.meetingUrl.message}
-              </p>
-            )}
+            <Label>Video Platform</Label>
+            <Select
+              onValueChange={(value) => form.setValue('videoProvider', value as 'daily' | 'google_meet')}
+              defaultValue={form.getValues('videoProvider')}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select video platform" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily.co (Auto-generated)</SelectItem>
+                <SelectItem value="google_meet">Google Meet</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          {/* Google Meet Link (conditional) */}
+          {videoProvider === 'google_meet' && (
+            <div className="space-y-2">
+              <Label htmlFor="googleMeetLink">Google Meet Link</Label>
+              <Input
+                id="googleMeetLink"
+                placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                {...form.register('googleMeetLink')}
+              />
+              <p className="text-xs text-muted-foreground">
+                Paste your Google Meet link here
+              </p>
+              {form.formState.errors.googleMeetLink && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.googleMeetLink.message}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-2">

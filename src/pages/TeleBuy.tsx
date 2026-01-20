@@ -71,8 +71,8 @@ function SessionCard({ session }: { session: TelebuySession }) {
       // Mark as in_progress when joining
       if (session.status === 'scheduled') {
         updateStatus.mutate({
-          p_session_id: session.id,
-          p_status: 'in_progress',
+          sessionId: session.id,
+          status: 'in_progress',
         });
       }
     }
@@ -80,15 +80,15 @@ function SessionCard({ session }: { session: TelebuySession }) {
 
   const handleComplete = () => {
     updateStatus.mutate({
-      p_session_id: session.id,
-      p_status: 'completed',
+      sessionId: session.id,
+      status: 'completed',
     });
   };
 
   const handleCancel = () => {
     updateStatus.mutate({
-      p_session_id: session.id,
-      p_status: 'cancelled',
+      sessionId: session.id,
+      status: 'cancelled',
     });
   };
 
@@ -299,8 +299,8 @@ export default function TeleBuy() {
                 <div className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg">
                   AI-powered transcription and negotiation insights available with Pro subscription
                 </div>
-                <Button variant="outline" className="w-full" disabled>
-                  Upgrade to Pro
+                <Button variant="outline" className="w-full" asChild>
+                  <a href="/settings/billing">Upgrade to Pro</a>
                 </Button>
               </CardContent>
             </Card>

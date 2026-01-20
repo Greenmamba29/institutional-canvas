@@ -2,12 +2,10 @@
  * React Query hooks for TeleBuy sessions
  * 
  * Org-aware: Query keys include currentOrgId for proper cache isolation.
- * All mutations use authenticated Supabase client for RLS enforcement.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCurrentOrg } from '@/hooks/useCurrentOrg';
-import { useAuthenticatedClient } from '@/hooks/useAuthenticatedClient';
 import { useRealtimeSubscription } from './useRealtimeSubscription';
 import {
   getTelebuySessions,
@@ -17,11 +15,8 @@ import {
   createTelebuySession,
   updateSessionStatus,
   type TelebuySession,
+  type CreateTelebuySessionParams,
 } from '@/services/telebuy.service';
-import { 
-  CreateTelebuySessionInput, 
-  UpdateSessionStatusInput 
-} from '@/lib/validation/telebuy.schemas';
 import { toast } from 'sonner';
 
 export const telebuyKeys = {
@@ -98,18 +93,16 @@ export function useSessionDocuments(sessionId: string) {
 }
 
 // ============================================
-// SESSION MUTATIONS (Authenticated)
+// SESSION MUTATIONS
 // ============================================
 
 export function useCreateTelebuySession() {
   const queryClient = useQueryClient();
   const { currentOrgId } = useCurrentOrg();
-  const { getClient } = useAuthenticatedClient();
   
   return useMutation({
-    mutationFn: async (params: CreateTelebuySessionInput) => {
-      const client = await getClient();
-      const { data, error } = await createTelebuySession(client, params);
+    mutationFn: async (params: CreateTelebuySessionParams) => {
+      const { data, error } = await createTelebuySession(params);
       if (error) throw error;
       return data as TelebuySession;
     },
@@ -127,17 +120,15 @@ export function useCreateTelebuySession() {
 export function useUpdateSessionStatus() {
   const queryClient = useQueryClient();
   const { currentOrgId } = useCurrentOrg();
-  const { getClient } = useAuthenticatedClient();
   
   return useMutation({
-    mutationFn: async (params: UpdateSessionStatusInput) => {
-      const client = await getClient();
-      const { data, error } = await updateSessionStatus(client, params);
+    mutationFn: async (params: { sessionId: string; status: string }) => {
+      const { data, error } = await updateSessionStatus(params.sessionId, params.status);
       if (error) throw error;
       return data as TelebuySession;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: telebuyKeys.session(variables.p_session_id) });
+      queryClient.invalidateQueries({ queryKey: telebuyKeys.session(variables.sessionId) });
       queryClient.invalidateQueries({ queryKey: telebuyKeys.sessions(currentOrgId) });
       toast.success('Session status updated');
     },
@@ -153,8 +144,8 @@ export function useCancelSession() {
   return useMutation({
     mutationFn: async (sessionId: string) => {
       return updateStatus.mutateAsync({
-        p_session_id: sessionId,
-        p_status: 'cancelled',
+        sessionId,
+        status: 'cancelled',
       });
     },
     onError: (error: Error) => {
@@ -169,8 +160,8 @@ export function useStartSession() {
   return useMutation({
     mutationFn: async (sessionId: string) => {
       return updateStatus.mutateAsync({
-        p_session_id: sessionId,
-        p_status: 'in_progress',
+        sessionId,
+        status: 'in_progress',
       });
     },
     onError: (error: Error) => {
@@ -185,8 +176,8 @@ export function useCompleteSession() {
   return useMutation({
     mutationFn: async (sessionId: string) => {
       return updateStatus.mutateAsync({
-        p_session_id: sessionId,
-        p_status: 'completed',
+        sessionId,
+        status: 'completed',
       });
     },
     onError: (error: Error) => {
