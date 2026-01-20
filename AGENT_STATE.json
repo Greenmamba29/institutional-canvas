@@ -1,0 +1,228 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-01-20T15:45:00Z",
+  "orchestration_mode": "warp-primary",
+  "current_phase": "phase_1_security_setup",
+  "agents": {
+    "architect": {
+      "status": "active",
+      "current_task": "gap_analysis_review",
+      "last_action": "created_state_file"
+    },
+    "security": {
+      "status": "completed",
+      "current_task": "secrets_audit",
+      "last_action": "P0_security_complete"
+    },
+    "build": {
+      "status": "idle",
+      "current_task": null,
+      "last_action": null
+    },
+    "devops": {
+      "status": "idle",
+      "current_task": null,
+      "last_action": null
+    },
+    "test": {
+      "status": "idle",
+      "current_task": null,
+      "last_action": null
+    },
+    "compliance": {
+      "status": "idle",
+      "current_task": null,
+      "last_action": null
+    }
+  },
+  "epics": {
+    "p0_security_bootability": {
+      "priority": "P0",
+      "status": "completed",
+      "assigned_agents": [
+        "security",
+        "devops"
+      ],
+      "progress": 100,
+      "subtasks": {
+        "remove_committed_secrets": {
+          "status": "completed",
+          "assignee": "security"
+        },
+        "standardize_env_vars": {
+          "status": "completed",
+          "assignee": "security"
+        },
+        "runtime_env_validation": {
+          "status": "completed",
+          "assignee": "devops"
+        },
+        "security_documentation": {
+          "status": "completed",
+          "assignee": "security"
+        }
+      },
+      "acceptance_criteria": [
+        "No secrets committed to repo",
+        "All env vars use VITE_SUPABASE_ANON_KEY",
+        "Runtime validation shows helpful errors",
+        "SECURITY.md exists with rotation checklist"
+      ]
+    },
+    "p0_carbon_calculator": {
+      "priority": "P0",
+      "status": "pending",
+      "assigned_agents": [
+        "build"
+      ],
+      "progress": 0,
+      "subtasks": {
+        "backend_calculation_logic": {
+          "status": "pending",
+          "assignee": "build"
+        },
+        "supabase_edge_function": {
+          "status": "pending",
+          "assignee": "build"
+        },
+        "frontend_ui_component": {
+          "status": "pending",
+          "assignee": "build"
+        },
+        "wcag_accessibility_audit": {
+          "status": "pending",
+          "assignee": "compliance"
+        }
+      },
+      "acceptance_criteria": [
+        "Calculation engine returns kgCO2/kgLi accurately",
+        "UI mobile-responsive (375px+)",
+        "Recharts visualization integrated",
+        "WCAG 2.1 AA compliant",
+        "Unit tests ≥80% coverage"
+      ]
+    },
+    "p0_auction_engine": {
+      "priority": "P0",
+      "status": "pending",
+      "assigned_agents": [
+        "build"
+      ],
+      "progress": 0,
+      "subtasks": {
+        "bidding_logic_rls": {
+          "status": "pending",
+          "assignee": "build"
+        },
+        "realtime_bid_updates": {
+          "status": "pending",
+          "assignee": "build"
+        },
+        "winner_determination": {
+          "status": "pending",
+          "assignee": "build"
+        },
+        "escrow_integration": {
+          "status": "pending",
+          "assignee": "build"
+        }
+      },
+      "acceptance_criteria": [
+        "Real-time bid updates functional",
+        "Winner auto-determined on auction close",
+        "Escrow payment triggered for winner",
+        "RLS policies enforce bid authorization",
+        "E2E test covers full auction flow"
+      ]
+    },
+    "p1_supplier_matching": {
+      "priority": "P1",
+      "status": "pending",
+      "assigned_agents": [
+        "build"
+      ],
+      "progress": 0,
+      "acceptance_criteria": [
+        "Scoring function weights: product 40%, location 20%, carbon 20%, price 20%",
+        "/api/supplier-suggestions RPC functional",
+        "Top 5 suppliers returned with scores",
+        "Data logging for ML training pipeline"
+      ]
+    },
+    "p1_3pl_integration": {
+      "priority": "P1",
+      "status": "pending",
+      "assigned_agents": [
+        "build"
+      ],
+      "progress": 0,
+      "acceptance_criteria": [
+        "three_pl_inventory table seeded",
+        "CSV/JSON import service created",
+        "Spot Plus items marked (≤3 day delivery)",
+        "Order flow updated to use 3PL inventory"
+      ]
+    },
+    "p1_testing_infrastructure": {
+      "priority": "P1",
+      "status": "pending",
+      "assigned_agents": [
+        "test"
+      ],
+      "progress": 0,
+      "acceptance_criteria": [
+        "Unit test coverage ≥80%",
+        "Component tests for all React components",
+        "E2E tests for: carbon calc, auction flow, RFQ creation",
+        "Load test: 1000 concurrent auction bidders"
+      ]
+    },
+    "p2_devops_hardening": {
+      "priority": "P2",
+      "status": "pending",
+      "assigned_agents": [
+        "devops"
+      ],
+      "progress": 0,
+      "acceptance_criteria": [
+        "GitHub Actions: lint + typecheck + test on PR",
+        "Supabase migration automation",
+        "Sentry integrated (frontend)",
+        "CloudWatch logging (backend)",
+        "ECS deployment config complete"
+      ]
+    }
+  },
+  "quality_gates": {
+    "test_coverage": {
+      "current": 0,
+      "target": 80,
+      "unit": "percent"
+    },
+    "typescript_errors": {
+      "current": null,
+      "target": 0,
+      "unit": "count"
+    },
+    "eslint_errors": {
+      "current": null,
+      "target": 0,
+      "unit": "count"
+    },
+    "lighthouse_accessibility": {
+      "current": null,
+      "target": 90,
+      "unit": "score"
+    },
+    "build_time": {
+      "current": null,
+      "target": 300,
+      "unit": "seconds"
+    }
+  },
+  "blocking_issues": [],
+  "handoff_ready": false,
+  "warp_completion_report_path": null,
+  "lovable_handoff_timestamp": null,
+  "notes": "P0 Security complete: removed hardcoded credentials, created SECURITY_ROTATION_CHECKLIST.md, env validation functional"
+}

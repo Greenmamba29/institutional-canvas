@@ -2,10 +2,11 @@
 // For authenticated RPC calls, use createAuthenticatedClient from @/lib/supabase/authenticated-client
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+import { env } from '@/config/env';
 
-// Hardcoded values - VITE_* env vars are not supported in Lovable
-const SUPABASE_URL = 'https://vuekwckknfjivjighhfd.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1ZWt3Y2trbmZqaXZqaWdoaGZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MTczNTcsImV4cCI6MjA2Nzk5MzM1N30.9NqjmpF9qqaTALfP2VAAii13vjZTI9IKOf_CSRT9lbo';
+// Use environment variables for security and credential rotation
+// Get values from .env file (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY)
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = env();
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
