@@ -4,8 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { env } from '@/config/env';
 
-// Use environment variables for security and credential rotation
-// Get values from .env file (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY)
+// Use env() helper for secure credential management
 const { SUPABASE_URL, SUPABASE_ANON_KEY } = env();
 
 // Import the supabase client like this:
