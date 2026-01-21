@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@/context/OrganizationContext";
+import { useRole } from "@/context/RoleContext";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { GMVSummaryPanel } from "./GMVSummaryPanel";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -35,33 +36,42 @@ import {
   Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface LayoutShellProps {
   children: React.ReactNode;
 }
 
+// Navigation items with role/tier requirements
+interface NavItem {
+  label: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  count?: number;
+  requiresOrgType?: ('admin' | 'supplier' | 'buyer' | 'soe')[];
+  requiresTier?: 'pro' | 'enterprise';
+}
+
 // Buyer/Admin Navigation - MVP locked ordering
-// TODO: Realtime publish later: subscribe to bid events + notification events
-const adminNavItems = [
+const adminNavItems: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Marketplace', path: '/marketplace', icon: Store },
+  { label: 'Marketplace', path: '/marketplace', icon: Store, requiresOrgType: ['admin', 'buyer', 'soe'] },
   { label: 'Auctions', path: '/auctions', icon: Gavel, count: 14 },
   { label: 'Recycling', path: '/recycling', icon: Activity, count: 3 },
   { label: 'Bids', path: '/bids', icon: Target, count: 5 },
   { label: 'RFQs', path: '/rfqs', icon: FileText, count: 8 },
   { label: 'Deals', path: '/deals', icon: Handshake },
   { label: 'Orders', path: '/orders', icon: Package, count: 3 },
-  { label: 'TeleBuy', path: '/telebuy', icon: Video },
-  { label: 'AI Studio', path: '/ai-studio', icon: Brain },
+  { label: 'TeleBuy', path: '/telebuy', icon: Video, requiresTier: 'pro' },
+  { label: 'AI Studio', path: '/ai-studio', icon: Brain, requiresTier: 'pro' },
   { label: 'Data', path: '/data', icon: Database },
   { label: 'Messages', path: '/messages', icon: MessageSquare, count: 3 },
-  { label: 'Verification', path: '/verification', icon: ShieldCheck, count: 5 },
+  { label: 'Verification', path: '/verification', icon: ShieldCheck, count: 5, requiresOrgType: ['admin'] },
   { label: 'Analytics', path: '/analytics', icon: TrendingUp },
 ];
 
 // Supplier Navigation - MVP locked ordering
-// TODO: Realtime publish later: subscribe to bid events + notification events
-const supplierNavItems = [
+const supplierNavItems: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Recycling', path: '/recycling', icon: Activity, count: 2 },
   { label: 'RFQs', path: '/rfqs', icon: FileText, count: 15 },
@@ -69,7 +79,7 @@ const supplierNavItems = [
   { label: 'Bid Activity', path: '/bids', icon: Target, count: 3 },
   { label: 'Deals', path: '/deals', icon: Handshake },
   { label: 'Orders', path: '/orders', icon: Package, count: 3 },
-  { label: 'TeleBuy', path: '/telebuy', icon: Video },
+  { label: 'TeleBuy', path: '/telebuy', icon: Video, requiresTier: 'pro' },
   { label: 'Messages', path: '/messages', icon: MessageSquare, count: 3 },
   { label: 'Analytics', path: '/analytics', icon: TrendingUp },
 ];
@@ -84,9 +94,26 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { viewMode } = useOrganization();
+  const { orgType, subscriptionTier } = useRole();
 
   const isActive = (path: string) => location.pathname.startsWith(path);
-  const navItems = viewMode === 'supplier' ? supplierNavItems : adminNavItems;
+  
+  // Filter nav items based on org type and subscription tier
+  const baseNavItems = viewMode === 'supplier' ? supplierNavItems : adminNavItems;
+  
+  const navItems = useMemo(() => {
+    return baseNavItems.filter(item => {
+      // Check org type requirement
+      if (item.requiresOrgType && orgType) {
+        if (!item.requiresOrgType.includes(orgType as 'admin' | 'supplier' | 'buyer' | 'soe')) {
+          return false;
+        }
+      }
+      // Note: We don't filter by subscription here - we show all items
+      // but will show lock icons for gated features
+      return true;
+    });
+  }, [baseNavItems, orgType]);
 
   return (
     <div className="min-h-screen bg-background flex w-full">
@@ -160,15 +187,21 @@ export function LayoutShell({ children }: LayoutShellProps) {
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin">
           {navItems.map((item) => {
             const active = isActive(item.path);
+            const isLocked = item.requiresTier && 
+              subscriptionTier !== item.requiresTier && 
+              subscriptionTier !== 'enterprise' &&
+              orgType !== 'admin';
+            
             return (
               <Link
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                  "flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative",
                   active
                     ? "bg-primary/10 text-primary border border-primary/20"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary",
+                  isLocked && "opacity-60"
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -177,12 +210,18 @@ export function LayoutShell({ children }: LayoutShellProps) {
                     <span className="font-medium truncate">{item.label}</span>
                   )}
                 </div>
-                {sidebarOpen && item.count && (
-                  <CountBadge count={item.count} variant={active ? 'default' : 'accent'} />
-                )}
+                <div className="flex items-center gap-2">
+                  {sidebarOpen && isLocked && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">PRO</Badge>
+                  )}
+                  {sidebarOpen && item.count && (
+                    <CountBadge count={item.count} variant={active ? 'default' : 'accent'} />
+                  )}
+                </div>
                 {!sidebarOpen && (
                   <span className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
                     {item.label}
+                    {isLocked && ' (Pro)'}
                   </span>
                 )}
               </Link>

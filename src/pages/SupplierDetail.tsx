@@ -29,6 +29,7 @@ import { SupplierReviews } from "@/components/suppliers/SupplierReviews";
 import { SupplierCertifications } from "@/components/suppliers/SupplierCertifications";
 import { QuoteRequestModal } from "@/components/suppliers/QuoteRequestModal";
 import { ScheduleTeleBuyModal } from "@/components/suppliers/ScheduleTeleBuyModal";
+import { FollowButton } from "@/components/shared/FollowButton";
 
 export default function SupplierDetail() {
   const { id } = useParams<{ id: string }>();
@@ -115,6 +116,12 @@ export default function SupplierDetail() {
           </div>
 
           <div className="flex items-center gap-3 ml-auto md:ml-0">
+            {/* Follow Button - enables messaging when mutual */}
+            <FollowButton 
+              targetOrgId={supplier.org_id || id || ""} 
+              showMessageButton={true}
+              onMessageClick={() => window.location.href = `/messages?org=${supplier.org_id || id}`}
+            />
             <Button variant="outline" onClick={() => setTelebuyModalOpen(true)}>
               <Video className="h-4 w-4 mr-2" />
               Schedule TeleBuy
