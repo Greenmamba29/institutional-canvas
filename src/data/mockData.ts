@@ -1,6 +1,23 @@
+/**
+ * @deprecated LEGACY MOCK DATA - Phase 7 Cleanup
+ * 
+ * This file contains mock data that was used during initial development.
+ * Most pages now use real data via React Query hooks:
+ * - useRFQs() instead of rfqs[]
+ * - useBids() instead of bids[]
+ * - useDeals() instead of deals[]
+ * - useAuctions() instead of auctions[]
+ * - useSuppliers() instead of suppliers[]
+ * 
+ * TODO: Migrate remaining components that still use this mock data:
+ * - Dashboard.tsx (chartData, auditEntries, trustedPartners, etc.)
+ * - Any component importing from '@/data/mockData'
+ * 
+ * After migration, this file can be deleted.
+ */
+
 // LithiumBuy - Institutional Mock Data
 // Realistic commodities trading data for battery metals
-
 export interface Supplier {
   id: string;
   name: string;

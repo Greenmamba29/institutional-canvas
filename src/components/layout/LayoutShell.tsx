@@ -3,8 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@/context/OrganizationContext";
 import { useRole } from "@/context/RoleContext";
+import { useAuth } from "@/context/AuthContext";
 import { RoleSwitcher } from "./RoleSwitcher";
-import { GMVSummaryPanel } from "./GMVSummaryPanel";
+import { GMVSummaryPanelConnected } from "./GMVSummaryPanelConnected";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { CountBadge } from "@/components/shared/CountBadge";
 import { OrgSwitcher } from "@/components/org/OrgSwitcher";
@@ -93,8 +94,25 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { viewMode } = useOrganization();
+  const { viewMode, currentOrg } = useOrganization();
   const { orgType, subscriptionTier } = useRole();
+  const { user } = useAuth();
+
+  // Derive user display info
+  const userDisplayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const userInitials = userDisplayName
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+  const orgDisplayName = currentOrg?.name || 'No Organization';
+  const orgInitials = orgDisplayName
+    .split(' ')
+    .map((w: string) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   const isActive = (path: string) => location.pathname.startsWith(path);
   
@@ -154,10 +172,10 @@ export function LayoutShell({ children }: LayoutShellProps) {
           <div className="p-4 border-b border-border/50 space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
-                LC
+                {orgInitials}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">LithiumCorp</p>
+                <p className="font-semibold text-sm truncate">{orgDisplayName}</p>
                 <VerificationBadge tier="gold" showIcon={false} />
               </div>
             </div>
@@ -168,10 +186,10 @@ export function LayoutShell({ children }: LayoutShellProps) {
             <div className="p-2 rounded-lg bg-secondary/30 border border-border/30">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs">
-                  DS
+                  {userInitials}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">Diego Santos</p>
+                  <p className="text-xs font-medium truncate">{userDisplayName}</p>
                   <p className="text-[10px] text-primary">1X LIVE RFQ • $47.3K</p>
                 </div>
               </div>
@@ -231,13 +249,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
         {/* GMV Summary for Admin */}
         {viewMode !== 'supplier' && sidebarOpen && (
-          <GMVSummaryPanel
-            gmvYTD={15200000}
-            changePercent={12.4}
-            suppliersVerified={147}
-            buyersVerified={17402}
-            sparklineData={[10, 15, 12, 18, 22, 19, 25, 28, 24, 30]}
-          />
+          <GMVSummaryPanelConnected />
         )}
 
         {/* Bottom nav */}
@@ -370,11 +382,13 @@ export function LayoutShell({ children }: LayoutShellProps) {
               {/* User Profile */}
               <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-border/50">
                 <div className="text-right">
-                  <p className="text-sm font-semibold">Admin User</p>
-                  <p className="text-[10px] text-muted-foreground">VERIFIED • GOLD TIER</p>
+                  <p className="text-sm font-semibold">{userDisplayName}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase">
+                    {subscriptionTier ? `${subscriptionTier} TIER` : 'FREE'} • {orgType || 'USER'}
+                  </p>
                 </div>
                 <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
-                  AU
+                  {userInitials}
                 </div>
               </div>
             </div>

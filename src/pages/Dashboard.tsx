@@ -6,17 +6,20 @@ import { TabBar } from "@/components/shared/TabBar";
 import { SystemAlert } from "@/components/shared/SystemAlert";
 import { SparklineChart } from "@/components/shared/SparklineChart";
 import { GMVChart } from "@/components/dashboard/GMVChart";
-import { AuditLog, AuditLogEntry } from "@/components/dashboard/AuditLog";
-import { TrustedPartners, TrustedPartner } from "@/components/dashboard/TrustedPartners";
+import { AuditLog } from "@/components/dashboard/AuditLog";
+import { TrustedPartners } from "@/components/dashboard/TrustedPartners";
 import { MetricsReview } from "@/components/dashboard/MetricsReview";
 import { BottomKPIs } from "@/components/dashboard/BottomKPIs";
 import { WeeklyAuctionSnapshot } from "@/components/supplier/WeeklyAuctionSnapshot";
 import { UpcomingAuctions } from "@/components/supplier/UpcomingAuctions";
-import { TrendingUp, DollarSign, Activity, Lock } from "lucide-react";
 import { useDashboardStats, usePriceTicker } from "@/hooks/useDashboardStats";
+import { useAuditLog } from "@/hooks/useAuditLog";
+import { usePartners } from "@/hooks/usePartners";
+import { useGMVStats, useGMVSparkline } from "@/hooks/useGMVStats";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const chartData = [
+// Fallback chart data when no real data available
+const fallbackChartData = [
   { date: 'Oct 1', value: 42000 },
   { date: 'Oct 6', value: 48000 },
   { date: 'Oct 11', value: 45000 },
@@ -25,23 +28,13 @@ const chartData = [
   { date: 'Oct 26', value: 66300 },
 ];
 
-const auditEntries: AuditLogEntry[] = [
-  { id: '1', type: 'approved', title: 'Lithium Recycling Certificate', description: 'Batch #R-2025-99 verified', timestamp: '12M AGO', action: 'VIEW CREDENTIALS' },
-  { id: '2', type: 'cancelled', title: 'Black Mass Trade Cancelled', description: 'Order #77421 - Logistics delay', timestamp: '2H AGO', action: 'DETAILS' },
-  { id: '3', type: 'flagged', title: 'Recycling Purity Flag', description: 'Secondary Li-Carbonate below 99.5%', timestamp: '5M AGO', action: 'REVIEW' },
-  { id: '4', type: 'withdrawal', title: 'Sustainable Source Verified', description: 'Closed-loop certification active', timestamp: '6H AGO', action: 'CERTIFICATE' },
-];
-
-const trustedPartners: TrustedPartner[] = [
-  { id: '1', name: 'Lithium Recycling Global', verified: true, verificationTier: 'gold', ytdRevenue: 3750000, product: 'Recycled Lithium', pricePerMT: 83250, responseTime: '4.2H' },
-  { id: '2', name: 'EcoBattery Solutions', verified: true, verificationTier: 'gold', ytdRevenue: 5200000, product: 'Black Mass (Co/Ni/Li)', pricePerMT: 24500, responseTime: '2.1H' },
-];
-
+// Fallback upcoming auctions (will be replaced with real data)
 const upcomingAuctions = [
   { id: '1', company: 'LithiumRecycle', countryCode: 'DE', verified: true, volume: 60, product: 'Recycled Carbonate', pricePerMT: 66500 },
   { id: '2', company: 'GreenLi Tech', countryCode: 'CA', verified: true, volume: 120, product: 'Black Mass', pricePerMT: 2850 },
 ];
 
+// Fallback escrowed assets
 const escrowedAssets = [
   { description: 'Recycled Li-Hydroxide', remainder: '4.2k', gain: 1.2 },
   { description: 'Black Mass Concentrate', remainder: '1.8k', gain: -0.4 },
@@ -54,6 +47,16 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState(viewMode === 'supplier' ? 'overview' : 'dashboard');
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: priceData } = usePriceTicker();
+  const { data: auditEntries = [] } = useAuditLog(4);
+  const { data: partners = [] } = usePartners(2);
+  const { data: gmvStats } = useGMVStats();
+  const gmvSparkline = useGMVSparkline();
+
+  // Build chart data from GMV sparkline
+  const chartData = gmvSparkline.map((value, i) => ({
+    date: new Date(2024, i, 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    value,
+  }));
 
   const tabs = viewMode === 'supplier' 
     ? [{ id: 'overview', label: 'OVERVIEW' }, { id: 'listings', label: 'MY LISTINGS' }, { id: 'financials', label: 'FINANCIALS' }]
@@ -137,7 +140,7 @@ export default function Dashboard() {
 
           <div className="glass-panel rounded-xl p-4 lg:col-span-2">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold text-green-600 bg-green-600/20 px-1.5 py-0.5 rounded">DEALS</span>
+              <span className="text-[10px] font-bold text-success bg-success/20 px-1.5 py-0.5 rounded">DEALS</span>
             </div>
             <p className="text-[10px] text-muted-foreground tracking-wider">ACCEPTED / PENDING</p>
             {statsLoading ? (
@@ -188,7 +191,7 @@ export default function Dashboard() {
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <GMVChart data={chartData} />
+            <GMVChart data={chartData.length > 0 ? chartData : fallbackChartData} />
             
             {viewMode === 'supplier' ? (
               <WeeklyAuctionSnapshot
@@ -199,15 +202,18 @@ export default function Dashboard() {
                 verifiedBidders={21}
               />
             ) : (
-              <TrustedPartners partners={trustedPartners} />
+              <TrustedPartners partners={partners.length > 0 ? partners : [
+                { id: '1', name: 'Lithium Recycling Global', verified: true, verificationTier: 'gold', ytdRevenue: 3750000, product: 'Recycled Lithium', pricePerMT: 83250, responseTime: '4.2H' },
+                { id: '2', name: 'EcoBattery Solutions', verified: true, verificationTier: 'gold', ytdRevenue: 5200000, product: 'Black Mass (Co/Ni/Li)', pricePerMT: 24500, responseTime: '2.1H' },
+              ]} />
             )}
           </div>
 
           <div className="space-y-6">
             <MetricsReview
-              totalGMV={4270000}
+              totalGMV={gmvStats?.gmvYTD || 4270000}
               todayChange={6300}
-              grossMerchandise={52.1}
+              grossMerchandise={gmvStats?.changePercent || 52.1}
               stackedData={52}
               verificationMedia={17}
               escrowedAssets={escrowedAssets}
