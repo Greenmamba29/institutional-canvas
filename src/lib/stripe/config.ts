@@ -7,7 +7,7 @@
 
 export const STRIPE_PRODUCTS = {
   pro: {
-    priceId: process.env.VITE_STRIPE_PRO_PRICE_ID || 'price_xxx', // Replace with actual price ID from Stripe Dashboard
+    priceId: import.meta.env.VITE_STRIPE_PRO_PRICE_ID || 'price_xxx', // Replace with actual price ID from Stripe Dashboard
     name: 'Pro',
     price: 199,
     features: [
@@ -18,7 +18,7 @@ export const STRIPE_PRODUCTS = {
     ],
   },
   enterprise: {
-    priceId: process.env.VITE_STRIPE_ENTERPRISE_PRICE_ID || 'price_yyy', // Replace with actual price ID
+    priceId: import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID || 'price_yyy', // Replace with actual price ID
     name: 'Enterprise',
     price: 1999,
     features: [
