@@ -33,6 +33,7 @@ import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Purchases from "./pages/Purchases";
 import Team from "./pages/Team";
+import Landing from "./pages/Landing";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,11 +56,11 @@ const AppContent = () => {
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
+        <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
         
         {/* Protected routes - using Outlet pattern */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/marketplace" element={<Marketplace />} />
