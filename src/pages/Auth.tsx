@@ -7,6 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Sparkles, Shield, Zap, Globe, Loader2, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+// Demo credentials for easy testing
+const DEMO_CREDENTIALS = {
+  email: 'demo@lithiumbuy.com',
+  password: 'demo123456',
+};
+
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -446,6 +452,25 @@ export default function Auth() {
                     )}
                   </Button>
                 </form>
+
+                {/* Demo Account Quick Fill */}
+                {!isResetMode && !isSignUp && (
+                  <div className="pt-2 border-t border-border/50">
+                    <p className="text-xs text-muted-foreground mb-2">Quick access for testing:</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEmail(DEMO_CREDENTIALS.email);
+                        setPassword(DEMO_CREDENTIALS.password);
+                      }}
+                      className="w-full text-xs"
+                    >
+                      Use Demo Account
+                    </Button>
+                  </div>
+                )}
 
                 <div className="text-center space-y-2">
                   {isResetMode ? (
