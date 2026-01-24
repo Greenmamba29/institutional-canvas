@@ -8,9 +8,39 @@ import { Sparkles, Shield, Zap, Globe, Loader2, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Demo credentials for easy testing
+// Password must meet Supabase requirements: 12+ chars, upper/lower/number/special
 const DEMO_CREDENTIALS = {
   email: 'demo@lithiumbuy.com',
-  password: 'demo123456',
+  password: 'Demo@Lithium2024!',
+};
+
+// Error message mapping for better UX
+const getAuthErrorMessage = (error: any): string => {
+  const code = error?.code || error?.message || '';
+  
+  if (code.includes('invalid_credentials') || code.includes('Invalid login credentials')) {
+    return 'Invalid email or password. Please check your credentials or sign up for a new account.';
+  }
+  if (code.includes('user_not_found') || code.includes('User not found')) {
+    return 'No account found with this email. Please sign up first.';
+  }
+  if (code.includes('email_not_confirmed')) {
+    return 'Please confirm your email before signing in. Check your inbox for a confirmation link.';
+  }
+  if (code.includes('too_many_requests') || code.includes('rate_limit')) {
+    return 'Too many attempts. Please wait a few minutes and try again.';
+  }
+  if (code.includes('user_already_exists') || code.includes('User already registered')) {
+    return 'An account with this email already exists. Please sign in instead.';
+  }
+  if (code.includes('weak_password')) {
+    return 'Password is too weak. Please use at least 6 characters with a mix of letters and numbers.';
+  }
+  if (code.includes('invalid_email')) {
+    return 'Please enter a valid email address.';
+  }
+  
+  return error?.message || 'An unexpected error occurred. Please try again.';
 };
 
 export default function Auth() {
@@ -146,11 +176,22 @@ export default function Auth() {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
+      const errorMessage = getAuthErrorMessage(error);
+      
       toast({
         title: isResetMode ? 'Reset failed' : isSignUp ? 'Sign up failed' : 'Sign in failed',
-        description: error.message || 'Please check your credentials and try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
+      
+      // If sign-in failed with invalid credentials, suggest signing up
+      if (!isSignUp && !isResetMode && (error?.code?.includes('invalid_credentials') || error?.message?.includes('Invalid login credentials'))) {
+        toast({
+          title: 'Need an account?',
+          description: 'Click "Sign up" below to create a new account.',
+          duration: 6000,
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -453,21 +494,96 @@ export default function Auth() {
                   </Button>
                 </form>
 
-                {/* Demo Account Quick Fill */}
-                {!isResetMode && !isSignUp && (
+                {/* Demo Account Quick Fill - Shows on Sign In AND Sign Up */}
+                {!isResetMode && (
                   <div className="pt-2 border-t border-border/50">
-                    <p className="text-xs text-muted-foreground mb-2">Quick access for testing:</p>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {isSignUp ? 'Or use demo credentials:' : 'Quick access for testing:'}
+                    </p>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => {
+                      onClick={async () => {
+                        // Fill in demo credentials
                         setEmail(DEMO_CREDENTIALS.email);
                         setPassword(DEMO_CREDENTIALS.password);
+                        
+                        // If in sign-up mode, just fill the form
+                        if (isSignUp) {
+                          toast({
+                            title: 'Demo credentials filled',
+                            description: 'Click "Create Account" to sign up with the demo account.',
+                          });
+                          return;
+                        }
+                        
+                        // Try to sign in with demo account
+                        setIsLoading(true);
+                        try {
+                          const { error: signInError } = await supabase.auth.signInWithPassword({
+                            email: DEMO_CREDENTIALS.email,
+                            password: DEMO_CREDENTIALS.password,
+                          });
+                          
+                          if (signInError) {
+                            // If sign in fails, try to sign up
+                            if (signInError.message?.includes('Invalid login credentials')) {
+                              const { error: signUpError, data } = await supabase.auth.signUp({
+                                email: DEMO_CREDENTIALS.email,
+                                password: DEMO_CREDENTIALS.password,
+                                options: {
+                                  emailRedirectTo: `${window.location.origin}/auth`,
+                                },
+                              });
+                              
+                              if (signUpError) {
+                                throw signUpError;
+                              }
+                              
+                              if (data.session) {
+                                toast({
+                                  title: 'Demo account created!',
+                                  description: 'Welcome to LithiumBuy. Redirecting...',
+                                });
+                              } else {
+                                toast({
+                                  title: 'Demo account created',
+                                  description: 'Please check email to confirm, or disable email confirmation in Supabase settings for testing.',
+                                  duration: 8000,
+                                });
+                              }
+                            } else {
+                              throw signInError;
+                            }
+                          } else {
+                            toast({
+                              title: 'Welcome back!',
+                              description: 'Signed in with demo account.',
+                            });
+                          }
+                        } catch (error: any) {
+                          console.error('Demo login error:', error);
+                          toast({
+                            title: 'Demo login failed',
+                            description: getAuthErrorMessage(error),
+                            variant: 'destructive',
+                          });
+                        } finally {
+                          setIsLoading(false);
+                        }
                       }}
                       className="w-full text-xs"
+                      disabled={isLoading}
                     >
-                      Use Demo Account
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        'Use Demo Account'
+                      )}
                     </Button>
                   </div>
                 )}
