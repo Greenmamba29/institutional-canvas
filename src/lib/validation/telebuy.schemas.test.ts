@@ -100,30 +100,32 @@ describe('TeleBuy Validation Schemas', () => {
 
   describe('addSessionTranscriptSchema', () => {
     it('should accept valid transcript data', () => {
+      const transcriptObject = {
+        speaker: 'John Doe',
+        text: 'Welcome to the meeting',
+        timestamp: '00:00:05',
+      };
       const validTranscript = {
         p_session_id: '123e4567-e89b-12d3-a456-426614174000',
-        p_transcript: {
-          speaker: 'John Doe',
-          text: 'Welcome to the meeting',
-          timestamp: '00:00:05',
-        },
+        p_transcript: JSON.stringify(transcriptObject),
       };
       
       const result = addSessionTranscriptSchema.parse(validTranscript);
-      expect(result.p_transcript).toEqual(validTranscript.p_transcript);
+      expect(result.p_transcript).toEqual(JSON.stringify(transcriptObject));
     });
 
     it('should accept transcript array', () => {
+      const transcriptArray = [
+        { speaker: 'John', text: 'Hello', timestamp: '00:00:00' },
+        { speaker: 'Jane', text: 'Hi there', timestamp: '00:00:02' },
+      ];
       const validTranscript = {
         p_session_id: '123e4567-e89b-12d3-a456-426614174000',
-        p_transcript: [
-          { speaker: 'John', text: 'Hello', timestamp: '00:00:00' },
-          { speaker: 'Jane', text: 'Hi there', timestamp: '00:00:02' },
-        ],
+        p_transcript: JSON.stringify(transcriptArray),
       };
       
       const result = addSessionTranscriptSchema.parse(validTranscript);
-      expect(result.p_transcript).toHaveLength(2);
+      expect(JSON.parse(result.p_transcript)).toHaveLength(2);
     });
   });
 });
