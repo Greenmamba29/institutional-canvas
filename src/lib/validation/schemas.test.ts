@@ -111,7 +111,9 @@ describe('Validation Schemas', () => {
     it('should accept valid bid data', () => {
       const validBid = {
         p_rfq_id: '123e4567-e89b-12d3-a456-426614174000',
+        p_supplier_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
         p_price: 85000,
+        p_currency: 'USD',
         p_quantity: 100,
         p_lead_time_days: 45,
         p_notes: 'Standard delivery terms',
