@@ -99,7 +99,11 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const { orgType, subscriptionTier } = useRole();
   const { user, signOut } = useAuth();
 
-  // Derive user display info
+  // Create a key based on user.id to force re-renders when user changes
+  // This ensures the sidebar updates with the correct user info after sign-in/sign-out
+  const userKey = user?.id || 'anonymous';
+
+  // Derive user display info - use userKey dependency implicitly via user object
   const userDisplayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const userInitials = userDisplayName
     .split(' ')

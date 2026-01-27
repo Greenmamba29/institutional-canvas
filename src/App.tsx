@@ -30,6 +30,8 @@ import Data from "./pages/Data";
 import Orders from "./pages/Orders";
 import Billing from "./pages/Billing";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
+import PasswordReset from "./pages/PasswordReset";
 import Onboarding from "./pages/Onboarding";
 import Purchases from "./pages/Purchases";
 import Team from "./pages/Team";
@@ -58,6 +60,8 @@ const AppContent = () => {
         {/* Public routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/password-reset" element={<PasswordReset />} />
         
         {/* Protected routes - using Outlet pattern */}
         <Route element={<ProtectedRoute />}>
