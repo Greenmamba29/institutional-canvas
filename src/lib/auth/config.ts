@@ -11,8 +11,9 @@ export const AUTH_CONFIG = {
   redirectUrls: {
     afterSignIn: '/dashboard',
     afterSignUp: '/onboarding',
-    afterPasswordReset: '/auth',
+    afterPasswordReset: '/dashboard',
     authCallback: '/auth/callback',
+    passwordReset: '/password-reset',
   },
   
   /**

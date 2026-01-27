@@ -72,6 +72,11 @@ export default function Auth() {
     if (isRecoveryFlow) {
       // Set password update mode immediately to prevent redirect
       setIsUpdatePasswordMode(true);
+      // Notify user that recovery link was verified
+      toast({
+        title: 'Reset link verified',
+        description: 'Enter your new password below.',
+      });
     }
 
     // Set up auth state listener FIRST to catch PASSWORD_RECOVERY event
@@ -96,15 +101,11 @@ export default function Auth() {
 
     // Check for existing session AFTER setting up the listener
     // This ensures PASSWORD_RECOVERY event is handled before redirect
+    // NOTE: We do NOT redirect here - let onAuthStateChange handle all redirects
+    // to avoid race conditions between the two callbacks
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      // Don't redirect if we're in a recovery flow
-      // Check URL hash directly (not state) to avoid race conditions with async state updates
-      // The state variable in closure might be stale, but URL hash is always current
-      if (session && !checkRecoveryToken()) {
-        const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
-        navigate(from, { replace: true });
-      }
+      // Only set session state here - redirect is handled by onAuthStateChange
     });
 
     return () => subscription.unsubscribe();
