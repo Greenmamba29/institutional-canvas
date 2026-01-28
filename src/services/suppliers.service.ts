@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '@/lib/supabase/rpc';
+import { sanitizeSearchQuery } from '@/lib/validation/sanitize';
 import type { Tables } from '@/integrations/supabase/types';
 
 export type Supplier = Tables<'suppliers'>;
@@ -135,21 +136,13 @@ export async function getSupplierReviews(supplierId: string) {
 
 /**
  * Search suppliers by display name
- * Sanitizes input to prevent SQL injection in LIKE patterns
+ * Sanitizes input to prevent SQL injection and wildcard injection in LIKE patterns
  */
 export async function searchSuppliers(query: string) {
-  // Validate input
-  if (!query || typeof query !== 'string') {
-    return { data: [], error: null };
-  }
+  // Sanitize input with wildcard escape
+  const sanitized = sanitizeSearchQuery(query);
   
-  // Sanitize: remove SQL special characters and limit length
-  const sanitized = query
-    .replace(/[%;'"\\]/g, '') // Remove SQL special chars
-    .trim()
-    .slice(0, 100); // Limit length
-  
-  if (sanitized.length < 2) {
+  if (!sanitized) {
     return { data: [], error: null };
   }
   
