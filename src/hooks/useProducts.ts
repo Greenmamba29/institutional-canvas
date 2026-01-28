@@ -4,6 +4,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeSearchQuery } from '@/lib/validation/sanitize';
 
 export interface Product {
   id: string;
@@ -72,8 +73,10 @@ async function fetchProducts(filters: ProductFilters = {}) {
     query = query.gte('price_per_unit', priceRange[0]).lte('price_per_unit', priceRange[1]);
   }
 
-  if (search && search.length >= 2) {
-    query = query.ilike('name', `%${search}%`);
+  // Sanitize search input to prevent wildcard injection
+  const sanitizedSearch = sanitizeSearchQuery(search || '');
+  if (sanitizedSearch) {
+    query = query.ilike('name', `%${sanitizedSearch}%`);
   }
 
   // Apply sorting
