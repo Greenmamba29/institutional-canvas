@@ -44,15 +44,13 @@ export function VideoCallRoom({
   const [showConfirmPurchaseFlow, setShowConfirmPurchaseFlow] = useState(false);
   const queryClient = useQueryClient();
 
-  // Save notes mutation using direct update
+  // Save notes mutation using RPC (secure backend validation)
   const saveNotesMutation = useMutation({
     mutationFn: async (content: string) => {
-      const { data, error } = await supabase
-        .from('telebuy_sessions')
-        .update({ notes: content })
-        .eq('id', sessionId)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('update_telebuy_notes', {
+        p_session_id: sessionId,
+        p_notes: content
+      });
       
       if (error) throw new Error(error.message);
       return data;

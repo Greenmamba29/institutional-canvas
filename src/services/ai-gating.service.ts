@@ -58,8 +58,12 @@ export async function getAIFeatureFlags(): Promise<AIFeatureFlag[]> {
 }
 
 export async function updateAIFeatureFlag(featureKey: string, status: 'on' | 'off' | 'shadow'): Promise<boolean> {
-  const { error } = await supabase.from('ai_feature_flags').update({ status, updated_at: new Date().toISOString() }).eq('feature_key', featureKey);
-  return !error;
+  const { data, error } = await supabase.rpc('update_ai_feature_flag_status', {
+    p_feature_key: featureKey,
+    p_status: status
+  });
+  if (error) return false;
+  return data as boolean;
 }
 
 export async function getReleaseGates(): Promise<ReleaseGate[]> {
@@ -69,8 +73,12 @@ export async function getReleaseGates(): Promise<ReleaseGate[]> {
 }
 
 export async function updateReleaseGate(gateId: string, status: 'open' | 'closed' | 'review_required'): Promise<boolean> {
-  const { error } = await supabase.from('release_gates').update({ status, updated_at: new Date().toISOString() }).eq('gate_id', gateId);
-  return !error;
+  const { data, error } = await supabase.rpc('update_release_gate_status', {
+    p_gate_id: gateId,
+    p_status: status
+  });
+  if (error) return false;
+  return data as boolean;
 }
 
 export async function getAIRunHistory(limit = 50): Promise<AIRunLedger[]> {

@@ -4455,6 +4455,10 @@ export type Database = {
         Returns: string
       }
       log_job_metrics: { Args: { p_job: string }; Returns: Json }
+      mark_messages_read: {
+        Args: { p_conversation_id: string }
+        Returns: number
+      }
       mark_notification_read: {
         Args: { p_notification_id: string }
         Returns: boolean
@@ -4610,6 +4614,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_ai_feature_flag_status: {
+        Args: { p_feature_key: string; p_status: string }
+        Returns: boolean
+      }
       update_deal_status: {
         Args: {
           p_deal_id: string
@@ -4673,6 +4681,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      update_release_gate_status: {
+        Args: { p_gate_id: string; p_status: string }
+        Returns: boolean
       }
       update_session_status: {
         Args: { p_session_id: string; p_status: string }
