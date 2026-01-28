@@ -1,293 +1,217 @@
 
 
-# LithiumBuy Gap Analysis Report
+# Gap Analysis: Implementation Status Review
 
-Based on my thorough examination of the codebase and the summary you provided, here is a comprehensive analysis of what has been completed and what areas still need attention.
-
----
-
-## Summary: Completion Status
-
-| Area | Status | Details |
-|------|--------|---------|
-| TeleBuy Video Feature | Partial | Daily.co edge function exists but service worker is missing |
-| Validation Logic | Complete | Zod schemas and tests are in place |
-| PWA Implementation | Partial | Manifest exists but no service worker |
-| Testing Suite | Partial | Some tests exist (5 test files) but coverage is low |
-| Dependency Management | Complete | Dependencies are current |
-| ESLint Configuration | Complete | ESLint configured with RPC-only warnings |
-| Prettier/Formatting | Not Started | No Prettier configuration found |
-| CI/CD Pipeline | Not Started | No .github workflows directory |
-| Component Documentation | Not Started | No Storybook setup |
+Based on my thorough examination of both the uploaded ZIP file (session updates) and the current codebase, here is the complete status of what has been implemented vs. what remains.
 
 ---
 
-## Detailed Findings
+## Summary: Current Completion Status
 
-### 1. TeleBuy Video Feature
-
-**Completed:**
-- `supabase/functions/daily-rooms/index.ts` - Edge function for Daily.co room management
-- `src/components/telebuy/VideoCallRoom.tsx` - Frontend video component using Daily.co SDK
-- Environment variable configuration documented in `.env.example`
-
-**Gap:**
-- The Daily.co API key must be configured as a Supabase secret (`DAILY_API_KEY`)
-- The `DAILY_DOMAIN` environment variable defaults to `lithiumbuy.daily.co` but may need verification
-
-### 2. Validation Logic
-
-**Completed:**
-- `src/lib/validation/schemas.ts` - Core validation schemas (UUID, currency, notes, RFQ, bid, deal)
-- `src/lib/validation/schemas.test.ts` - Tests for core schemas
-- `src/lib/validation/telebuy.schemas.ts` - TeleBuy-specific validation
-- `src/lib/validation/telebuy.schemas.test.ts` - TeleBuy validation tests
-
-**Status:** Fully implemented
-
-### 3. Progressive Web App (PWA) Implementation
-
-**Completed:**
-- `public/manifest.json` - App manifest with name, icons, shortcuts
-- `index.html` - PWA meta tags, theme color, manifest link
-- `public/site.webmanifest` - Alternative manifest file
-- PWA icons: `android-chrome-192x192.png`, `android-chrome-512x512.png`, `apple-touch-icon.png`, `favicon.svg`
-
-**Gaps:**
-- **No service worker** - Critical for offline capability
-- No `vite-plugin-pwa` installed - Recommended for service worker generation
-- No caching strategy implemented
-- No push notification support
-- The `/install` page mentioned in best practices does not exist
-
-### 4. Testing Suite
-
-**Completed:**
-- `vitest.config.ts` - Test configuration with coverage settings
-- `src/test/setup.ts` - Global test setup with mocks (matchMedia, IntersectionObserver, ResizeObserver)
-- `src/test/mocks/supabase.ts` - Supabase client mocks
-- `src/test/mocks/auth.tsx` - Auth context mocks
-
-**Test Files Found (5 total):**
-1. `src/lib/validation/schemas.test.ts`
-2. `src/lib/validation/telebuy.schemas.test.ts`
-3. `src/hooks/useAuthenticatedClient.test.ts`
-4. `src/lib/supabase/authenticated-client.test.ts`
-5. `src/services/telebuy.service.test.ts`
-
-**Gaps:**
-- **Low test coverage** - Only 5 test files for 100+ components and services
-- No tests for:
-  - Page components (Dashboard, Marketplace, RFQs, etc.)
-  - UI components (40+ shadcn components)
-  - Context providers (AuthContext, OrganizationContext, etc.)
-  - Hooks (30+ hooks, only 1 tested)
-  - Most services (20+ services, only 1 tested)
-- No ProtectedRoute test (mentioned as "added" but not found in codebase)
-
-### 5. Dependency Management and Code Quality
-
-**Completed:**
-- `package.json` - Clean dependency list with current versions
-- `lucide-react@0.462.0` - Updated
-- `@tanstack/react-query@5.83.0` - Current
-
-**Gaps:**
-- No dependency audit report
-- `@testing-library/react@14.2.1` could be updated to v16 (per dependencies shown)
-- `jsdom@24.0.0` vs `jsdom@20.0.3` version mismatch between package.json and dependencies list
-
-### 6. ESLint and Linting
-
-**Completed:**
-- `eslint.config.js` - Modern flat config with:
-  - React hooks rules
-  - React refresh rules
-  - Custom RPC-only write enforcement warnings
-
-**Status:** Fully configured
-
-### 7. Prettier/Code Formatting
-
-**Gap:** Not implemented
-- No `.prettierrc` or `prettier.config.js`
-- No `prettier` dependency in package.json
-- No format scripts in package.json
-
-### 8. CI/CD Pipeline
-
-**Gap:** Not implemented
-- No `.github/workflows/` directory
-- No GitHub Actions configuration
-- No automated testing on PR
-- No automated deployments
-
-### 9. Component Library Documentation (Storybook)
-
-**Gap:** Not implemented
-- No Storybook configuration
-- No `.storybook/` directory
-- No component stories
-- 40+ shadcn/ui components undocumented
+| Task | Status | Evidence |
+|------|--------|----------|
+| **PWA Service Worker** | ✅ Complete | `vite-plugin-pwa` configured in `vite.config.ts` with Workbox caching |
+| **PWA Offline Page** | ✅ Complete | `public/offline.html` and `src/pages/Offline.tsx` exist |
+| **Workbox Large Assets Fix** | ✅ Complete | `maximumFileSizeToCacheInBytes: 3 * 1024 * 1024` set |
+| **CI/CD Pipeline** | ✅ Complete | `.github/workflows/ci.yml` with TypeScript, ESLint, tests, security audit |
+| **Prettier Config** | ⚠️ Partial | `.prettierrc` exists but `prettier` not in devDependencies |
+| **ProtectedRoute Tests** | ❌ Missing | No test file found at `src/components/auth/ProtectedRoute.test.tsx` |
+| **Daily.co API Key** | ✅ Complete | `DAILY_API_KEY` secret is configured in Supabase |
+| **Security: search_path** | ❌ Missing | 26 custom functions still need `search_path` fix |
+| **Security: RLS Policies** | ❌ Missing | `audit_log` and `org_members` have RLS enabled but no policies |
 
 ---
 
-## Security Findings (from Supabase Linter)
+## Detailed Gap Analysis
 
-The Supabase linter identified 28 issues:
+### 1. Prettier Package (Deployment Fix)
 
-| Severity | Count | Issue |
-|----------|-------|-------|
-| INFO | 2 | RLS enabled but no policies |
-| WARN | 20+ | Function search_path not set |
+**Current State:**
+- `.prettierrc` configuration file exists ✅
+- `prettier` package is NOT in `package.json` devDependencies ❌
+- No `format` or `format:check` scripts ❌
 
-These should be addressed to harden the database security.
+**Files to Modify:**
+- `package.json` - Add prettier devDependency + format scripts
 
 ---
 
-## Recommended Priority Actions
+### 2. ProtectedRoute Tests (Missing)
 
-### P0 - Critical (Ship Blockers)
+**Current State:**
+- `src/components/auth/ProtectedRoute.tsx` exists ✅
+- `src/components/auth/ProtectedRoute.test.tsx` does NOT exist ❌
 
-1. **Add Service Worker for PWA**
-   - Install `vite-plugin-pwa`
-   - Configure caching strategy
-   - Enable offline capability
-   
-2. **Configure Daily.co Secret**
-   - Verify `DAILY_API_KEY` is set in Supabase secrets
-   - Test video call functionality end-to-end
+**The gap analysis report mentioned this test was "added" but it was never actually created.**
 
-### P1 - High Priority
+**Files to Create:**
+- `src/components/auth/ProtectedRoute.test.tsx`
 
-3. **Increase Test Coverage**
-   - Add tests for ProtectedRoute component
-   - Test critical auth flows
-   - Test core business logic (RFQ, Bids, Deals)
-   
-4. **Fix Database Security**
-   - Add RLS policies to tables with RLS enabled but no policies
-   - Set `search_path` on database functions
+**Test Scenarios Required:**
+1. Shows loading screen while auth is loading
+2. Shows loading screen while org is loading  
+3. Redirects to `/auth` when not authenticated
+4. Redirects to `/onboarding` when authenticated but no organization
+5. Allows access to `/onboarding` without organization
+6. Renders children when authenticated with organization
 
-5. **Add CI/CD Pipeline**
-   - Create `.github/workflows/ci.yml`
-   - Run tests on PR
-   - Run linting on PR
+---
 
-### P2 - Medium Priority
+### 3. Security: Function search_path (26 Custom Functions)
 
-6. **Add Prettier**
-   - Install Prettier
-   - Add `.prettierrc` configuration
-   - Add format scripts to package.json
-   
-7. **Full Dependency Audit**
-   - Run `npm audit`
-   - Update any vulnerable dependencies
+**Current State:** The following custom functions are missing `search_path`:
 
-### P3 - Low Priority (Post-MVP)
+| Function | Arguments |
+|----------|-----------|
+| `can_process` | `p_user uuid, p_requested integer` |
+| `check_usage_limit` | `p_user_id uuid, p_tier text` |
+| `create_purchase` | `p_buyer_org_id uuid, p_supplier_org_id uuid, p_payload jsonb` |
+| `current_sub` | (none) |
+| `ensure_folder_path` | `p_user uuid, p_path text` |
+| `get_chat_document_latest_version` | `doc_id uuid` |
+| `get_dashboard_activity` | `p_limit integer` |
+| `get_dashboard_stats` | (none) |
+| `get_file_activities` | `p_file_id uuid, p_limit integer, p_offset integer` |
+| `get_latest_chat_document` | `doc_id uuid, auth_user_id uuid` |
+| `get_purchase_by_id` | `p_po text` |
+| `get_user_org_ids` | (none) |
+| `handle_chat_document_version` | (none, trigger) |
+| `handle_updated_at` | (none, trigger) |
+| `increment_usage_counters` | `p_user_id uuid, p_files_count integer, p_tokens integer, p_cost numeric` |
+| `jwt_claim` | `claim text` |
+| `jwt_org_id` | (none) |
+| `jwt_user_id` | (none) |
+| `log_job_metrics` | `p_job uuid` |
+| `match_documents` | `query_embedding vector, match_count integer, filter jsonb` |
+| `purchases_broadcast_trigger` | (none, trigger) |
+| `remove_org_member` | `p_org_id uuid, p_user_id uuid` |
+| `set_updated_at` | (none) |
+| `update_file_metadata` | `p_file_id uuid, p_metadata jsonb, p_tags text[], p_ai_summary text` |
+| `update_member_role` | `p_org_id uuid, p_user_id uuid, p_new_role text` |
+| `update_updated_at_column` | (none) |
 
-8. **Add Storybook**
-   - Document shadcn/ui components
-   - Create component playground
+**Note:** Vector/extension functions like `halfvec`, `sparsevec`, `vector_negative_inner_product`, etc. are part of the `pgvector` extension and should NOT be modified.
 
-9. **Advanced PWA Features**
-   - Push notifications
-   - Background sync
-   - Advanced caching
+---
+
+### 4. Security: RLS Enabled But No Policies
+
+**Tables requiring policies:**
+1. `audit_log` - Has RLS enabled but no policies
+2. `org_members` - Has RLS enabled but no policies
 
 ---
 
 ## Implementation Plan
 
-### Phase 1: Critical PWA Fix (2-3 hours)
+### Step 1: Fix Package.json (Prettier)
 
-```text
-1. Install vite-plugin-pwa
-2. Configure service worker in vite.config.ts
-3. Add workbox caching strategies for:
-   - App shell (cache-first)
-   - API requests (network-first with fallback)
-   - Static assets (cache-first)
-4. Create offline fallback page
-5. Test installability and offline mode
+Add to `devDependencies`:
+```json
+"prettier": "^3.3.0"
 ```
 
-### Phase 2: CI/CD Setup (1-2 hours)
-
-```text
-1. Create .github/workflows/ci.yml with:
-   - TypeScript type checking (tsc --noEmit)
-   - ESLint
-   - Vitest test run
-   - Build verification
-2. Add branch protection rules
-3. Add PR template
-```
-
-### Phase 3: Test Coverage Expansion (4-6 hours)
-
-```text
-1. ProtectedRoute component tests
-2. Auth flow integration tests
-3. Core service tests:
-   - rfqs.service.ts
-   - bids.service.ts
-   - deals.service.ts
-4. Hook tests:
-   - useRFQs
-   - useBids
-   - useDeals
-```
-
-### Phase 4: Security Hardening (2-3 hours)
-
-```text
-1. Identify tables with RLS enabled but no policies
-2. Add appropriate SELECT/INSERT/UPDATE/DELETE policies
-3. Update functions with search_path
-4. Re-run Supabase linter to verify fixes
+Add to `scripts`:
+```json
+"format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+"format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
 ```
 
 ---
 
-## Technical Details
+### Step 2: Create ProtectedRoute Tests
 
-### Files That Need Creation
+Create `src/components/auth/ProtectedRoute.test.tsx` with:
+- Mock setup for `useAuth` and `useOrganization` contexts
+- Test cases for all auth flow scenarios
+- Verification of redirect behavior
 
-| File | Purpose |
-|------|---------|
-| `.prettierrc` | Code formatting configuration |
-| `.github/workflows/ci.yml` | CI/CD pipeline |
-| `src/sw.ts` or via vite-plugin-pwa | Service worker |
-| `src/pages/Install.tsx` | PWA install prompt page |
-| Additional `*.test.ts` files | Expanded test coverage |
+---
 
-### Package.json Updates Needed
+### Step 3: SQL Migration for search_path
 
+Create migration that applies `SET search_path = public` to all 26 custom functions listed above.
+
+**Important:** Skip extension functions (`halfvec`, `sparsevec`, `vector_*`, `hnsw_*`, `ivfflat_*`).
+
+---
+
+### Step 4: SQL Migration for RLS Policies
+
+Add RLS policies for:
+- `audit_log`: SELECT for authenticated users on their own org's entries
+- `org_members`: SELECT/INSERT/UPDATE/DELETE policies enforcing org-based access
+
+---
+
+## Technical Implementation Details
+
+### package.json Changes
 ```json
 {
-  "devDependencies": {
-    "vite-plugin-pwa": "^0.20.0",
-    "prettier": "^3.3.0"
-  },
   "scripts": {
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    // ... existing scripts ...
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
+  },
+  "devDependencies": {
+    // ... existing devDependencies ...
+    "prettier": "^3.3.0"
   }
 }
 ```
 
+### ProtectedRoute.test.tsx Structure
+```typescript
+// Test file with 6 test cases:
+// 1. Loading state (auth)
+// 2. Loading state (org)
+// 3. Redirect to /auth (unauthenticated)
+// 4. Redirect to /onboarding (no org)
+// 5. Allow /onboarding access without org
+// 6. Render children when fully authenticated
+```
+
+### SQL Migration Structure
+```sql
+-- Part 1: Set search_path on custom functions
+ALTER FUNCTION public.can_process(uuid, integer) SET search_path = public;
+ALTER FUNCTION public.check_usage_limit(uuid, text) SET search_path = public;
+-- ... (24 more functions)
+
+-- Part 2: Add RLS policies
+CREATE POLICY "audit_log_select_own_org" ON public.audit_log
+  FOR SELECT USING (
+    organization_id IN (SELECT public.get_user_org_ids())
+  );
+
+CREATE POLICY "org_members_select_own" ON public.org_members
+  FOR SELECT USING (
+    org_id IN (SELECT public.get_user_org_ids())
+  );
+-- ... additional policies
+```
+
 ---
 
-## Conclusion
+## Expected Outcomes
 
-The codebase has a solid foundation with good architecture, proper authentication flows, and core business features implemented. The main gaps are in:
+After implementation:
 
-1. **PWA completeness** - Manifest exists but no service worker
-2. **Test coverage** - Framework exists but only ~5% of code is tested
-3. **Developer tooling** - Missing Prettier, CI/CD, Storybook
-4. **Database security** - Some RLS policies missing, function search_path issues
+| Metric | Before | After |
+|--------|--------|-------|
+| Supabase Linter Warnings | 28 | ~4 (extension-only) |
+| Test Files | 5 | 6 |
+| CI Pipeline | May fail (prettier) | Passes |
+| Deployment | May fail | Succeeds |
 
-Addressing the P0 and P1 items would significantly improve the stability, security, and developer experience of the platform.
+---
+
+## Files Summary
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `package.json` | Modify | Add prettier + format scripts |
+| `src/components/auth/ProtectedRoute.test.tsx` | Create | Auth flow test coverage |
+| SQL Migration | Create | Fix search_path + add RLS policies |
 
