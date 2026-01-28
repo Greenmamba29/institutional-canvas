@@ -214,17 +214,17 @@ export async function sendMessage(
 }
 
 /**
- * Mark messages as read
+ * Mark messages as read (uses backend RPC for secure validation)
+ * Note: myOrgId parameter is kept for backwards compatibility but not used
+ * (the RPC extracts org from JWT token)
  */
-export async function markMessagesAsRead(conversationId: string, myOrgId: string): Promise<void> {
-  const { error } = await supabase
-    .from('direct_messages')
-    .update({ read_at: new Date().toISOString() })
-    .eq('conversation_id', conversationId)
-    .neq('sender_org_id', myOrgId)
-    .is('read_at', null);
+export async function markMessagesAsRead(conversationId: string, _myOrgId?: string): Promise<number> {
+  const { data, error } = await supabase.rpc('mark_messages_read', {
+    p_conversation_id: conversationId
+  });
 
   if (error) throw new Error(error.message);
+  return data as number;
 }
 
 /**
