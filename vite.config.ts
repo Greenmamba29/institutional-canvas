@@ -50,6 +50,19 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MiB to accommodate large images
         runtimeCaching: [
+          // Navigation handler - MUST be first to prevent false offline states
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'navigation-cache',
+              networkTimeoutSeconds: 15, // Wait 15s before considering offline
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60, // 1 hour
+              },
+            },
+          },
           {
             urlPattern: /^https:\/\/vuekwckknfjivjighhfd\.supabase\.co\/rest\/v1\/.*/i,
             handler: 'NetworkFirst',
@@ -85,8 +98,30 @@ export default defineConfig(({ mode }) => ({
             },
           },
         ],
+        // Only show offline.html for true network failures on non-app routes
         navigateFallback: '/offline.html',
-        navigateFallbackDenylist: [/^\/api/, /^\/auth/],
+        // Exclude ALL app routes - let SPA router handle them
+        navigateFallbackDenylist: [
+          /^\/api/,
+          /^\/auth/,
+          /^\/$/,              // Root path
+          /^\/dashboard/,
+          /^\/marketplace/,
+          /^\/onboarding/,
+          /^\/telebuy/,
+          /^\/ai-studio/,
+          /^\/deals/,
+          /^\/rfqs/,
+          /^\/orders/,
+          /^\/auctions/,
+          /^\/settings/,
+          /^\/bids/,
+          /^\/purchases/,
+          /^\/messages/,
+          /^\/analytics/,
+          /^\/verification/,
+          /^\/team/,
+        ],
       },
       devOptions: {
         enabled: false,
