@@ -1,8 +1,7 @@
 /**
- * Orders Service - Read operations for orders and quotes
- * 
- * NOTE: Order/Quote writes require backend RPC implementation.
- * @see ORCHESTRATION/API.openapiv1.yaml - create_order, update_order_status
+ * Orders Service - CRUD operations for orders and quotes
+ *
+ * Uses Supabase RPC for secure mutations with proper authorization.
  */
 
 import { supabase } from '@/lib/supabase/rpc';
@@ -12,33 +11,57 @@ export type Order = Tables<'orders'>;
 export type Quote = Tables<'quotes'>;
 
 // ============================================
-// PENDING RPC IMPLEMENTATIONS
-// These functions are stubs - backend must implement the RPCs
+// ORDER MUTATIONS (via RPC)
 // ============================================
 
-/**
- * Create a new order (PENDING BACKEND IMPLEMENTATION)
- * @see ORCHESTRATION/API.openapiv1.yaml - POST /rpc/create_order
- */
-export async function createOrder(_params: {
+export interface CreateOrderParams {
   quoteId?: string;
   supplierId: string;
   totalAmount: number;
   currency?: string;
-}): Promise<{ data: null; error: Error }> {
-  // TODO: Replace with rpc('create_order', params) when backend implements
-  console.warn('[orders.service] create_order RPC not yet implemented');
-  return { data: null, error: new Error('RPC create_order not implemented - request backend implementation') };
+  orgId?: string;
 }
 
 /**
- * Update order status (PENDING BACKEND IMPLEMENTATION)
- * @see ORCHESTRATION/API.openapiv1.yaml - POST /rpc/update_order_status
+ * Create a new order
  */
-export async function updateOrderStatus(_orderId: string, _status: string): Promise<{ data: null; error: Error }> {
-  // TODO: Replace with rpc('update_order_status', { p_order_id, p_status }) when backend implements
-  console.warn('[orders.service] update_order_status RPC not yet implemented');
-  return { data: null, error: new Error('RPC update_order_status not implemented - request backend implementation') };
+export async function createOrder(params: CreateOrderParams): Promise<{ data: Order | null; error: Error | null }> {
+  const { data, error } = await supabase.rpc('create_order', {
+    p_supplier_id: params.supplierId,
+    p_total_amount: params.totalAmount,
+    p_currency: params.currency || 'USD',
+    p_quote_id: params.quoteId || null,
+    p_org_id: params.orgId || null,
+  });
+
+  if (error) {
+    console.error('[orders.service] create_order failed:', error.message);
+    return { data: null, error: new Error(error.message) };
+  }
+
+  return { data: data as Order, error: null };
+}
+
+/**
+ * Update order status
+ */
+export async function updateOrderStatus(
+  orderId: string,
+  status: string,
+  paymentStatus?: string
+): Promise<{ data: Order | null; error: Error | null }> {
+  const { data, error } = await supabase.rpc('update_order_status', {
+    p_order_id: orderId,
+    p_status: status,
+    p_payment_status: paymentStatus || null,
+  });
+
+  if (error) {
+    console.error('[orders.service] update_order_status failed:', error.message);
+    return { data: null, error: new Error(error.message) };
+  }
+
+  return { data: data as Order, error: null };
 }
 
 // ============================================
