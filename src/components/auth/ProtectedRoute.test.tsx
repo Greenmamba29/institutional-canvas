@@ -27,18 +27,21 @@ vi.mock('@/context/OrganizationContext', () => ({
 
 /**
  * Render helper that wraps ProtectedRoute in a router with test routes
+ * Note: Route order matters - ProtectedRoute must wrap /onboarding so the
+ * path exception logic (line 39-41 in ProtectedRoute) can work correctly.
  */
 function renderWithRouter(initialPath = '/dashboard') {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
         <Route path="/auth" element={<div data-testid="auth-page">Auth Page</div>} />
-        <Route path="/onboarding" element={<div data-testid="onboarding-redirect">Onboarding Redirect</div>} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<div data-testid="dashboard">Dashboard</div>} />
           <Route path="/onboarding" element={<div data-testid="onboarding-flow">Onboarding Flow</div>} />
           <Route path="/settings" element={<div data-testid="settings">Settings</div>} />
         </Route>
+        {/* Fallback route - only reached when Navigate redirects here from outside ProtectedRoute */}
+        <Route path="/onboarding" element={<div data-testid="onboarding-redirect">Onboarding Redirect</div>} />
       </Routes>
     </MemoryRouter>
   );
@@ -91,10 +94,11 @@ describe('ProtectedRoute', () => {
       mockAuthState.isLoading = false;
       mockOrgState.hasOrganization = false;
       mockOrgState.isLoading = false;
-      
+
       renderWithRouter('/dashboard');
-      
-      expect(screen.getByTestId('onboarding-redirect')).toBeInTheDocument();
+
+      // User should be redirected to onboarding flow (ProtectedRoute allows /onboarding path)
+      expect(screen.getByTestId('onboarding-flow')).toBeInTheDocument();
       expect(screen.queryByTestId('dashboard')).not.toBeInTheDocument();
     });
   });

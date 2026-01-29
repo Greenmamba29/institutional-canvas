@@ -111,12 +111,14 @@ describe('Validation Schemas', () => {
     it('should accept valid bid data', () => {
       const validBid = {
         p_rfq_id: '123e4567-e89b-12d3-a456-426614174000',
+        p_supplier_id: '123e4567-e89b-12d3-a456-426614174001',
         p_price: 85000,
+        p_currency: 'USD',
         p_quantity: 100,
         p_lead_time_days: 45,
         p_notes: 'Standard delivery terms',
       };
-      
+
       const result = submitBidSchema.parse(validBid);
       expect(result.p_price).toBe(85000);
       expect(result.p_quantity).toBe(100);
@@ -125,10 +127,13 @@ describe('Validation Schemas', () => {
     it('should reject bid with negative price', () => {
       const invalidBid = {
         p_rfq_id: '123e4567-e89b-12d3-a456-426614174000',
+        p_supplier_id: '123e4567-e89b-12d3-a456-426614174001',
         p_price: -100,
+        p_currency: 'USD',
         p_quantity: 100,
+        p_lead_time_days: 30,
       };
-      
+
       expect(() => submitBidSchema.parse(invalidBid)).toThrow();
     });
   });

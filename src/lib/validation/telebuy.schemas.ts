@@ -25,10 +25,20 @@ export const updateSessionStatusSchema = z.object({
 
 export type UpdateSessionStatusInput = z.infer<typeof updateSessionStatusSchema>;
 
-// Add transcript schema
+// Transcript entry schema (for JSONB array elements)
+const transcriptEntrySchema = z.object({
+  speaker: z.string().optional(),
+  text: z.string(),
+  timestamp: z.string().optional(),
+});
+
+// Add transcript schema - accepts JSONB (object or array)
 export const addSessionTranscriptSchema = z.object({
   p_session_id: uuidSchema,
-  p_transcript: z.string().min(1, 'Transcript cannot be empty').max(100000, 'Transcript too long'),
+  p_transcript: z.union([
+    transcriptEntrySchema,
+    z.array(transcriptEntrySchema),
+  ]),
 });
 
 export type AddSessionTranscriptInput = z.infer<typeof addSessionTranscriptSchema>;
