@@ -231,11 +231,50 @@ export function useSendMessage() {
 
 export function useUnreadCount() {
   const { currentOrg } = useOrganization();
-  
-  return useQuery<number>({
+
+  const query = useQuery<number>({
     queryKey: messagingKeys.unreadCount(currentOrg?.id),
     queryFn: () => messagingService.getUnreadCount(currentOrg!.id),
     enabled: !!currentOrg,
-    refetchInterval: 30000, // Poll every 30 seconds
+    staleTime: 0, // Always consider stale to use realtime
   });
+
+  // Real-time subscription for new messages (updates unread count instantly)
+  useEffect(() => {
+    if (!currentOrg) return;
+
+    const channel = supabase
+      .channel('unread_messages_count')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'direct_messages',
+        },
+        () => {
+          // Refetch unread count when new message arrives
+          query.refetch();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'direct_messages',
+          // When messages are marked as read
+        },
+        () => {
+          query.refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentOrg, query.refetch]);
+
+  return query;
 }

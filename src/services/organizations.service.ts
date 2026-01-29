@@ -11,6 +11,19 @@ import { callAuthenticatedRpc } from '@/lib/supabase/authenticated-client';
 type Organization = Database['public']['Tables']['organizations']['Row'];
 type OrgMember = Database['public']['Tables']['org_members']['Row'];
 
+// Invite type (may not be in generated types yet)
+export interface Invite {
+  id: string;
+  organization_id: string;
+  email: string;
+  token: string;
+  role: 'owner' | 'admin' | 'member' | 'viewer';
+  expires_at: string;
+  used_at: string | null;
+  created_by: string;
+  created_at: string;
+}
+
 export interface CreateOrganizationParams {
   name: string;
   orgType: 'buyer' | 'supplier' | 'admin' | 'soe';
@@ -74,35 +87,44 @@ export async function createOrganization(
 }
 
 /**
- * Invite a new member to an organization
+ * Create an invitation to join an organization
+ * Returns the invite record with token for sharing
  */
-export async function inviteOrgMember(
+export async function createInvite(
   client: SupabaseClient<Database>,
   params: InviteOrgMemberParams
-): Promise<{ data: OrgMember | null; error: Error | null }> {
-  return callAuthenticatedRpc<OrgMember>(client, 'invite_org_member', {
+): Promise<{ data: Invite | null; error: Error | null }> {
+  return callAuthenticatedRpc<Invite>(client, 'create_invite', {
     p_org_id: params.orgId,
-    p_user_email: params.email,
+    p_email: params.email,
     p_role: params.role,
   });
 }
 
 /**
+ * Invite a new member to an organization
+ * @deprecated Use createInvite instead for better invite management
+ */
+export async function inviteOrgMember(
+  client: SupabaseClient<Database>,
+  params: InviteOrgMemberParams
+): Promise<{ data: Invite | null; error: Error | null }> {
+  // Redirect to createInvite for backwards compatibility
+  return createInvite(client, params);
+}
+
+/**
  * Claim membership in an organization
- * NOTE: Uses direct query until RPC is created in backend
+ * Validates invite token if provided for secure joining
  */
 export async function claimOrgMembership(
   client: SupabaseClient<Database>,
   params: ClaimMembershipParams
 ): Promise<{ data: OrgMember | null; error: Error | null }> {
-  // Use direct query until RPC is available
-  const { data, error } = await client
-    .from('org_members')
-    .select('*')
-    .eq('org_id', params.orgId)
-    .single();
-  
-  return { data, error: error ? new Error(error.message) : null };
+  return callAuthenticatedRpc<OrgMember>(client, 'claim_org_membership', {
+    p_org_id: params.orgId,
+    p_invite_token: params.inviteToken || null,
+  });
 }
 
 /**
