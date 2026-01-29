@@ -89,12 +89,14 @@ export async function createOrganization(
 /**
  * Create an invitation to join an organization
  * Returns the invite record with token for sharing
+ * @note RPC 'create_invite' pending backend implementation - see ORCHESTRATION/API.openapiv1.yaml
  */
 export async function createInvite(
   client: SupabaseClient<Database>,
   params: InviteOrgMemberParams
 ): Promise<{ data: Invite | null; error: Error | null }> {
-  return callAuthenticatedRpc<Invite>(client, 'create_invite', {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return callAuthenticatedRpc<Invite>(client, 'create_invite' as any, {
     p_org_id: params.orgId,
     p_email: params.email,
     p_role: params.role,
@@ -116,12 +118,14 @@ export async function inviteOrgMember(
 /**
  * Claim membership in an organization
  * Validates invite token if provided for secure joining
+ * @note RPC 'claim_org_membership' pending backend implementation - see ORCHESTRATION/API.openapiv1.yaml
  */
 export async function claimOrgMembership(
   client: SupabaseClient<Database>,
   params: ClaimMembershipParams
 ): Promise<{ data: OrgMember | null; error: Error | null }> {
-  return callAuthenticatedRpc<OrgMember>(client, 'claim_org_membership', {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return callAuthenticatedRpc<OrgMember>(client, 'claim_org_membership' as any, {
     p_org_id: params.orgId,
     p_invite_token: params.inviteToken || null,
   });

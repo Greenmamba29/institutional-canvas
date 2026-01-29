@@ -24,9 +24,11 @@ export interface CreateOrderParams {
 
 /**
  * Create a new order
+ * @note RPC 'create_order' pending backend implementation - see ORCHESTRATION/API.openapiv1.yaml
  */
 export async function createOrder(params: CreateOrderParams): Promise<{ data: Order | null; error: Error | null }> {
-  const { data, error } = await supabase.rpc('create_order', {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)('create_order', {
     p_supplier_id: params.supplierId,
     p_total_amount: params.totalAmount,
     p_currency: params.currency || 'USD',
@@ -44,13 +46,15 @@ export async function createOrder(params: CreateOrderParams): Promise<{ data: Or
 
 /**
  * Update order status
+ * @note RPC 'update_order_status' pending backend implementation - see ORCHESTRATION/API.openapiv1.yaml
  */
 export async function updateOrderStatus(
   orderId: string,
   status: string,
   paymentStatus?: string
 ): Promise<{ data: Order | null; error: Error | null }> {
-  const { data, error } = await supabase.rpc('update_order_status', {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)('update_order_status', {
     p_order_id: orderId,
     p_status: status,
     p_payment_status: paymentStatus || null,
