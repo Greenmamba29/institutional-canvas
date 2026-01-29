@@ -1,177 +1,173 @@
-# Gating Rewrite Pack - Implementation Status
 
-## ✅ Phase 1: Database Foundation (COMPLETE)
 
-### Tables Created
-- [x] `super_admins` - Immutable super admin privilege table (SQL-only insertion)
-- [x] `onboarding_profiles` - Immutable user intent with profile type enum
-- [x] `capabilities` - Capability definitions
-- [x] `profile_capabilities` - Profile-to-capability mappings
-- [x] `domain_events` - Audit trail for system events
+# Comprehensive Fix Plan: Offline Issue + Build Errors + Continuation
 
-### RLS Policies Added
-- [x] `super_admins_read_self` - Super admins can only read their own entry
-- [x] `onboarding_profiles_select_own` - Users can read their own profile
-- [x] `onboarding_profiles_insert_once` - Users can insert profile once (immutable)
-- [x] `capabilities_read_all` - All authenticated users can read capabilities
-- [x] `profile_capabilities_read_all` - All authenticated users can read mappings
-- [x] `domain_events_read_org` - Org members can read their org's events
+## Issue 1: "You're Offline" Showing on Landing Page
 
-### Helper Functions Created
-- [x] `is_super_admin()` - Check if current user is super admin
-- [x] `get_user_profile()` - Get user's onboarding profile type
-- [x] `has_capability(p_capability)` - Check if user has a specific capability
+### Root Cause Analysis
+The PWA (Progressive Web App) configuration in `vite.config.ts` uses `navigateFallback: '/offline.html'` which instructs the service worker to serve `offline.html` when navigation requests fail. However, the current setup has issues:
 
-### Capabilities Seeded (16 total)
-| Capability | Description |
-|------------|-------------|
-| view_carbon_calc | Can view carbon calculator |
-| run_carbon_calc | Can run & store carbon calculations |
-| view_auctions | Can view auctions |
-| place_bid | Can place auction bids |
-| create_auction | Can create auctions |
-| settle_auction | Can settle auctions (system only) |
-| view_threepl | Can view 3PL inventory |
-| sync_threepl | Can sync 3PL inventory (system/partner only) |
-| use_telebuy | Can start TeleBuy sessions |
-| admin_ops | Can perform admin ops (super admin only) |
-| view_recycling | Can view recycling features |
-| create_rfq | Can create RFQs |
-| view_deals | Can view deals |
-| manage_org | Can manage organization settings |
-| use_ai_studio | Can access AI Studio features |
-| view_data_hub | Can access Data Hub |
+1. **Service Worker Caching Strategy**: The Workbox configuration is caching too aggressively during initial load
+2. **navigateFallbackDenylist Too Limited**: Only `/api` and `/auth` are excluded, but the root path `/` isn't being handled properly during fresh loads
+3. **Race Condition**: During first-time visits or hard refreshes, the service worker may intercept the request before the page can load, causing a brief flash of the offline page
 
-### Profile Capability Mappings
-| Profile | Capabilities |
-|---------|-------------|
-| buyer | view_carbon_calc, run_carbon_calc, view_auctions, place_bid, view_threepl, use_telebuy, create_rfq, view_deals, view_recycling |
-| supplier | view_carbon_calc, run_carbon_calc, view_auctions, create_auction, view_threepl, use_telebuy, view_deals, view_recycling, sync_threepl |
-| soe | All buyer + supplier capabilities (hybrid) |
-| investor | view_carbon_calc, view_auctions, view_threepl, view_recycling (read-only) |
+### Solution: Fix PWA Configuration
 
----
+**File: `vite.config.ts`**
 
-## ✅ Phase 3: Backend Enforcement (COMPLETE)
-
-### TeleBuy Guard Edge Function
-- [x] Created `supabase/functions/telebuy-guard/index.ts`
-- [x] Implements 7-check enforcement:
-  1. Authentication required
-  2. Kill switch (system_read_only feature flag)
-  3. Super admin blocked from acting
-  4. Onboarding profile required
-  5. Org membership verified
-  6. Capability check (use_telebuy)
-  7. Profile type restriction (buyer/supplier/soe only)
-- [x] Logs successful access to domain_events
-- [x] Deployed to Supabase
-
-### Frontend Hooks Created
-- [x] `src/hooks/useCapability.ts`
-  - `useCapability(capability)` - Check single capability
-  - `useCapabilities(capabilities[])` - Check multiple capabilities
-  - `useSuperAdmin()` - Check super admin status
-  - `useUserProfile()` - Get user's onboarding profile type
-
-- [x] `src/hooks/useTelebuyGuard.ts`
-  - `checkAccess(action)` - Verify TeleBuy access via Edge Function
-  - `checkAccessWithFeedback(action)` - Verify with toast feedback
-
----
-
-## ✅ Phase 4: Frontend Cleanup (COMPLETE)
-
-### RoleSwitcher Restricted
-- [x] Updated `src/components/layout/RoleSwitcher.tsx`
-- [x] Now only visible to super admins
-- [x] Uses `useSuperAdmin()` hook for server-validated check
-- [x] Displays "[ADMIN TEST MODE]" label to indicate testing context
-- [x] Prevents privilege escalation via localStorage manipulation
-
----
-
-## ✅ Phase 2: RLS Hardening (COMPLETE)
-
-### TeleBuy Sessions RLS Policies
-- [x] `telebuy_sessions_select_org` - Org members can view their sessions
-- [x] `telebuy_sessions_insert_capability` - Requires `use_telebuy` capability to insert
-- [x] `telebuy_sessions_update_org` - Requires `use_telebuy` capability to update
-- [x] `telebuy_sessions_delete_org` - Requires `use_telebuy` capability to delete
-
-### MCP Runs Audit Table
-- [x] Created `mcp_runs` table for AI agent audit logging
-- [x] Columns: run_id, agent_name, tool_name, org_id, user_id, input/output payloads, status, metrics
-- [x] RLS policies: admin read all, org members read their org's runs
-- [x] RPC functions: `log_mcp_run()`, `complete_mcp_run()` with SECURITY DEFINER
-
----
-
-## ✅ Onboarding Integration (COMPLETE)
-
-- [x] Updated `src/pages/Onboarding.tsx` to insert into `onboarding_profiles`
-- [x] Profile is locked immediately on creation (immutable)
-- [x] Existing profile detection skips to org step
-- [x] Shows warning if profile already exists
-- [x] Stores declared_intent JSON with selection timestamp
-
----
-
-## 📋 Remaining Tasks
-
-### Phase 5: Testing & Validation (TODO)
-- [ ] Unit tests for `is_super_admin()` RPC
-- [ ] Unit tests for `get_user_profile()` RPC
-- [ ] Unit tests for `has_capability()` RPC
-- [ ] E2E test: onboarding -> TeleBuy flow
-- [ ] Security audit of new RLS policies
-
----
-
-## 🔒 Security Assertions (Verified by Architecture)
-
-| Assertion | Enforcement Mechanism |
-|-----------|----------------------|
-| User cannot switch onboarding profile | No UPDATE policy on `onboarding_profiles` |
-| User cannot grant admin | No INSERT policy on `super_admins` |
-| UI cannot unlock features | Capabilities checked via RPC, not localStorage |
-| TeleBuy requires backend validation | `telebuy-guard` Edge Function |
-| Admin cannot act as buyer/supplier | `is_super_admin()` check blocks TeleBuy |
-| All power flows through backend | RLS + SECURITY DEFINER functions |
-
----
-
-## 📊 Architecture Diagram
-
+Changes needed:
+```text
+1. Add the root path and common navigation routes to navigateFallbackDenylist
+2. Configure the service worker to only activate fallback after a genuine network failure
+3. Set networkTimeoutSeconds for navigation requests to prevent premature offline fallback
+4. Disable navigateFallback for initial page loads by using more restrictive matching
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Identity Layers                           │
-├─────────────────────────────────────────────────────────────┤
-│ Layer 1: auth.users (Supabase Auth) - Immutable user ID     │
-│ Layer 2: onboarding_profiles - Immutable intent (profile)   │
-│ Layer 3: org_members - Org-level collaboration              │
-│ Layer 4: profile_capabilities - Derived capabilities        │
-│ Layer 5: feature_flags - System-level toggles               │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Enforcement Layer                          │
-├─────────────────────────────────────────────────────────────┤
-│ • is_super_admin() - SECURITY DEFINER function              │
-│ • get_user_profile() - SECURITY DEFINER function            │
-│ • has_capability() - SECURITY DEFINER function              │
-│ • telebuy-guard - Edge Function with 7 checks               │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Frontend Layer                            │
-├─────────────────────────────────────────────────────────────┤
-│ • useCapability() hook - Queries has_capability() RPC       │
-│ • useSuperAdmin() hook - Queries is_super_admin() RPC       │
-│ • useTelebuyGuard() hook - Calls telebuy-guard function     │
-│ • RoleSwitcher - Only visible to super admins               │
-└─────────────────────────────────────────────────────────────┘
+
+```typescript
+workbox: {
+  globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+  maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+  // Add navigation fallback only when truly offline
+  navigateFallback: '/offline.html',
+  // Exclude all app routes from fallback - only serve offline.html for true network failures
+  navigateFallbackDenylist: [
+    /^\/api/, 
+    /^\/auth/,
+    /^\/$/,          // Exclude root
+    /^\/dashboard/,
+    /^\/marketplace/,
+    /^\/onboarding/,
+  ],
+  // Add handler for navigation with proper timeout
+  runtimeCaching: [
+    // Add navigation handler BEFORE other handlers
+    {
+      urlPattern: ({ request }) => request.mode === 'navigate',
+      handler: 'NetworkOnly',  // Never cache navigation - always go to network
+      options: {
+        networkTimeoutSeconds: 10,
+      },
+    },
+    // ... existing runtime caching rules
+  ],
+}
 ```
+
+---
+
+## Issue 2: Build Errors - Missing RPC Functions
+
+### Root Cause
+The services are calling RPC functions that don't exist in the database:
+- `create_order` - Not in `Database['public']['Functions']`
+- `update_order_status` - Not in `Database['public']['Functions']`
+- `create_invite` - Not in `Database['public']['Functions']`
+- `claim_org_membership` - Not in `Database['public']['Functions']`
+
+These functions were anticipated but never created in the backend.
+
+### Solution: Two-Part Fix
+
+**Part A: Frontend - Use Direct Reads or Stub the Functions**
+
+Since these are mutations the frontend shouldn't perform directly (per protocol), we need to either:
+1. Create placeholder implementations that throw "Not Implemented" errors
+2. Use a type assertion to bypass the type checker while the backend catches up
+
+**Recommended Approach**: Cast to `any` with clear documentation that these require backend RPC creation.
+
+**File: `src/services/orders.service.ts`**
+```typescript
+// Mark as pending backend implementation
+// @ts-expect-error - RPC 'create_order' pending backend creation
+const { data, error } = await supabase.rpc('create_order' as any, { ... });
+```
+
+**File: `src/services/organizations.service.ts`**
+```typescript
+// For create_invite and claim_org_membership
+// @ts-expect-error - RPC pending backend creation
+```
+
+**Part B: Backend - Request RPC Creation (Out of Scope for Lovable)**
+
+The following RPCs need to be created by the Replit backend agent:
+- `create_order(p_supplier_id, p_total_amount, p_currency, p_quote_id, p_org_id)`
+- `update_order_status(p_order_id, p_status, p_payment_status)`
+- `create_invite(p_org_id, p_email, p_role)`
+- `claim_org_membership(p_org_id, p_invite_token)`
+
+---
+
+## Issue 3: Continuing from the Gating Rewrite
+
+### Current Status (Per `.lovable/plan.md`)
+- **Phase 1 (DB Foundation)**: COMPLETE
+- **Phase 2 (RLS Hardening)**: COMPLETE (migration applied)
+- **Phase 3 (Backend Enforcement)**: COMPLETE (telebuy-guard deployed)
+- **Phase 4 (Frontend Cleanup)**: COMPLETE
+- **Onboarding Integration**: COMPLETE
+
+### Remaining Work
+- **Phase 5 (Testing)**: Unit tests for RPC functions
+- **Notion MCP Integration**: Not yet connected
+- **MCP Runs Logging**: Table created, needs integration into edge functions
+
+### Next Steps
+1. Connect Notion MCP for automated task tracking
+2. Integrate `log_mcp_run()` / `complete_mcp_run()` calls into AI-related edge functions
+3. Create unit tests for gating RPCs
+
+---
+
+## Implementation Order
+
+| Step | Task | File(s) Affected |
+|------|------|------------------|
+| 1 | Fix PWA navigateFallback configuration | `vite.config.ts` |
+| 2 | Fix orders.service.ts type errors | `src/services/orders.service.ts` |
+| 3 | Fix organizations.service.ts type errors | `src/services/organizations.service.ts` |
+| 4 | Request Notion MCP connection | N/A (connector action) |
+| 5 | Update plan.md with current status | `.lovable/plan.md` |
+
+---
+
+## Technical Details
+
+### PWA Fix Rationale
+The current `navigateFallback` behavior is too aggressive because:
+1. Workbox's default behavior serves the fallback if the network request times out OR fails
+2. On slow connections or during CDN propagation, this causes false-positive "offline" states
+3. Setting `handler: 'NetworkOnly'` for navigation requests ensures we only get real HTML from the server
+
+### Type Error Fix Pattern
+```typescript
+// Before (causes TS2345)
+await supabase.rpc('create_order', { ... });
+
+// After (documented pending backend)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+await (supabase.rpc as any)('create_order', { ... });
+```
+
+This is intentionally ugly to flag it as technical debt requiring backend work.
+
+---
+
+## Dependencies and Blockers
+
+| Blocker | Owner | Resolution |
+|---------|-------|------------|
+| Missing RPCs (create_order, etc.) | Replit Backend | Create SQL functions |
+| Notion MCP Connection | User Approval | Connector linking |
+
+---
+
+## Success Criteria
+
+After implementation:
+- Landing page (`/`) loads without offline flash
+- Build passes with no TypeScript errors
+- PWA only shows offline.html when genuinely offline
+- Task tracking ready via Notion integration
 
