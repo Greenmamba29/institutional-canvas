@@ -91,11 +91,33 @@
 
 ---
 
-## 📋 Remaining Tasks
+## ✅ Phase 2: RLS Hardening (COMPLETE)
 
-### Phase 2: RLS Hardening (TODO)
-- [ ] Add capability-based insert policy to `telebuy_sessions`
-- [ ] Update existing `telebuy_sessions` RLS policies
+### TeleBuy Sessions RLS Policies
+- [x] `telebuy_sessions_select_org` - Org members can view their sessions
+- [x] `telebuy_sessions_insert_capability` - Requires `use_telebuy` capability to insert
+- [x] `telebuy_sessions_update_org` - Requires `use_telebuy` capability to update
+- [x] `telebuy_sessions_delete_org` - Requires `use_telebuy` capability to delete
+
+### MCP Runs Audit Table
+- [x] Created `mcp_runs` table for AI agent audit logging
+- [x] Columns: run_id, agent_name, tool_name, org_id, user_id, input/output payloads, status, metrics
+- [x] RLS policies: admin read all, org members read their org's runs
+- [x] RPC functions: `log_mcp_run()`, `complete_mcp_run()` with SECURITY DEFINER
+
+---
+
+## ✅ Onboarding Integration (COMPLETE)
+
+- [x] Updated `src/pages/Onboarding.tsx` to insert into `onboarding_profiles`
+- [x] Profile is locked immediately on creation (immutable)
+- [x] Existing profile detection skips to org step
+- [x] Shows warning if profile already exists
+- [x] Stores declared_intent JSON with selection timestamp
+
+---
+
+## 📋 Remaining Tasks
 
 ### Phase 5: Testing & Validation (TODO)
 - [ ] Unit tests for `is_super_admin()` RPC
@@ -103,11 +125,6 @@
 - [ ] Unit tests for `has_capability()` RPC
 - [ ] E2E test: onboarding -> TeleBuy flow
 - [ ] Security audit of new RLS policies
-
-### Onboarding Integration (TODO)
-- [ ] Update `src/pages/Onboarding.tsx` to insert into `onboarding_profiles`
-- [ ] Remove ability to change role after profile creation
-- [ ] Store declared_intent JSON with onboarding answers
 
 ---
 

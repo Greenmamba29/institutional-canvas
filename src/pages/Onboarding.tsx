@@ -3,16 +3,21 @@
  * 
  * Steps:
  * 1. Welcome - Introduction to the platform
- * 2. Role Selection - Choose buyer/supplier/soe
+ * 2. Role Selection - Choose buyer/supplier/soe (saves to onboarding_profiles)
  * 3. Organization Setup - Create or join an organization
  * 4. Feature Tour - Interactive walkthrough of features
+ * 
+ * IMPORTANT: Role selection is now IMMUTABLE once saved to onboarding_profiles.
+ * The profile determines user capabilities via the profile_capabilities junction table.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useOrganization } from '@/context/OrganizationContext';
 import { useCreateOrganization, useClaimMembership } from '@/hooks/useOrganizations';
+import { useUserProfile } from '@/hooks/useCapability';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CheckCircle2, Sparkles } from 'lucide-react';
 import {
@@ -34,17 +39,40 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   { id: 'tour', title: 'Tour', description: 'Explore features' },
 ];
 
+// Map UI role to database profile type
+const roleToProfileType = (role: UserRole): 'buyer' | 'supplier' | 'soe' | 'investor' => {
+  switch (role) {
+    case 'buyer': return 'buyer';
+    case 'supplier': return 'supplier';
+    case 'soe': return 'soe';
+    default: return 'buyer';
+  }
+};
+
 export default function Onboarding() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { refetch } = useOrganization();
   const createOrg = useCreateOrganization();
   const claimMembership = useClaimMembership();
+  const { data: existingProfile, isLoading: profileLoading } = useUserProfile();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdOrgName, setCreatedOrgName] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // If user already has an onboarding profile, skip to org step or dashboard
+  useEffect(() => {
+    if (existingProfile && !profileLoading) {
+      // User already completed role selection - profile is immutable
+      // existingProfile is already the profile type string (e.g., 'buyer')
+      setSelectedRole(existingProfile as UserRole);
+      // Skip welcome and role steps, go to organization
+      setCurrentStep(2);
+    }
+  }, [existingProfile, profileLoading]);
 
   // Step navigation
   const goToNextStep = useCallback(() => {
@@ -101,10 +129,57 @@ export default function Onboarding() {
     }
   }, [claimMembership, refetch, goToNextStep]);
 
-  // Handle role selection and move to next step
+  // Handle role selection (does NOT save yet - saving happens on Continue)
   const handleRoleSelect = useCallback((role: UserRole) => {
     setSelectedRole(role);
   }, []);
+
+  // Save profile to database when continuing from role selection
+  const handleRoleContinue = useCallback(async () => {
+    if (!selectedRole || !user?.id) return;
+    
+    // Check if profile already exists (immutable)
+    if (existingProfile) {
+      goToNextStep();
+      return;
+    }
+
+    setIsSavingProfile(true);
+    try {
+      const profileType = roleToProfileType(selectedRole);
+      
+      // Insert into onboarding_profiles (immutable - locked by default)
+      const { error } = await supabase
+        .from('onboarding_profiles')
+        .insert({
+          user_id: user.id,
+          profile: profileType,
+          declared_intent: { 
+            selected_at: new Date().toISOString(),
+            initial_role: selectedRole 
+          },
+          locked: true, // Profile is immediately locked
+        });
+
+      if (error) {
+        // If duplicate key, profile already exists
+        if (error.code === '23505') {
+          toast.info('Profile already set. Continuing...');
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success(`Profile set to ${selectedRole}`);
+      }
+      
+      goToNextStep();
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      toast.error('Failed to save profile. Please try again.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }, [selectedRole, user?.id, existingProfile, goToNextStep]);
 
   // Handle completing feature tour
   const handleTourComplete = useCallback(() => {
@@ -167,6 +242,14 @@ export default function Onboarding() {
               selectedRole={selectedRole}
               onSelectRole={handleRoleSelect}
             />
+            {existingProfile && (
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Note:</strong> Your profile is already set to <span className="text-foreground font-medium">{existingProfile}</span>. 
+                  This cannot be changed.
+                </p>
+              </div>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={goToPrevStep}
@@ -175,11 +258,11 @@ export default function Onboarding() {
                 Back
               </button>
               <button
-                onClick={goToNextStep}
-                disabled={!selectedRole}
+                onClick={handleRoleContinue}
+                disabled={!selectedRole || isSavingProfile}
                 className="flex-1 h-12 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
               >
-                Continue
+                {isSavingProfile ? 'Saving...' : existingProfile ? 'Continue' : 'Set Profile & Continue'}
               </button>
             </div>
           </div>

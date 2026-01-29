@@ -1768,6 +1768,78 @@ export type Database = {
         }
         Relationships: []
       }
+      mcp_runs: {
+        Row: {
+          agent_name: string
+          completed_at: string | null
+          cost_estimate: number | null
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          input_payload: Json | null
+          metadata: Json | null
+          org_id: string | null
+          output_payload: Json | null
+          run_id: string
+          status: string
+          tokens_used: number | null
+          tool_name: string
+          user_id: string | null
+        }
+        Insert: {
+          agent_name: string
+          completed_at?: string | null
+          cost_estimate?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input_payload?: Json | null
+          metadata?: Json | null
+          org_id?: string | null
+          output_payload?: Json | null
+          run_id: string
+          status?: string
+          tokens_used?: number | null
+          tool_name: string
+          user_id?: string | null
+        }
+        Update: {
+          agent_name?: string
+          completed_at?: string | null
+          cost_estimate?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input_payload?: Json | null
+          metadata?: Json | null
+          org_id?: string | null
+          output_payload?: Json | null
+          run_id?: string
+          status?: string
+          tokens_used?: number | null
+          tool_name?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           chat_id: string
@@ -3883,6 +3955,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      complete_mcp_run: {
+        Args: {
+          p_cost_estimate?: number
+          p_duration_ms?: number
+          p_error_message?: string
+          p_id: string
+          p_output_payload?: Json
+          p_status: string
+          p_tokens_used?: number
+        }
+        Returns: boolean
+      }
       create_deal: {
         Args: { p_rfq_id: string; p_supplier_id: string; p_title: string }
         Returns: {
@@ -4598,6 +4682,18 @@ export type Database = {
         Returns: string
       }
       log_job_metrics: { Args: { p_job: string }; Returns: Json }
+      log_mcp_run: {
+        Args: {
+          p_agent_name: string
+          p_input_payload?: Json
+          p_metadata?: Json
+          p_org_id?: string
+          p_run_id: string
+          p_tool_name: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
       mark_messages_read: {
         Args: { p_conversation_id: string }
         Returns: number
