@@ -4,17 +4,18 @@
  * Wraps GMVSummaryPanel with real data from useGMVStats hook
  */
 
+import { forwardRef } from 'react';
 import { useGMVStats, useGMVSparkline } from '@/hooks/useGMVStats';
 import { GMVSummaryPanel } from './GMVSummaryPanel';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export function GMVSummaryPanelConnected() {
+export const GMVSummaryPanelConnected = forwardRef<HTMLDivElement>((_, ref) => {
   const { data: gmvStats, isLoading } = useGMVStats();
   const sparklineData = useGMVSparkline();
 
   if (isLoading) {
     return (
-      <div className="p-3 border-t border-border/50 bg-secondary/20 space-y-3">
+      <div ref={ref} className="p-3 border-t border-border/50 bg-secondary/20 space-y-3">
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-6 w-24" />
         <Skeleton className="h-6 w-full" />
@@ -28,6 +29,7 @@ export function GMVSummaryPanelConnected() {
 
   return (
     <GMVSummaryPanel
+      ref={ref}
       gmvYTD={gmvStats?.gmvYTD || 0}
       changePercent={gmvStats?.changePercent || 0}
       suppliersVerified={gmvStats?.suppliersVerified || 0}
@@ -35,4 +37,6 @@ export function GMVSummaryPanelConnected() {
       sparklineData={sparklineData}
     />
   );
-}
+});
+
+GMVSummaryPanelConnected.displayName = 'GMVSummaryPanelConnected';
