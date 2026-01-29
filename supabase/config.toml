@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.google-meet]
 verify_jwt = false
+
+[functions.telebuy-guard]
+verify_jwt = false

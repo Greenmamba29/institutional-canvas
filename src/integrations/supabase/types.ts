@@ -639,6 +639,24 @@ export type Database = {
         }
         Relationships: []
       }
+      capabilities: {
+        Row: {
+          created_at: string
+          description: string
+          key: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          key: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          key?: string
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           certificate_url: string | null
@@ -1138,6 +1156,54 @@ export type Database = {
           {
             foreignKeyName: "dm_conversations_org_b_id_fkey"
             columns: ["org_b_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      domain_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          event_type: string
+          id: string
+          org_id: string | null
+          payload: Json
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          event_type: string
+          id?: string
+          org_id?: string | null
+          payload?: Json
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          event_type?: string
+          id?: string
+          org_id?: string | null
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domain_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domain_events_org_id_fkey"
+            columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
@@ -1796,6 +1862,33 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_profiles: {
+        Row: {
+          completed_at: string
+          created_at: string
+          declared_intent: Json
+          locked: boolean
+          profile: Database["public"]["Enums"]["onboarding_profile_type"]
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          declared_intent?: Json
+          locked?: boolean
+          profile: Database["public"]["Enums"]["onboarding_profile_type"]
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          declared_intent?: Json
+          locked?: boolean
+          profile?: Database["public"]["Enums"]["onboarding_profile_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           created_at: string | null
@@ -2199,6 +2292,29 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_capabilities: {
+        Row: {
+          capability_key: string
+          profile: Database["public"]["Enums"]["onboarding_profile_type"]
+        }
+        Insert: {
+          capability_key: string
+          profile: Database["public"]["Enums"]["onboarding_profile_type"]
+        }
+        Update: {
+          capability_key?: string
+          profile?: Database["public"]["Enums"]["onboarding_profile_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_capabilities_capability_key_fkey"
+            columns: ["capability_key"]
+            isOneToOne: false
+            referencedRelation: "capabilities"
+            referencedColumns: ["key"]
           },
         ]
       }
@@ -2972,6 +3088,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      super_admins: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       supplier_profiles: {
         Row: {
@@ -4279,6 +4416,11 @@ export type Database = {
           subscription_tier: string
         }[]
       }
+      get_user_profile: {
+        Args: never
+        Returns: Database["public"]["Enums"]["onboarding_profile_type"]
+      }
+      has_capability: { Args: { p_capability: string }; Returns: boolean }
       has_org_role: {
         Args: { p_org_id: string; p_role: string }
         Returns: boolean
@@ -4341,6 +4483,7 @@ export type Database = {
         Returns: Json
       }
       is_org_member: { Args: { p_org_id: string }; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       jwt_claim: { Args: { claim: string }; Returns: string }
       jwt_org_id: { Args: never; Returns: string }
       jwt_user_id: { Args: never; Returns: string }
@@ -4763,6 +4906,7 @@ export type Database = {
         | "auction_won"
         | "system"
       offer_decision: "accepted" | "rejected"
+      onboarding_profile_type: "buyer" | "supplier" | "soe" | "investor"
       rfq_status: "draft" | "submitted" | "closed" | "cancelled"
     }
     CompositeTypes: {
@@ -4911,6 +5055,7 @@ export const Constants = {
         "system",
       ],
       offer_decision: ["accepted", "rejected"],
+      onboarding_profile_type: ["buyer", "supplier", "soe", "investor"],
       rfq_status: ["draft", "submitted", "closed", "cancelled"],
     },
   },
