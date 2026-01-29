@@ -201,7 +201,7 @@ CREATE TABLE IF NOT EXISTS public.invites (
   role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member', 'viewer')),
   expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
   used_at TIMESTAMPTZ,
-  created_by UUID NOT NULL,
+  created_by TEXT NOT NULL,  -- TEXT to match org_members.user_id pattern (supports both UUID and sub formats)
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -315,7 +315,7 @@ BEGIN
     v_token,
     COALESCE(p_role, 'member'),
     NOW() + INTERVAL '7 days',
-    COALESCE(v_user_id, v_user_sub::UUID),
+    COALESCE(v_user_id::TEXT, v_user_sub),  -- Store as TEXT (no UUID cast)
     NOW()
   )
   RETURNING * INTO v_row;
