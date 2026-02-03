@@ -12,6 +12,7 @@ import { MetricsReview } from "@/components/dashboard/MetricsReview";
 import { BottomKPIs } from "@/components/dashboard/BottomKPIs";
 import { WeeklyAuctionSnapshot } from "@/components/supplier/WeeklyAuctionSnapshot";
 import { UpcomingAuctions } from "@/components/supplier/UpcomingAuctions";
+import { LivePriceTicker, MarketNewsFeed, ArbitragePanel } from "@/components/market";
 import { useDashboardStats, usePriceTicker } from "@/hooks/useDashboardStats";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { usePartners } from "@/hooks/usePartners";
@@ -207,9 +208,15 @@ export default function Dashboard() {
                 { id: '2', name: 'EcoBattery Solutions', verified: true, verificationTier: 'gold', ytdRevenue: 5200000, product: 'Black Mass (Co/Ni/Li)', pricePerMT: 24500, responseTime: '2.1H' },
               ]} />
             )}
+
+            {/* Market News Feed - New */}
+            <MarketNewsFeed />
           </div>
 
           <div className="space-y-6">
+            {/* Live Price Ticker - New */}
+            <LivePriceTicker />
+
             <MetricsReview
               totalGMV={gmvStats?.gmvYTD || 4270000}
               todayChange={6300}
@@ -222,7 +229,10 @@ export default function Dashboard() {
             {viewMode === 'supplier' ? (
               <UpcomingAuctions auctions={upcomingAuctions} />
             ) : (
-              <AuditLog entries={auditEntries} />
+              <>
+                <ArbitragePanel />
+                <AuditLog entries={auditEntries} />
+              </>
             )}
           </div>
         </div>
