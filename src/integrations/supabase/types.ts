@@ -388,6 +388,51 @@ export type Database = {
           },
         ]
       }
+      arbitrage_opportunities: {
+        Row: {
+          buy_price: number
+          buy_region: string
+          confidence_score: number | null
+          detected_at: string | null
+          expires_at: string | null
+          id: string
+          product_type: string
+          profit_margin_percent: number
+          purity: string | null
+          sell_price: number
+          sell_region: string
+          status: string | null
+        }
+        Insert: {
+          buy_price: number
+          buy_region: string
+          confidence_score?: number | null
+          detected_at?: string | null
+          expires_at?: string | null
+          id?: string
+          product_type: string
+          profit_margin_percent: number
+          purity?: string | null
+          sell_price: number
+          sell_region: string
+          status?: string | null
+        }
+        Update: {
+          buy_price?: number
+          buy_region?: string
+          confidence_score?: number | null
+          detected_at?: string | null
+          expires_at?: string | null
+          id?: string
+          product_type?: string
+          profit_margin_percent?: number
+          purity?: string | null
+          sell_price?: number
+          sell_region?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
       auction_bids: {
         Row: {
           amount: number
@@ -1765,6 +1810,147 @@ export type Database = {
           id?: string
           is_primary?: boolean | null
           supplier_id?: string
+        }
+        Relationships: []
+      }
+      market_briefings: {
+        Row: {
+          briefing_date: string
+          executive_summary: string | null
+          generated_at: string | null
+          id: string
+          key_highlights: Json | null
+          opportunities: Json | null
+          price_outlook: string | null
+          risk_factors: Json | null
+        }
+        Insert: {
+          briefing_date: string
+          executive_summary?: string | null
+          generated_at?: string | null
+          id?: string
+          key_highlights?: Json | null
+          opportunities?: Json | null
+          price_outlook?: string | null
+          risk_factors?: Json | null
+        }
+        Update: {
+          briefing_date?: string
+          executive_summary?: string | null
+          generated_at?: string | null
+          id?: string
+          key_highlights?: Json | null
+          opportunities?: Json | null
+          price_outlook?: string | null
+          risk_factors?: Json | null
+        }
+        Relationships: []
+      }
+      market_kpis: {
+        Row: {
+          change_percent: number | null
+          id: string
+          metric_name: string
+          metric_value: number
+          previous_value: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          change_percent?: number | null
+          id?: string
+          metric_name: string
+          metric_value: number
+          previous_value?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          change_percent?: number | null
+          id?: string
+          metric_name?: string
+          metric_value?: number
+          previous_value?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      market_news: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          published_at: string | null
+          sentiment: string | null
+          sentiment_score: number | null
+          source: string | null
+          summary: string | null
+          title: string
+          url: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          published_at?: string | null
+          sentiment?: string | null
+          sentiment_score?: number | null
+          source?: string | null
+          summary?: string | null
+          title: string
+          url?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          published_at?: string | null
+          sentiment?: string | null
+          sentiment_score?: number | null
+          source?: string | null
+          summary?: string | null
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      market_prices: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          market_trend: string | null
+          price_change_24h: number | null
+          price_usd: number
+          product_type: string
+          purity: string | null
+          region: string
+          source: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          market_trend?: string | null
+          price_change_24h?: number | null
+          price_usd: number
+          product_type: string
+          purity?: string | null
+          region: string
+          source?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          market_trend?: string | null
+          price_change_24h?: number | null
+          price_usd?: number
+          product_type?: string
+          purity?: string | null
+          region?: string
+          source?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -4387,6 +4573,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_market_summary: { Args: never; Returns: Json }
       get_my_organizations: {
         Args: never
         Returns: {
@@ -4504,6 +4691,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["onboarding_profile_type"]
       }
+      handle_make_webhook: { Args: { payload: Json }; Returns: Json }
       has_capability: { Args: { p_capability: string }; Returns: boolean }
       has_org_role: {
         Args: { p_org_id: string; p_role: string }

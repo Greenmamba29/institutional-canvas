@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.telebuy-guard]
 verify_jwt = false
+
+[functions.make-webhook]
+verify_jwt = false
