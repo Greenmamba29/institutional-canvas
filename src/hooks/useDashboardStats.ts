@@ -2,13 +2,13 @@
  * Dashboard Stats Hook
  * 
  * Aggregates org-level statistics from various data sources
+ * Now uses real-time market data from Make.com integration
  */
 
-import { useQuery } from '@tanstack/react-query';
 import { useRFQs } from './useRFQs';
 import { useBids } from './useBids';
 import { useDeals } from './useDeals';
-import { getPriceIndicators } from '@/services/market.service';
+import { usePrices } from './useMarketData';
 
 export interface DashboardStats {
   // RFQ Stats
@@ -92,22 +92,33 @@ export function useDashboardStats() {
   };
 }
 
+export interface PriceTickerData {
+  symbol: string;
+  region: string;
+  price: number;
+  unit: string;
+  change24h: number;
+  trend: 'up' | 'down' | 'stable';
+}
+
 /**
- * Hook to fetch price ticker data
+ * Hook to fetch price ticker data from real-time market_prices table
  */
 export function usePriceTicker() {
-  return useQuery({
-    queryKey: ['price-ticker'],
-    queryFn: async () => {
-      const { data, error } = await getPriceIndicators({
-        p_symbol: 'LCE',
-        p_region: 'GLOBAL',
-        p_limit: 1,
-      });
-      
-      if (error) throw error;
-      return data?.[0] || null;
-    },
-    refetchInterval: 60000, // Refresh every minute
-  });
+  const { data: prices, isLoading } = usePrices();
+  
+  // Get the first/most recent price as the ticker
+  const tickerData: PriceTickerData | null = prices?.[0] ? {
+    symbol: prices[0].product_type,
+    region: prices[0].region,
+    price: prices[0].price_usd,
+    unit: 'MT',
+    change24h: prices[0].price_change_24h,
+    trend: prices[0].market_trend,
+  } : null;
+
+  return {
+    data: tickerData,
+    isLoading,
+  };
 }
