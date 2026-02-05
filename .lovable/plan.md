@@ -5,108 +5,79 @@
 
 This plan completes the data transducer configuration by extending the existing `sync-to-airtable` Edge Function to support the new market intelligence tables, creating bidirectional sync capabilities between Make.com, Supabase, and Airtable.
 
+## ✅ IMPLEMENTATION COMPLETE
+
+All phases have been implemented. See implementation status below.
+
 ## Current State Analysis
 
-### What's Already Deployed
+### What's Now Deployed
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| `make-webhook` Edge Function | Deployed | Receives Make.com updates, writes to market tables |
-| `handle_make_webhook` RPC | Active | Handles `price_update`, `kpi_update`, `news_update`, `arbitrage_update`, `briefing_update` |
-| `sync-to-airtable` Edge Function | Partial | Only syncs `subscriptions`, `subscription_plans`, `payments` |
-| `airtable-proxy` Edge Function | Deployed | Reads FAQs and Products from Airtable |
-| Market Tables | Created | `market_prices`, `market_kpis`, `market_news`, `arbitrage_opportunities`, `market_briefings` |
-| Supabase Realtime | Enabled | All 5 market tables in publication |
-
-### Configuration Gaps
-
-| Gap | Issue | Resolution |
-|-----|-------|------------|
-| Airtable table mapping | `sync-to-airtable` missing market tables | Add mapping for 5 market tables |
-| Missing secrets | `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID` not configured | User must add via Supabase secrets |
-| Make.com webhook URL | Not updated in Make.com scenarios | User must update Scenario 4047120 |
-| Database triggers | No auto-sync from Supabase to Airtable | Add Postgres triggers + RPC |
+| `make-webhook` Edge Function | ✅ Deployed | Receives Make.com updates, writes to market tables |
+| `handle_make_webhook` RPC | ✅ Active | Handles all 5 event types |
+| `sync-to-airtable` Edge Function | ✅ Extended | Now syncs all 8 tables including market intelligence |
+| `market-data` Edge Function | ✅ New | Fetches from Make.com Data Stores API |
+| `airtable-market-webhook` Edge Function | ✅ New | Handles Airtable → Supabase sync |
+| `airtable-proxy` Edge Function | ✅ Deployed | Reads FAQs and Products from Airtable |
+| Market Tables | ✅ Created | All 5 market tables with Realtime enabled |
+| Secrets | ✅ Configured | AIRTABLE_API_KEY, AIRTABLE_WEBHOOK_SECRET, MAKE_API_KEY |
 
 ---
 
-## Implementation Plan
+## Implementation Status
 
-### Phase 1: Extend sync-to-airtable Table Mapping
+### ✅ Phase 1: Extend sync-to-airtable Table Mapping
 
-Update the Edge Function to support syncing market intelligence data TO Airtable.
+Extended `supabase/functions/sync-to-airtable/index.ts` with:
+- Added 5 new market table mappings
+- Added field transformers for Airtable column naming
+- Added batch operation support
 
-**File**: `supabase/functions/sync-to-airtable/index.ts`
-
-```text
-Current tableMapping:
+```typescript
+const tableMapping = {
+  // Existing
   subscriptions    -> tblCQa00kVDzzIchQ
   subscription_plans -> tblyoqlubNtFyLgG3
   payments         -> tblQsm36zVYUo4wAA
-
-Extended tableMapping (new entries):
-  market_prices    -> tbl_PRICE_ID  (user provides)
-  market_kpis      -> tbl_KPI_ID    (user provides)
-  market_news      -> tbl_NEWS_ID   (user provides)
-  arbitrage_opportunities -> tbl_ARB_ID (user provides)
-  market_briefings -> tbl_BRIEF_ID  (user provides)
+  // New market tables (configurable via env vars)
+  market_prices    -> AIRTABLE_MARKET_PRICES_TABLE
+  market_kpis      -> AIRTABLE_MARKET_KPIS_TABLE
+  market_news      -> AIRTABLE_MARKET_NEWS_TABLE
+  arbitrage_opportunities -> AIRTABLE_ARBITRAGE_TABLE
+  market_briefings -> AIRTABLE_BRIEFINGS_TABLE
+}
 ```
 
-Changes:
-- Add new entries to `tableMapping` object
-- Add field transformation for Airtable column naming conventions
-- Add support for batch operations (multiple records per call)
+---
+
+### ⏳ Phase 2: Database Triggers (Optional)
+
+Database triggers for automatic sync can be added via migration if needed.
+Currently, sync is triggered via Edge Function calls from Make.com webhooks.
 
 ---
 
-### Phase 2: Create Supabase-to-Airtable Trigger System
+### ✅ Phase 3: Market Data API Endpoint
 
-Add database triggers that automatically sync changes to Airtable when market data is updated.
+Created `supabase/functions/market-data/index.ts`:
+- Fetches from Make.com Data Store API
+- Data Store IDs: 73727 (prices), 73730 (KPIs), 73723 (news), 73728 (arbitrage)
+- Syncs to Supabase tables
+- Supports filtering by type: `?type=prices|kpis|news|arbitrage|all`
 
-**New RPC Function**: `sync_market_data_to_airtable()`
-
-```sql
--- Calls sync-to-airtable Edge Function when market tables change
-CREATE FUNCTION sync_market_data_to_airtable()
-RETURNS TRIGGER AS $$
-BEGIN
-  PERFORM net.http_post(
-    url := 'https://vuekwckknfjivjighhfd.supabase.co/functions/v1/sync-to-airtable',
-    headers := '{"Content-Type": "application/json"}'::jsonb,
-    body := jsonb_build_object(
-      'table', TG_TABLE_NAME,
-      'record', row_to_json(NEW)::jsonb,
-      'action', TG_OP
-    )
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+**Usage:**
+```
+GET https://vuekwckknfjivjighhfd.supabase.co/functions/v1/market-data
+GET https://vuekwckknfjivjighhfd.supabase.co/functions/v1/market-data?type=prices
 ```
 
-**Triggers** (optional - can be enabled per table):
-- `market_prices_sync_trigger`
-- `market_kpis_sync_trigger`
-- `market_news_sync_trigger`
-
 ---
 
-### Phase 3: Create Market Data API Endpoint
+### ✅ Phase 4: Config Updated
 
-Add an Edge Function to fetch data directly from Make.com Data Stores as a fallback/refresh mechanism.
-
-**New File**: `supabase/functions/market-data/index.ts`
-
-This function:
-- Fetches from Make.com Data Store API using `MAKE_API_KEY`
-- Data Store IDs: `73727` (prices), `73730` (KPIs), `73723` (news), `73728` (arbitrage)
-- Writes fresh data to Supabase tables
-- Returns combined market data response
-
----
-
-### Phase 4: Update supabase/config.toml
-
-Register the new `market-data` function and `sync-to-airtable` function:
+`supabase/config.toml` now includes:
 
 ```toml
 [functions.sync-to-airtable]
@@ -114,52 +85,53 @@ verify_jwt = false
 
 [functions.market-data]
 verify_jwt = false
+
+[functions.airtable-market-webhook]
+verify_jwt = false
 ```
 
 ---
 
-### Phase 5: Add Airtable Webhook Sync Handler
+### ✅ Phase 5: Airtable Webhook Handler
 
-Create a handler for Airtable-initiated webhooks (when Airtable data changes push to Supabase).
-
-**New File**: `supabase/functions/airtable-market-webhook/index.ts`
-
-Features:
+Created `supabase/functions/airtable-market-webhook/index.ts`:
 - Receives Airtable Automation webhook payloads
 - Maps Airtable field names to Supabase columns
 - Validates with `AIRTABLE_WEBHOOK_SECRET`
-- Updates corresponding Supabase market tables
+- Supports both simple automation and Webhooks API formats
+
+**Webhook URL:**
+```
+https://vuekwckknfjivjighhfd.supabase.co/functions/v1/airtable-market-webhook
+```
 
 ---
 
-## Files to Create/Modify
+## Files Created/Modified
 
-| Action | File | Description |
-|--------|------|-------------|
-| MODIFY | `supabase/functions/sync-to-airtable/index.ts` | Add market table mappings + field transformers |
-| CREATE | `supabase/functions/market-data/index.ts` | Make.com Data Store API fetcher |
-| CREATE | `supabase/functions/airtable-market-webhook/index.ts` | Airtable -> Supabase sync handler |
-| MODIFY | `supabase/config.toml` | Register new functions |
-| MIGRATE | (SQL) | Add sync triggers + helper functions |
-
----
-
-## Required Secrets Configuration
-
-These secrets must be added in the Supabase Dashboard:
-
-| Secret | Source | Purpose |
-|--------|--------|---------|
-| `AIRTABLE_API_KEY` | Airtable Account Settings | API access for reads/writes |
-| `AIRTABLE_BASE_ID` | Airtable Base URL | Target base identifier |
-| `AIRTABLE_WEBHOOK_SECRET` | User-generated | Validate incoming webhooks |
-| `MAKE_API_KEY` | Make.com API Settings | Access Data Store API |
+| Action | File | Status |
+|--------|------|--------|
+| MODIFIED | `supabase/functions/sync-to-airtable/index.ts` | ✅ Complete |
+| CREATED | `supabase/functions/market-data/index.ts` | ✅ Complete |
+| CREATED | `supabase/functions/airtable-market-webhook/index.ts` | ✅ Complete |
+| MODIFIED | `supabase/config.toml` | ✅ Complete |
 
 ---
 
-## Airtable Table IDs (User Must Provide)
+## Secrets Configured
 
-Create these tables in Airtable and provide their IDs:
+| Secret | Status |
+|--------|--------|
+| `AIRTABLE_API_KEY` | ✅ Added |
+| `AIRTABLE_WEBHOOK_SECRET` | ✅ Added |
+| `MAKE_API_KEY` | ✅ Added |
+
+---
+
+## Next Steps (User Action Required)
+
+### 1. Create Airtable Tables
+Create these tables in your Airtable base and optionally set table IDs as env vars:
 
 | Table Name | Fields Required |
 |------------|-----------------|
@@ -171,9 +143,9 @@ Create these tables in Airtable and provide their IDs:
 
 ---
 
-## Make.com Configuration Updates
+### 2. Update Make.com Scenarios
 
-After deployment, update these Make.com scenarios:
+Update webhook URLs in these scenarios:
 
 | Scenario ID | Current Webhook | New Webhook URL |
 |-------------|-----------------|-----------------|
@@ -185,6 +157,17 @@ Add header to all scenarios:
 ```
 Authorization: Bearer <SUPABASE_ANON_KEY>
 ```
+
+### 3. Set Up Airtable Automation (Optional)
+
+To sync Airtable changes back to Supabase:
+1. Create an Airtable Automation for each table
+2. Trigger: When record created/updated/deleted
+3. Action: Send webhook to:
+   ```
+   https://vuekwckknfjivjighhfd.supabase.co/functions/v1/airtable-market-webhook
+   ```
+4. Include header: `x-airtable-signature: <AIRTABLE_WEBHOOK_SECRET>`
 
 ---
 
