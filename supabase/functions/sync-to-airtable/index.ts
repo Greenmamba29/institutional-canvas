@@ -6,17 +6,98 @@ const AIRTABLE_BASE_ID = Deno.env.get('AIRTABLE_BASE_ID') || 'appu9fRT4qFBCf8wL'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
+// Table mappings: Supabase table -> Airtable table ID
 const tableMapping: Record<string, string> = {
+  // Existing mappings
   'subscriptions': 'tblCQa00kVDzzIchQ',
   'subscription_plans': 'tblyoqlubNtFyLgG3',
   'payments': 'tblQsm36zVYUo4wAA',
+  // Market intelligence mappings (configurable via env or defaults)
+  'market_prices': Deno.env.get('AIRTABLE_MARKET_PRICES_TABLE') || 'tblMarketPrices',
+  'market_kpis': Deno.env.get('AIRTABLE_MARKET_KPIS_TABLE') || 'tblMarketKPIs',
+  'market_news': Deno.env.get('AIRTABLE_MARKET_NEWS_TABLE') || 'tblMarketNews',
+  'arbitrage_opportunities': Deno.env.get('AIRTABLE_ARBITRAGE_TABLE') || 'tblArbitrage',
+  'market_briefings': Deno.env.get('AIRTABLE_BRIEFINGS_TABLE') || 'tblBriefings',
 };
+
+// Field transformers: Convert Supabase column names to Airtable field names
+const fieldTransformers: Record<string, Record<string, string>> = {
+  'market_prices': {
+    'product_type': 'Product Type',
+    'purity': 'Purity',
+    'region': 'Region',
+    'price_usd': 'Price (USD)',
+    'price_change_24h': 'Price Change 24h',
+    'market_trend': 'Market Trend',
+    'source': 'Source',
+    'confidence_score': 'Confidence Score',
+    'updated_at': 'Last Updated',
+  },
+  'market_kpis': {
+    'metric_name': 'Metric Name',
+    'metric_value': 'Metric Value',
+    'previous_value': 'Previous Value',
+    'change_percent': 'Change Percent',
+    'updated_at': 'Last Updated',
+  },
+  'market_news': {
+    'title': 'Title',
+    'summary': 'Summary',
+    'source': 'Source',
+    'url': 'URL',
+    'sentiment': 'Sentiment',
+    'sentiment_score': 'Sentiment Score',
+    'category': 'Category',
+    'published_at': 'Published At',
+  },
+  'arbitrage_opportunities': {
+    'product_type': 'Product Type',
+    'purity': 'Purity',
+    'buy_region': 'Buy Region',
+    'sell_region': 'Sell Region',
+    'buy_price': 'Buy Price',
+    'sell_price': 'Sell Price',
+    'profit_margin_percent': 'Profit Margin %',
+    'confidence_score': 'Confidence Score',
+    'status': 'Status',
+    'detected_at': 'Detected At',
+    'expires_at': 'Expires At',
+  },
+  'market_briefings': {
+    'briefing_date': 'Briefing Date',
+    'executive_summary': 'Executive Summary',
+    'key_highlights': 'Key Highlights',
+    'price_outlook': 'Price Outlook',
+    'risk_factors': 'Risk Factors',
+    'opportunities': 'Opportunities',
+    'generated_at': 'Generated At',
+  },
+};
+
+// Transform record fields for Airtable
+function transformFields(table: string, record: Record<string, any>): Record<string, any> {
+  const transformer = fieldTransformers[table];
+  if (!transformer) return record;
+
+  const transformed: Record<string, any> = {};
+  for (const [key, value] of Object.entries(record)) {
+    if (key === 'id' || key === 'created_at') continue;
+    const airtableField = transformer[key] || key;
+    if (typeof value === 'object' && value !== null) {
+      transformed[airtableField] = JSON.stringify(value);
+    } else {
+      transformed[airtableField] = value;
+    }
+  }
+  return transformed;
+}
 
 interface SyncRequest {
   table: string;
   record: Record<string, any>;
   action?: 'create' | 'update' | 'delete';
   recordId?: string;
+  records?: Record<string, any>[];
 }
 
 serve(async (req) => {
@@ -31,10 +112,10 @@ serve(async (req) => {
       });
     }
 
-    const { table, record, action = 'create', recordId }: SyncRequest = await req.json();
+    const { table, record, action = 'create', recordId, records }: SyncRequest = await req.json();
 
-    if (!table || !record) {
-      throw new Error('Missing required fields: table and record');
+    if (!table || (!record && !records)) {
+      throw new Error('Missing required fields: table and (record or records)');
     }
 
     const airtableTableId = tableMapping[table];
@@ -46,7 +127,45 @@ serve(async (req) => {
       throw new Error('AIRTABLE_API_KEY environment variable is not set');
     }
 
-    const airtableRecord = { fields: record };
+    // Handle batch operations
+    if (records && records.length > 0) {
+      const batchRecords = records.map(r => ({ fields: transformFields(table, r) }));
+      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${airtableTableId}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ records: batchRecords }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Airtable batch API error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log(`Batch synced ${records.length} records to ${table}`);
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          action: 'batch_create',
+          count: records.length,
+          data,
+          message: `Successfully created ${records.length} records in Airtable table ${table}`,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          status: 200,
+        }
+      );
+    }
+
+    // Single record operations
+    const transformedRecord = transformFields(table, record);
+    const airtableRecord = { fields: transformedRecord };
     let response: Response;
     let url: string;
 
@@ -94,13 +213,15 @@ serve(async (req) => {
           event_type: `airtable_sync_${action}`,
           source: 'sync-to-airtable',
           table_name: table,
-          payload: { table, record, action, airtable_response: data },
+          payload: { table, record: transformedRecord, action, airtable_response: data },
           status: 'success',
         });
       } catch (logError) {
         console.error('Failed to log webhook event:', logError);
       }
     }
+
+    console.log(`Successfully synced ${table} record to Airtable:`, { action, recordId: data.id });
 
     return new Response(
       JSON.stringify({
