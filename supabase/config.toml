@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.airtable-market-webhook]
 verify_jwt = false
+
+[functions.log-skill-invocation]
+verify_jwt = false

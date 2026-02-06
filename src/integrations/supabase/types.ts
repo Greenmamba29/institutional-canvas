@@ -1365,6 +1365,33 @@ export type Database = {
           },
         ]
       }
+      feature_flags: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          enabled: boolean
+          id: string
+          key: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       file_activities: {
         Row: {
           activity_type: string
@@ -3179,6 +3206,69 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_invocations: {
+        Row: {
+          context_snapshot: Json | null
+          created_at: string | null
+          duration_ms: number | null
+          error_code: string | null
+          error_message: string | null
+          input_hash: string | null
+          invocation_id: string
+          org_id: string | null
+          skill_name: string
+          skill_version: string
+          success: boolean
+          tool_calls: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          context_snapshot?: Json | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          input_hash?: string | null
+          invocation_id?: string
+          org_id?: string | null
+          skill_name: string
+          skill_version?: string
+          success: boolean
+          tool_calls?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          context_snapshot?: Json | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          input_hash?: string | null
+          invocation_id?: string
+          org_id?: string | null
+          skill_name?: string
+          skill_version?: string
+          success?: boolean
+          tool_calls?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_invocations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_invocations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       smart_folders: {
         Row: {
           auto_organize: boolean | null
@@ -4116,6 +4206,7 @@ export type Database = {
         Args: { p_action: string; p_trigger_source: string }
         Returns: boolean
       }
+      check_feature_flag: { Args: { p_key: string }; Returns: boolean }
       check_mutual_follow: {
         Args: { p_org_a: string; p_org_b: string }
         Returns: boolean
@@ -4756,6 +4847,7 @@ export type Database = {
       }
       is_org_member: { Args: { p_org_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      is_system_read_only: { Args: never; Returns: boolean }
       jwt_claim: { Args: { claim: string }; Returns: string }
       jwt_org_id: { Args: never; Returns: string }
       jwt_user_id: { Args: never; Returns: string }
