@@ -1008,11 +1008,11 @@ test.describe('Privilege Escalation Prevention', () => {
 
 | Epic | Priority | PRs | Status |
 |------|----------|-----|--------|
-| 1. Policy Layer Foundation | P0 | 1.1-1.4 | Ready |
-| 2. Skills Registry | P0 | 2.1-2.6 | Blocked by Epic 1 |
-| 3. Skill Discovery + Recommendation | P1 | 3.1-3.2 | Blocked by Epic 2 |
-| 4. Migration + useSkill Integration | P1 | 4.1-4.4 | Blocked by Epic 2 |
-| 5. Hardening (E2E + CI) | P0 | 5.1-5.4 | Can start parallel |
+| 1. Policy Layer Foundation | P0 | 1.1-1.4 | ✅ Complete |
+| 2. Skills Registry | P0 | 2.1-2.6 | ✅ Complete |
+| 3. Skill Discovery + Recommendation | P1 | 3.1-3.2 | ✅ Complete |
+| 4. Migration + useSkill Integration | P1 | 4.1-4.4 | Ready |
+| 5. Hardening (E2E + CI) | P0 | 5.1-5.4 | ✅ Complete |
 
 ---
 

@@ -31,6 +31,12 @@ export {
   getRegistryStats,
 } from './registry';
 
+// Recommendations
+export {
+  recommendSkills,
+  getSkillsForEntity,
+} from './recommend';
+
 // Audit
 export {
   logSkillInvocation,
