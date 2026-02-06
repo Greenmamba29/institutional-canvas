@@ -44,6 +44,15 @@ export {
   ReadOnlyError,
 } from './killSwitch';
 
+// Feature Flags
+export {
+  checkFeatureFlag,
+  checkFeatureFlags,
+  invalidateFeatureFlagCache,
+  FEATURE_FLAGS,
+  type FeatureFlagKey,
+} from './featureFlags';
+
 // Capability Policy
 export {
   hasCapability,

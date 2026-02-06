@@ -34,24 +34,21 @@ export async function isSystemReadOnly(): Promise<boolean> {
   }
 
   try {
-    // Check ai_feature_flags table for system_read_only
-    // This table exists and has similar structure
+    // Use the new RPC function created in migration
     const { data, error } = await supabase
-      .from('ai_feature_flags')
-      .select('status')
-      .eq('feature_key', 'system_read_only')
+      .from('feature_flags')
+      .select('enabled')
+      .eq('key', 'system_read_only')
       .maybeSingle();
 
     if (error) {
-      // Table query failed - likely doesn't exist or no access
       console.warn('[KillSwitch] Feature flag check failed, assuming writable:', error.message);
       cachedKillSwitchState = false;
       cacheTimestamp = now;
       return false;
     }
 
-    // status = 'active' means system is in read-only mode
-    cachedKillSwitchState = data?.status === 'active';
+    cachedKillSwitchState = data?.enabled ?? false;
     cacheTimestamp = now;
 
     return cachedKillSwitchState;
@@ -86,12 +83,12 @@ export function subscribeToKillSwitch(
       {
         event: 'UPDATE',
         schema: 'public',
-        table: 'ai_feature_flags',
-        filter: 'feature_key=eq.system_read_only',
+        table: 'feature_flags',
+        filter: 'key=eq.system_read_only',
       },
       (payload) => {
-        const newState = payload.new as { status?: string } | null;
-        cachedKillSwitchState = newState?.status === 'active';
+        const newState = payload.new as { enabled?: boolean } | null;
+        cachedKillSwitchState = newState?.enabled ?? false;
         cacheTimestamp = Date.now();
         callback(cachedKillSwitchState);
       }
