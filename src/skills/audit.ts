@@ -6,7 +6,10 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import type { SkillContext, SkillResult, ToolCallRecord, SkillInvocationRecord } from './types';
+import type { SkillContext, SkillResult, ToolCallRecord } from './types';
+
+// Re-export ToolCallRecord for convenience
+export type { ToolCallRecord } from './types';
 
 /**
  * Log a skill invocation
