@@ -49,14 +49,17 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MiB to accommodate large images
+        // Force new service worker to take control immediately - prevents stale cache issues
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
-          // Navigation handler - MUST be first to prevent false offline states
+          // Navigation handler - NetworkFirst without fallback (SPA handles its own routing)
           {
             urlPattern: ({ request }) => request.mode === 'navigate',
             handler: 'NetworkFirst',
             options: {
               cacheName: 'navigation-cache',
-              networkTimeoutSeconds: 15, // Wait 15s before considering offline
+              networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60, // 1 hour
@@ -98,30 +101,7 @@ export default defineConfig(({ mode }) => ({
             },
           },
         ],
-        // Only show offline.html for true network failures on non-app routes
-        navigateFallback: '/offline.html',
-        // Exclude ALL app routes - let SPA router handle them
-        navigateFallbackDenylist: [
-          /^\/api/,
-          /^\/auth/,
-          /^\/$/,              // Root path
-          /^\/dashboard/,
-          /^\/marketplace/,
-          /^\/onboarding/,
-          /^\/telebuy/,
-          /^\/ai-studio/,
-          /^\/deals/,
-          /^\/rfqs/,
-          /^\/orders/,
-          /^\/auctions/,
-          /^\/settings/,
-          /^\/bids/,
-          /^\/purchases/,
-          /^\/messages/,
-          /^\/analytics/,
-          /^\/verification/,
-          /^\/team/,
-        ],
+        // REMOVED navigateFallback - SPA handles routing, no false offline messages
       },
       devOptions: {
         enabled: false,
