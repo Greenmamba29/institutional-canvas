@@ -13,6 +13,7 @@ import { BottomKPIs } from "@/components/dashboard/BottomKPIs";
 import { WeeklyAuctionSnapshot } from "@/components/supplier/WeeklyAuctionSnapshot";
 import { UpcomingAuctions } from "@/components/supplier/UpcomingAuctions";
 import { LivePriceTicker, MarketNewsFeed, ArbitragePanel } from "@/components/market";
+import { SkillRecommendations } from "@/components/skills/SkillRecommendations";
 import { useDashboardStats, usePriceTicker } from "@/hooks/useDashboardStats";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { usePartners } from "@/hooks/usePartners";
@@ -232,6 +233,7 @@ export default function Dashboard() {
               <>
                 <ArbitragePanel />
                 <AuditLog entries={auditEntries} />
+                <SkillRecommendations />
               </>
             )}
           </div>

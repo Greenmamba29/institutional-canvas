@@ -1,4 +1,5 @@
 import { CheckCircle, XCircle, Flag, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 export interface AuditLogEntry {
@@ -67,10 +68,13 @@ export function AuditLog({ entries }: AuditLogProps) {
         })}
       </div>
 
-      <button className="w-full mt-4 flex items-center justify-center gap-1 text-xs font-semibold text-accent hover:text-accent/80 transition-colors">
+      <Link 
+        to="/chain-of-custody" 
+        className="w-full mt-4 flex items-center justify-center gap-1 text-xs font-semibold text-accent hover:text-accent/80 transition-colors"
+      >
         VIEW FULL CHAIN OF CUSTODY
         <ArrowRight className="h-3 w-3" />
-      </button>
+      </Link>
     </div>
   );
 }
