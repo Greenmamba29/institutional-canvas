@@ -36,6 +36,7 @@ import Onboarding from "./pages/Onboarding";
 import Purchases from "./pages/Purchases";
 import Team from "./pages/Team";
 import Landing from "./pages/Landing";
+import ChainOfCustody from "./pages/ChainOfCustody";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -80,6 +81,7 @@ const AppContent = () => {
           <Route path="/purchases" element={<Purchases />} />
           <Route path="/telebuy" element={<TeleBuy />} />
           <Route path="/telebuy/session/:id" element={<TeleBuy />} />
+          <Route path="/chain-of-custody" element={<ChainOfCustody />} />
           
           {/* AI Studio - requires Pro subscription */}
           <Route element={<RoleProtectedRoute requireSubscription="pro" />}>

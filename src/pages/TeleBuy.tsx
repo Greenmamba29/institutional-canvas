@@ -4,10 +4,12 @@
  * Features:
  * - Schedule video negotiation sessions with suppliers
  * - Real-time session status updates
+ * - Session detail view with VideoCallRoom
  * - AI transcription and document management
  */
 
 import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { format, formatDistanceToNow, isToday, isTomorrow, parseISO } from 'date-fns';
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -31,12 +33,15 @@ import {
   CheckCircle2,
   PlayCircle,
   AlertCircle,
+  ArrowLeft,
 } from "lucide-react";
 import { CreateTelebuySessionDialog } from "@/components/telebuy/CreateTelebuySessionDialog";
+import { VideoCallRoom } from "@/components/telebuy/VideoCallRoom";
 import {
   useTelebuySessions,
   useUpcomingSessions,
   useUpdateSessionStatus,
+  useTelebuySession,
 } from "@/hooks/useTelebuy";
 import type { TelebuySession } from "@/services/telebuy.service";
 import { cn } from "@/lib/utils";
@@ -60,21 +65,31 @@ function formatSessionDate(dateString: string): string {
   return format(date, 'MMM d, yyyy h:mm a');
 }
 
-function SessionCard({ session }: { session: TelebuySession }) {
+interface SessionCardProps {
+  session: TelebuySession;
+  onJoinSession: (session: TelebuySession) => void;
+}
+
+function SessionCard({ session, onJoinSession }: SessionCardProps) {
   const updateStatus = useUpdateSessionStatus();
   const config = statusConfig[session.status] || statusConfig.scheduled;
   const StatusIcon = config.icon;
   
   const handleJoin = () => {
-    if (session.meeting_url) {
+    // For Google Meet, open in new tab
+    if (session.meeting_url?.includes('meet.google.com')) {
       window.open(session.meeting_url, '_blank');
-      // Mark as in_progress when joining
-      if (session.status === 'scheduled') {
-        updateStatus.mutate({
-          sessionId: session.id,
-          status: 'in_progress',
-        });
-      }
+    } else {
+      // For Daily.co or demo sessions, navigate to session view
+      onJoinSession(session);
+    }
+    
+    // Mark as in_progress when joining
+    if (session.status === 'scheduled') {
+      updateStatus.mutate({
+        sessionId: session.id,
+        status: 'in_progress',
+      });
     }
   };
 
@@ -201,10 +216,158 @@ function EmptyState() {
   );
 }
 
+// Session Detail View Component
+function SessionDetailView({ sessionId }: { sessionId: string }) {
+  const navigate = useNavigate();
+  const { data: session, isLoading, error } = useTelebuySession(sessionId);
+  const updateStatus = useUpdateSessionStatus();
+  
+  const handleLeaveSession = () => {
+    navigate('/telebuy');
+  };
+  
+  const handleEndSession = () => {
+    updateStatus.mutate({
+      sessionId,
+      status: 'completed',
+    });
+    navigate('/telebuy');
+  };
+  
+  if (isLoading) {
+    return (
+      <LayoutShell>
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/telebuy')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Skeleton className="h-8 w-48" />
+        </div>
+        <Skeleton className="h-[600px] w-full" />
+      </LayoutShell>
+    );
+  }
+  
+  if (error || !session) {
+    return (
+      <LayoutShell>
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/telebuy')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <PageHeader title="Session Not Found" />
+        </div>
+        <Card className="border-destructive bg-destructive/10">
+          <CardContent className="py-8 text-center">
+            <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Session Not Found</h3>
+            <p className="text-muted-foreground mb-4">
+              The session you're looking for doesn't exist or has been removed.
+            </p>
+            <Button onClick={() => navigate('/telebuy')}>
+              Back to TeleBuy
+            </Button>
+          </CardContent>
+        </Card>
+      </LayoutShell>
+    );
+  }
+  
+  // Determine if this is a Daily.co session or demo
+  const isDailySession = session.meeting_url?.includes('daily.co') || !session.meeting_url;
+  
+  return (
+    <LayoutShell>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={handleLeaveSession}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-xl font-bold">
+                Session #{session.id.slice(-6).toUpperCase()}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {formatSessionDate(session.scheduled_at)}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge 
+              variant="outline" 
+              className="bg-green-500/20 text-green-700 border-green-500/30"
+            >
+              <PlayCircle className="h-3 w-3 mr-1" />
+              Live
+            </Badge>
+            <Button variant="destructive" onClick={handleEndSession}>
+              End Session
+            </Button>
+          </div>
+        </div>
+        
+        {/* Video Room */}
+        {isDailySession ? (
+          <VideoCallRoom 
+            meetingUrl={session.meeting_url || `https://lithiumbuy.daily.co/demo-${sessionId.slice(-8)}`}
+            sessionId={sessionId}
+            dealName={`Session #${session.id.slice(-6).toUpperCase()}`}
+            supplierName={session.supplier_id ? 'Supplier' : undefined}
+            supplierId={session.supplier_id ?? undefined}
+            onLeave={handleLeaveSession}
+          />
+        ) : (
+          <Card className="h-[600px] flex items-center justify-center bg-muted/50">
+            <CardContent className="text-center">
+              <Video className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">External Meeting</h3>
+              <p className="text-muted-foreground mb-4 max-w-sm">
+                This session uses an external video platform. Click below to join.
+              </p>
+              <Button asChild>
+                <a href={session.meeting_url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open Meeting
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Session Info */}
+        {session.notes && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Session Notes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">{session.notes}</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </LayoutShell>
+  );
+}
+
+// Main TeleBuy Page
 export default function TeleBuy() {
+  const { id: sessionId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { data: sessions, isLoading, error } = useTelebuySessions();
   const { data: upcomingSessions } = useUpcomingSessions();
   const [activeTab, setActiveTab] = useState<'chat' | 'products' | 'docs' | 'sign' | 'cart'>('chat');
+
+  // If we have a session ID in the URL, show the session detail view
+  if (sessionId) {
+    return <SessionDetailView sessionId={sessionId} />;
+  }
+
+  const handleJoinSession = (session: TelebuySession) => {
+    navigate(`/telebuy/session/${session.id}`);
+  };
 
   const navItems = [
     { id: 'chat' as const, icon: MessageSquare, label: 'Chat' },
@@ -281,7 +444,11 @@ export default function TeleBuy() {
             {!isLoading && !error && sessions?.length === 0 && <EmptyState />}
             
             {!isLoading && sessions?.map((session) => (
-              <SessionCard key={session.id} session={session} />
+              <SessionCard 
+                key={session.id} 
+                session={session} 
+                onJoinSession={handleJoinSession}
+              />
             ))}
 
             {/* Privacy & AI Controls Tile */}
