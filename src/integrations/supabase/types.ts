@@ -4268,6 +4268,34 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_order: {
+        Args: {
+          p_currency?: string
+          p_org_id?: string
+          p_quote_id?: string
+          p_supplier_id: string
+          p_total_amount: number
+        }
+        Returns: {
+          created_at: string | null
+          currency: string
+          id: string
+          org_id: string | null
+          payment_status: string
+          quote_id: string | null
+          status: string
+          supplier_id: string
+          total_amount: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_organization:
         | {
             Args: {
@@ -5176,6 +5204,32 @@ export type Database = {
       update_member_role: {
         Args: { p_new_role: string; p_org_id: string; p_user_id: string }
         Returns: boolean
+      }
+      update_order_status: {
+        Args: {
+          p_order_id: string
+          p_payment_status?: string
+          p_status: string
+        }
+        Returns: {
+          created_at: string | null
+          currency: string
+          id: string
+          org_id: string | null
+          payment_status: string
+          quote_id: string | null
+          status: string
+          supplier_id: string
+          total_amount: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       update_purchase_status: {
         Args: { p_purchase_id: string; p_status: string }
