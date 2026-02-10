@@ -8,8 +8,8 @@ import { AUTH_CONFIG } from '@/lib/auth/config';
 /**
  * Auth Callback Page
  * 
- * Handles OAuth redirects, email verification, and password recovery callbacks.
- * Supabase redirects here after OAuth sign-in or email confirmation.
+ * Handles OAuth redirects (Google, Apple), email verification, and password recovery callbacks.
+ * With PKCE flow, Supabase sends ?code= in query params (not hash tokens).
  */
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -19,14 +19,10 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Parse URL hash for auth tokens
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        const type = hashParams.get('type');
-        const errorDescription = hashParams.get('error_description');
-
-        // Check for errors in URL
+        // Check for errors in URL params
+        const params = new URLSearchParams(window.location.search);
+        const errorDescription = params.get('error_description') || params.get('error');
+        
         if (errorDescription) {
           setError(errorDescription);
           toast({
@@ -38,58 +34,66 @@ export default function AuthCallback() {
           return;
         }
 
-        // Handle password recovery flow
-        if (type === 'recovery') {
-          // Password recovery - redirect to auth page to update password
-          navigate('/auth', { replace: true });
-          return;
-        }
-
-        // Handle OAuth and email verification
-        if (accessToken) {
-          // Exchange the code/tokens for a session
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // PKCE flow: exchange the ?code= param for a session
+        const code = params.get('code');
+        
+        if (code) {
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           
-          if (sessionError) {
-            throw sessionError;
+          if (exchangeError) {
+            throw exchangeError;
           }
 
-          if (session) {
-            // Successfully authenticated
+          if (data.session) {
             toast({
               title: 'Welcome!',
               description: 'You have successfully signed in.',
             });
 
-            // Redirect to intended destination or dashboard
             const redirectTo = sessionStorage.getItem('auth_redirect') || AUTH_CONFIG.redirectUrls.afterSignIn;
             sessionStorage.removeItem('auth_redirect');
             navigate(redirectTo, { replace: true });
-          } else {
-            // No session but we have tokens - wait for auth state change
-            const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
-              if (event === 'SIGNED_IN' && newSession) {
-                const redirectTo = sessionStorage.getItem('auth_redirect') || AUTH_CONFIG.redirectUrls.afterSignIn;
-                sessionStorage.removeItem('auth_redirect');
-                navigate(redirectTo, { replace: true });
-              } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-                // Handle sign out or token refresh
-                navigate('/auth', { replace: true });
-              }
-            });
-
-            // Cleanup subscription after 10 seconds if no redirect happened
-            setTimeout(() => {
-              subscription.unsubscribe();
-              if (!session) {
-                navigate('/auth', { replace: true });
-              }
-            }, 10000);
+            return;
           }
-        } else {
-          // No tokens in URL - redirect to auth
-          navigate('/auth', { replace: true });
         }
+
+        // Fallback: check hash params (for non-PKCE flows like password recovery)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const type = hashParams.get('type');
+
+        if (type === 'recovery') {
+          navigate('/auth', { replace: true });
+          return;
+        }
+
+        // If we have hash tokens (implicit flow fallback)
+        const accessToken = hashParams.get('access_token');
+        if (accessToken) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const redirectTo = sessionStorage.getItem('auth_redirect') || AUTH_CONFIG.redirectUrls.afterSignIn;
+            sessionStorage.removeItem('auth_redirect');
+            navigate(redirectTo, { replace: true });
+            return;
+          }
+        }
+
+        // No code or tokens - wait briefly for auth state change then redirect
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_IN' && session) {
+            const redirectTo = sessionStorage.getItem('auth_redirect') || AUTH_CONFIG.redirectUrls.afterSignIn;
+            sessionStorage.removeItem('auth_redirect');
+            navigate(redirectTo, { replace: true });
+            subscription.unsubscribe();
+          }
+        });
+
+        // Timeout: redirect to auth if nothing happens
+        setTimeout(() => {
+          subscription.unsubscribe();
+          navigate('/auth', { replace: true });
+        }, 5000);
+
       } catch (err: any) {
         console.error('Auth callback error:', err);
         setError(err.message || 'Authentication failed');
