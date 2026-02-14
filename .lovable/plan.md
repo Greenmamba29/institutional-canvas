@@ -1,66 +1,46 @@
 
 
-# Merge Sync + Phase 5 & 6 Completion
+# Fix Google Auth Error
 
-## Build Error Fixes (Immediate)
+## Problem
+Clicking "Continue with Google" throws a React error because `GoogleIcon` and `AppleIcon` are plain function components used as children of shadcn's `Button`. Under the hood, Radix UI's `Slot` component tries to forward a ref to these SVG components, which fails because they don't accept refs.
 
-Two TypeScript errors in edge functions where `error` is typed as `unknown` but `.message` is accessed directly.
+## Fix (1 file, ~10 lines changed)
 
-### Fix 1: `supabase/functions/airtable-crud/index.ts` (line 101)
-Change `error.message` to `error instanceof Error ? error.message : String(error)`
+### `src/pages/Auth.tsx`
 
-### Fix 2: `supabase/functions/perplexity-market-intel/index.ts` (line 100)
-Same fix -- `error instanceof Error ? error.message : String(error)`
+**Lines 1, 12-38**: Add `forwardRef` import and wrap both icon components:
 
----
+```typescript
+import { useState, useEffect, forwardRef } from 'react';
 
-## Phase 5: Verification Badge + Page (Already Done)
+const GoogleIcon = forwardRef<SVGSVGElement, React.SVGProps<SVGSVGElement>>((props, ref) => (
+  <svg ref={ref} className="h-5 w-5" viewBox="0 0 24 24" {...props}>
+    {/* ...4 existing path elements unchanged... */}
+  </svg>
+));
+GoogleIcon.displayName = 'GoogleIcon';
 
-Both items from the original plan are already implemented in the current codebase:
-- The `lithiumbuy` tier exists in `VerificationBadge.tsx` with BadgeCheck icon and branded accent color
-- `Verification.tsx` queries the `kyb_verification_queue` table via React Query with proper loading/error/empty states
+const AppleIcon = forwardRef<SVGSVGElement, React.SVGProps<SVGSVGElement>>((props, ref) => (
+  <svg ref={ref} className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" {...props}>
+    {/* ...existing path element unchanged... */}
+  </svg>
+));
+AppleIcon.displayName = 'AppleIcon';
+```
 
-No further work needed for Phase 5.
+No other files need to change. The OAuth flow logic itself (lines 548-566) is correct -- `signInWithOAuth` with `provider: 'google'` and `redirectTo` pointing to `/auth/callback`.
 
----
+## GitHub Sync Clarification
 
-## Phase 6: Integration Wiring & Route Verification
+Lovable cannot pull branches or trigger re-syncs from within the editor. If merged changes from GitHub are not appearing:
 
-### 6.1 Route Audit (Already Complete)
-All 28+ routes in `App.tsx` are correctly wired:
-- Public: `/`, `/auth`, `/auth/callback`, `/password-reset`
-- Protected: `/dashboard`, `/marketplace`, `/rfqs`, `/bids`, `/auctions`, `/auctions/:id` (AuctionDetail), `/deals`, `/orders`, `/purchases`, `/telebuy`, `/chain-of-custody`, `/data`, `/analytics`, `/settings`, `/verification`, `/messages`, `/team`
-- Subscription-gated: `/ai-studio` requires Pro via `RoleProtectedRoute`
-- `/onboarding` is inside ProtectedRoute but explicitly allowed without organization
+1. Check **Project Settings > GitHub** to confirm which branch Lovable is tracking
+2. If the tracked branch has the merged commits but they're not showing, push a trivial commit (e.g., add a newline to README) from GitHub/CLI to re-trigger the webhook
+3. If the changes are on a different branch than what Lovable tracks, merge that branch into the tracked one
 
-### 6.2 Dashboard Market Components (Already Connected)
-The Dashboard already imports and renders all three market components:
-- `LivePriceTicker` -- uses `usePrices()` from `useMarketData` hook (Supabase Realtime on `market_prices`)
-- `MarketNewsFeed` -- uses `useNews()` from `useMarketData` hook (Supabase Realtime on `market_news`)
-- `ArbitragePanel` -- uses `useArbitrage()` from `useMarketData` hook (Supabase Realtime on `arbitrage_opportunities`)
-
-These are wired to live Supabase tables with real-time subscriptions. The Perplexity edge function populates data into these same tables, so the pipeline is: **Perplexity API -> Edge Function -> market_news table -> Supabase Realtime -> Dashboard components**.
-
-### 6.3 Market Intel Hook (Available but Not Yet Surfaced)
-The `useMarketIntel` hook exists and is subscription-gated (free: price only, pro: all categories). It calls the `perplexity-market-intel` edge function directly. This hook can be used in AI Studio or other Pro-tier pages for on-demand intelligence queries. No immediate wiring needed -- it's ready when those pages need it.
-
----
-
-## Summary of Changes
-
-Only **2 lines** need to change across **2 files** to fix the build errors. Everything else from Phase 5 and Phase 6 is already implemented and connected.
-
-### Technical Details
-
-| File | Line | Change |
-|------|------|--------|
-| `supabase/functions/airtable-crud/index.ts` | 101 | `error.message` -> `error instanceof Error ? error.message : String(error)` |
-| `supabase/functions/perplexity-market-intel/index.ts` | 100 | `error.message` -> `error instanceof Error ? error.message : String(error)` |
-
-### Post-Fix Verification
-After the two-line fix, I will:
-1. Confirm the build passes cleanly
-2. Test both edge functions via curl to verify they respond correctly
-3. Navigate through the app to verify routing and component rendering
-4. Deliver a full roast of remaining issues
+## Post-Fix Verification
+1. Click "Continue with Google" -- should redirect to Google consent screen without errors
+2. Verify no console warnings about forwardRef
+3. Test email/password and demo account login still work
 
