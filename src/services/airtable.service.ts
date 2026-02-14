@@ -75,6 +75,14 @@ async function fetchAirtableRecords<T>(
 /**
  * Get all FAQs from Airtable
  */
+/**
+ * Escape a value for safe use in Airtable filter formulas.
+ * Prevents formula injection by escaping single quotes and backslashes.
+ */
+function escapeAirtableValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
 export async function getFAQs(options?: {
   category?: string;
   language?: string;
@@ -83,11 +91,11 @@ export async function getFAQs(options?: {
   let filterFormula = '';
 
   if (options?.category) {
-    filterFormula = `{Category} = '${options.category}'`;
+    filterFormula = `{Category} = '${escapeAirtableValue(options.category)}'`;
   }
 
   if (options?.language) {
-    const languageFilter = `{Language} = '${options.language}'`;
+    const languageFilter = `{Language} = '${escapeAirtableValue(options.language)}'`;
     filterFormula = filterFormula
       ? `AND(${filterFormula}, ${languageFilter})`
       : languageFilter;
@@ -131,11 +139,11 @@ export async function getMarketplaceProducts(options?: {
   let filterFormula = '';
 
   if (options?.type) {
-    filterFormula = `{Type} = '${options.type}'`;
+    filterFormula = `{Type} = '${escapeAirtableValue(options.type)}'`;
   }
 
   if (options?.supplier) {
-    const supplierFilter = `{Supplier} = '${options.supplier}'`;
+    const supplierFilter = `{Supplier} = '${escapeAirtableValue(options.supplier)}'`;
     filterFormula = filterFormula
       ? `AND(${filterFormula}, ${supplierFilter})`
       : supplierFilter;
