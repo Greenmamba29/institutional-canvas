@@ -38,6 +38,7 @@ import Purchases from "./pages/Purchases";
 import Team from "./pages/Team";
 import Landing from "./pages/Landing";
 import ChainOfCustody from "./pages/ChainOfCustody";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -90,6 +91,7 @@ const AppContent = () => {
           </Route>
           
           <Route path="/data" element={<Data />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/billing" element={<Billing />} />

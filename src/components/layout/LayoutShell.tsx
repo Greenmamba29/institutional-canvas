@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useOrganization } from "@/context/OrganizationContext";
 import { useRole } from "@/context/RoleContext";
 import { useAuth } from "@/context/AuthContext";
+import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { GMVSummaryPanelConnected } from "./GMVSummaryPanelConnected";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -12,6 +13,7 @@ import { OrgSwitcher } from "@/components/org/OrgSwitcher";
 import { VerificationBadge } from "@/components/shared/VerificationBadge";
 import {
   Store,
+  Shield,
   FileText,
   Gavel,
   TrendingUp,
@@ -70,6 +72,7 @@ const adminNavItems: NavItem[] = [
   { label: 'Messages', path: '/messages', icon: MessageSquare, count: 3 },
   { label: 'Verification', path: '/verification', icon: ShieldCheck, count: 5, requiresOrgType: ['admin'] },
   { label: 'Analytics', path: '/analytics', icon: TrendingUp },
+  { label: 'Admin', path: '/admin', icon: Shield, requiresOrgType: ['admin'] },
 ];
 
 // Supplier Navigation - MVP locked ordering
@@ -98,6 +101,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const { viewMode, currentOrg } = useOrganization();
   const { orgType, subscriptionTier } = useRole();
   const { user, signOut } = useAuth();
+  const { isSuperAdmin } = useIsSuperAdmin();
 
   // Create a key based on user.id to force re-renders when user changes
   // This ensures the sidebar updates with the correct user info after sign-in/sign-out
@@ -126,6 +130,10 @@ export function LayoutShell({ children }: LayoutShellProps) {
   
   const navItems = useMemo(() => {
     return baseNavItems.filter(item => {
+      // Admin nav item requires super_admins table check
+      if (item.path === '/admin' && !isSuperAdmin) {
+        return false;
+      }
       // Check org type requirement
       if (item.requiresOrgType && orgType) {
         if (!item.requiresOrgType.includes(orgType as 'admin' | 'supplier' | 'buyer' | 'soe')) {
@@ -136,7 +144,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
       // but will show lock icons for gated features
       return true;
     });
-  }, [baseNavItems, orgType]);
+  }, [baseNavItems, orgType, isSuperAdmin]);
 
   return (
     <div className="min-h-screen bg-background flex w-full">
