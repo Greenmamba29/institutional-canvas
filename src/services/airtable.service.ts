@@ -79,6 +79,14 @@ async function fetchAirtableRecords<T>(
 /**
  * Get all FAQs from Airtable
  */
+/**
+ * Escape a value for safe use in Airtable filter formulas.
+ * Prevents formula injection by escaping single quotes and backslashes.
+ */
+function escapeAirtableValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
 export async function getFAQs(options?: {
   category?: string;
   language?: string;

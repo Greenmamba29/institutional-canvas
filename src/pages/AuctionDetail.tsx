@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useAuction, useAuctionBids, usePlaceAuctionBid } from "@/hooks/useAuctions";
 import { useCurrentOrg } from "@/hooks/useCurrentOrg";
+import { toast } from "sonner";
 import type { AuctionBid } from "@/services/auctions.service";
 
 // ---------------------------------------------------------------------------
@@ -166,10 +167,24 @@ export default function AuctionDetail() {
     e.preventDefault();
     if (!id || !bidAmount) return;
 
+    const amount = parseFloat(bidAmount);
+
+    // Validate against reserve price
+    if (auction?.reserve_price && amount < auction.reserve_price) {
+      toast.error(`Bid must meet reserve price of ${formatCurrency(auction.reserve_price, auction.currency)}`);
+      return;
+    }
+
+    // Validate against highest bid
+    if (highBid && amount <= highBid.amount) {
+      toast.error(`Bid must exceed current highest bid of ${formatCurrency(highBid.amount, highBid.currency)}`);
+      return;
+    }
+
     placeBid.mutate(
       {
         p_auction_id: id,
-        p_amount: parseFloat(bidAmount),
+        p_amount: amount,
         p_currency: bidCurrency,
       },
       {

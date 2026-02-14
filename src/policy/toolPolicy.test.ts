@@ -19,7 +19,7 @@ describe('toolPolicy', () => {
   const mockFreeContext: SkillContext = {
     ...mockBuyerContext,
     subscriptionTier: 'free',
-    capabilities: ['create_rfq'],
+    capabilities: ['create_rfq', 'use_telebuy'],
   };
 
   const mockSuperAdminContext: SkillContext = {

@@ -54,7 +54,7 @@ export function VerificationBadge({ tier, showIcon = true, className }: Verifica
       icon: Shield,
     },
     lithiumbuy: {
-      label: 'LB STANDARD',
+      label: 'LITHIUMBUY STANDARD',
       bg: 'bg-[#1E40AF]/20',
       text: 'text-[#3B82F6]',
       border: 'border-[#3B82F6]/40',

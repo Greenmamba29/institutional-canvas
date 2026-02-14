@@ -121,8 +121,6 @@ export default function Auctions() {
             <p className="text-muted-foreground">Check back later for new auctions</p>
           </div>
         )}
-
-
       </div>
     </LayoutShell>
   );
@@ -172,20 +170,18 @@ function AuctionCard({ auction, isLive = false }: { auction: Auction; isLive?: b
           <p className="font-mono font-bold capitalize">{auction.status}</p>
         </div>
       </div>
-      {isLive ? (
-        <Link to={`/auctions/${auction.id}`}>
+      <Link to={`/auctions/${auction.id}`}>
+        {isLive ? (
           <Button className="w-full bg-gradient-primary text-primary-foreground">
             Enter Auction <ArrowUpRight className="h-4 w-4 ml-2" />
           </Button>
-        </Link>
-      ) : (
-        <Link to={`/auctions/${auction.id}`}>
+        ) : (
           <Button variant="outline" className="w-full">
             <Clock className="h-4 w-4 mr-2" />
             {auction.status === 'scheduled' ? 'View Details' : 'View Results'}
           </Button>
-        </Link>
-      )}
+        )}
+      </Link>
     </div>
   );
 }
