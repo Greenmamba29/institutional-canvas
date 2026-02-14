@@ -6,8 +6,8 @@
  */
 
 export const AUTH_CONFIG = {
-  siteUrl: 'https://www.lithiumbuy.com',
-  
+  siteUrl: 'https://lithiumbuy.com',
+
   redirectUrls: {
     afterSignIn: '/dashboard',
     afterSignUp: '/onboarding',
@@ -15,14 +15,14 @@ export const AUTH_CONFIG = {
     authCallback: '/auth/callback',
     passwordReset: '/password-reset',
   },
-  
+
   /**
    * Get the appropriate redirect URL based on environment
    * Uses production URL in production, current origin in development
    */
   getRedirectUrl: (path: string): string => {
-    const baseUrl = import.meta.env.PROD 
-      ? 'https://www.lithiumbuy.com'
+    const baseUrl = import.meta.env.PROD
+      ? 'https://lithiumbuy.com'
       : window.location.origin;
     return `${baseUrl}${path}`;
   },

@@ -1,7 +1,7 @@
 /**
  * TeleBuy Service - RPC wrappers for TeleBuy session operations
  * 
- * Uses create_telebuy_session, update_session_status, update_telebuy_notes RPCs
+ * Uses create_telebuy_session, update_telebuy_session_status, update_telebuy_notes RPCs
  * Integrates with Daily.co for video calling via Edge Function (secure)
  */
 
@@ -43,7 +43,7 @@ export async function createTelebuySession(params: CreateTelebuySessionParams) {
  * Update session status via RPC
  */
 export async function updateSessionStatus(sessionId: string, status: string) {
-  return callRpc<TelebuySession>('update_session_status', {
+  return callRpc<TelebuySession>('update_telebuy_session_status', {
     p_session_id: sessionId,
     p_status: status,
   });
@@ -84,10 +84,7 @@ export async function addSessionTranscript(
 export async function getTelebuySessions(options?: { status?: string; limit?: number }) {
   let query = supabase
     .from('telebuy_sessions')
-    .select(`
-      *,
-      suppliers (name, logo_url, verification_tier)
-    `)
+    .select('*')
     .order('scheduled_at', { ascending: false });
   
   if (options?.status) {
@@ -110,7 +107,6 @@ export async function getSessionById(sessionId: string) {
     .from('telebuy_sessions')
     .select(`
       *,
-      suppliers (*),
       telebuy_documents (*)
     `)
     .eq('id', sessionId)
@@ -125,10 +121,7 @@ export async function getSessionById(sessionId: string) {
 export async function getUpcomingSessions(limit: number = 5) {
   const { data, error } = await supabase
     .from('telebuy_sessions')
-    .select(`
-      *,
-      suppliers (name, logo_url)
-    `)
+    .select('*')
     .gte('scheduled_at', new Date().toISOString())
     .eq('status', 'scheduled')
     .order('scheduled_at', { ascending: true })
