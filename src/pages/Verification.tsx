@@ -214,13 +214,13 @@ export default function Verification() {
         ) : filteredData.length === 0 ? (
           <EmptyState
             icon={ShieldCheck}
-            message="No verification requests found"
-            action={
-              <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                <ShieldCheck className="h-4 w-4 mr-2" />
-                Submit Verification
-              </Button>
-            }
+            title="No verification requests"
+            description="No verification requests found for the current filter."
+            action={{
+              label: 'Submit Verification',
+              onClick: () => console.log('Submit verification'),
+              icon: ShieldCheck,
+            }}
           />
         ) : (
           <DataTable
