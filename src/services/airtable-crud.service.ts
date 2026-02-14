@@ -1,64 +1,75 @@
 /**
- * Airtable CRUD Service
- * Full CRUD operations via the airtable-crud edge function.
+ * Airtable CRUD Service - Full CRUD operations with subscription gating
+ * Connects to airtable-crud Edge Function for create/read/update/delete
+ *
+ * SECURITY: API keys are stored server-side in Edge Function secrets, not exposed to client
  */
 
 import { supabase } from '@/integrations/supabase/client';
 
-export type AirtableTable = 'Market_Intelligence' | 'Auction_Companies' | 'Auction_Contacts' | 'FAQs' | 'Products';
+type AirtableAction = 'create' | 'read' | 'update' | 'delete' | 'list';
+type AirtableTable = 'FAQs' | 'Products' | 'Market_Intelligence' | 'Auction_Companies' | 'Auction_Contacts';
 
-export interface AirtableCrudOptions {
+interface AirtableCrudParams {
+  action: AirtableAction;
   table: AirtableTable;
-  action?: 'list' | 'create' | 'update' | 'delete';
+  record_id?: string;
+  fields?: Record<string, unknown>;
   filter?: string;
   maxRecords?: number;
   sort?: Array<{ field: string; direction: 'asc' | 'desc' }>;
-  record?: Record<string, unknown>;
-  recordId?: string;
+  subscription_tier?: 'free' | 'pro' | 'enterprise';
+  records?: Array<{ fields: Record<string, unknown> }>; // enterprise batch
 }
 
-export interface AirtableRecord {
-  id: string;
-  fields: Record<string, unknown>;
-  createdTime?: string;
-}
-
-export interface AirtableCrudResponse {
+/**
+ * Generic Airtable CRUD operation via Edge Function proxy
+ */
+export async function airtableCrud<T = unknown>(params: AirtableCrudParams): Promise<{
+  records?: T[];
+  record?: T;
+  deleted?: boolean;
   configured: boolean;
-  records?: AirtableRecord[];
-  error?: string;
-}
+}> {
+  const { data, error } = await supabase.functions.invoke('airtable-crud', {
+    body: params,
+  });
 
-export async function airtableCrud(options: AirtableCrudOptions): Promise<AirtableCrudResponse> {
-  try {
-    const { data, error } = await supabase.functions.invoke('airtable-crud', {
-      body: options,
-    });
-
-    if (error) {
-      console.error('Airtable CRUD error:', error);
-      return { configured: false, error: error.message };
-    }
-
-    return data as AirtableCrudResponse;
-  } catch (err) {
-    console.error('Airtable CRUD exception:', err);
-    return { configured: false, error: String(err) };
+  if (error) {
+    console.error('Airtable CRUD error:', error);
+    throw new Error(error.message || 'Airtable operation failed');
   }
+
+  return data;
 }
 
-export async function listAirtableRecords(table: AirtableTable, filter?: string, maxRecords = 100) {
-  return airtableCrud({ table, action: 'list', filter, maxRecords });
-}
+// Convenience wrappers
 
-export async function createAirtableRecord(table: AirtableTable, record: Record<string, unknown>) {
-  return airtableCrud({ table, action: 'create', record });
-}
+export const listAirtableRecords = <T>(
+  table: AirtableTable,
+  options?: {
+    filter?: string;
+    maxRecords?: number;
+    sort?: Array<{ field: string; direction: 'asc' | 'desc' }>;
+    subscription_tier?: 'free' | 'pro' | 'enterprise';
+  }
+) => airtableCrud<T>({ action: 'list', table, ...options });
 
-export async function updateAirtableRecord(table: AirtableTable, recordId: string, record: Record<string, unknown>) {
-  return airtableCrud({ table, action: 'update', recordId, record });
-}
+export const createAirtableRecord = <T>(
+  table: AirtableTable,
+  fields: Record<string, unknown>,
+  subscription_tier: 'pro' | 'enterprise' = 'pro'
+) => airtableCrud<T>({ action: 'create', table, fields, subscription_tier });
 
-export async function deleteAirtableRecord(table: AirtableTable, recordId: string) {
-  return airtableCrud({ table, action: 'delete', recordId });
-}
+export const updateAirtableRecord = <T>(
+  table: AirtableTable,
+  record_id: string,
+  fields: Record<string, unknown>,
+  subscription_tier: 'pro' | 'enterprise' = 'pro'
+) => airtableCrud<T>({ action: 'update', table, record_id, fields, subscription_tier });
+
+export const deleteAirtableRecord = (
+  table: AirtableTable,
+  record_id: string,
+  subscription_tier: 'pro' | 'enterprise' = 'pro'
+) => airtableCrud({ action: 'delete', table, record_id, subscription_tier });

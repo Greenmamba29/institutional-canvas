@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LithiumBuy Platform Architecture</title>
+<style>
+  /* ── Reset & Base ───────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #3B82F6;
+    --primary-dim: #2563EB;
+    --primary-glow: rgba(59,130,246,.25);
+    --accent: #FFB800;
+    --accent-dim: #E6A600;
+    --success: #22C55E;
+    --success-dim: #16A34A;
+    --danger: #EF4444;
+    --bg-0: #0B0F1A;
+    --bg-1: #111827;
+    --bg-2: #1F2937;
+    --bg-3: #374151;
+    --border: #2D3748;
+    --text: #F1F5F9;
+    --text-dim: #94A3B8;
+    --text-muted: #64748B;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,.4);
+    --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  html { font-size: 14px; scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    background: var(--bg-0);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Print ──────────────────────────────────────────────────── */
+  @media print {
+    body { background: #fff; color: #111; }
+    .section-card { background: #f8f8f8 !important; border-color: #ccc !important; box-shadow: none !important; }
+    .header { background: #fff !important; }
+    .nav-bar { display: none !important; }
+    .badge { border: 1px solid #999 !important; }
+    :root { --text: #111; --text-dim: #444; --text-muted: #666; --bg-1: #f8f8f8; --bg-2: #eee; --bg-3: #ddd; --border: #ccc; }
+  }
+
+  /* ── Scrollbar ──────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-1); }
+  ::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 4px; }
+
+  /* ── Header ─────────────────────────────────────────────────── */
+  .header {
+    background: linear-gradient(135deg, var(--bg-1) 0%, #0F172A 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 2rem 1.5rem;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-inner {
+    max-width: 1600px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+  }
+  .logo-area { display: flex; align-items: center; gap: 1rem; }
+  .logo {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary) 0%, #1D4ED8 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: 800; color: #fff;
+    letter-spacing: -1px;
+    box-shadow: 0 0 20px var(--primary-glow);
+  }
+  .header-text h1 {
+    font-size: 1.75rem; font-weight: 800; letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header-text p { color: var(--text-dim); font-size: 0.85rem; }
+  .header-meta { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .meta-chip {
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: 20px;
+    padding: 0.3rem 0.85rem; font-size: 0.75rem; color: var(--text-dim);
+    display: flex; align-items: center; gap: 0.35rem;
+  }
+  .meta-chip .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-blue { background: var(--primary); }
+  .dot-gold { background: var(--accent); }
+  .dot-green { background: var(--success); }
+
+  /* ── Navigation ─────────────────────────────────────────────── */
+  .nav-bar {
+    background: var(--bg-1); border-bottom: 1px solid var(--border);
+    padding: 0.5rem 2rem; position: sticky; top: 0; z-index: 99;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .nav-bar a {
+    display: inline-block; padding: 0.5rem 1rem; color: var(--text-dim);
+    text-decoration: none; font-size: 0.8rem; font-weight: 500;
+    border-radius: var(--radius-sm); transition: all .2s;
+  }
+  .nav-bar a:hover { color: var(--primary); background: var(--primary-glow); }
+
+  /* ── Layout ─────────────────────────────────────────────────── */
+  .container { max-width: 1600px; margin: 0 auto; padding: 2rem; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .full-width { grid-column: 1 / -1; }
+  @media (max-width: 1100px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* ── Section Card ───────────────────────────────────────────── */
+  .section-card {
+    background: linear-gradient(180deg, var(--bg-1) 0%, rgba(17,24,39,.85) 100%);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.5rem; box-shadow: var(--shadow);
+    position: relative; overflow: hidden;
+  }
+  .section-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+  }
+  .section-card.accent-green::before {
+    background: linear-gradient(90deg, var(--success), var(--primary));
+  }
+  .section-card.accent-gold::before {
+    background: linear-gradient(90deg, var(--accent), var(--danger));
+  }
+  .section-title {
+    font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .section-title .icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+  }
+  .icon-blue { background: rgba(59,130,246,.15); color: var(--primary); }
+  .icon-gold { background: rgba(255,184,0,.15); color: var(--accent); }
+  .icon-green { background: rgba(34,197,94,.15); color: var(--success); }
+  .icon-red { background: rgba(239,68,68,.15); color: var(--danger); }
+
+  /* ── Badges ─────────────────────────────────────────────────── */
+  .badge {
+    display: inline-block; padding: 0.15rem 0.55rem; border-radius: 6px;
+    font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-blue { background: rgba(59,130,246,.15); color: var(--primary); }
+  .badge-gold { background: rgba(255,184,0,.15); color: var(--accent); }
+  .badge-green { background: rgba(34,197,94,.15); color: var(--success); }
+  .badge-red { background: rgba(239,68,68,.15); color: var(--danger); }
+  .badge-gray { background: rgba(100,116,139,.15); color: var(--text-muted); }
+  .badge-purple { background: rgba(168,85,247,.15); color: #A855F7; }
+
+  /* ── Route Tree ─────────────────────────────────────────────── */
+  .route-group { margin-bottom: 1.25rem; }
+  .route-group-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 0.5rem; padding-left: 0.25rem;
+  }
+  .route-group-label.public { color: var(--success); }
+  .route-group-label.protected { color: var(--primary); }
+  .route-group-label.pro { color: var(--accent); }
+
+  .route-list { list-style: none; }
+  .route-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.3rem 0.5rem; border-radius: 6px; font-size: 0.8rem;
+    transition: background .15s;
+  }
+  .route-item:hover { background: rgba(59,130,246,.08); }
+  .route-path {
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    color: var(--primary); font-weight: 500; min-width: 180px;
+    font-size: 0.75rem;
+  }
+  .route-desc { color: var(--text-dim); font-size: 0.75rem; }
+  .route-indent { padding-left: 1.25rem; border-left: 2px solid var(--border); margin-left: 0.5rem; }
+
+  /* ── Data Flow Diagram ──────────────────────────────────────── */
+  .flow-diagram {
+    display: flex; flex-direction: column; gap: 0;
+    align-items: center;
+  }
+  .flow-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 1rem; flex-wrap: wrap; width: 100%;
+  }
+  .flow-box {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 0.6rem 1rem;
+    font-size: 0.8rem; font-weight: 600; text-align: center;
+    min-width: 120px; position: relative;
+  }
+  .flow-box.highlight {
+    border-color: var(--primary);
+    box-shadow: 0 0 12px var(--primary-glow);
+  }
+  .flow-box.gold-border { border-color: var(--accent); }
+  .flow-box.green-border { border-color: var(--success); }
+  .flow-box small { display: block; font-weight: 400; color: var(--text-dim); font-size: 0.7rem; }
+  .flow-arrow {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); font-size: 1.2rem; padding: 0.25rem 0;
+  }
+  .flow-arrow.horizontal { padding: 0 0.25rem; }
+  .flow-connector {
+    width: 2px; height: 24px; background: linear-gradient(180deg, var(--primary), var(--accent));
+    margin: 0 auto; border-radius: 1px;
+  }
+  .flow-connector-h {
+    height: 2px; width: 24px; background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 1px;
+  }
+  .flow-branch {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.5rem; width: 100%;
+  }
+  .flow-branch-item {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 0.5rem 0.75rem;
+    font-size: 0.72rem; text-align: center;
+    border-top: 2px solid var(--primary);
+  }
+  .flow-branch-item.gold-top { border-top-color: var(--accent); }
+  .flow-branch-item.green-top { border-top-color: var(--success); }
+  .flow-branch-item .fn-name {
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+    color: var(--primary); font-weight: 600; font-size: 0.7rem;
+    word-break: break-all;
+  }
+  .flow-branch-item .fn-desc {
+    color: var(--text-dim); font-size: 0.65rem; margin-top: 0.15rem;
+  }
+
+  /* ── DB Table Groups ────────────────────────────────────────── */
+  .db-group { margin-bottom: 1rem; }
+  .db-group-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 0.4rem;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .db-group-label .line { flex: 1; height: 1px; background: var(--border); }
+  .db-tables {
+    display: flex; flex-wrap: wrap; gap: 0.35rem;
+  }
+  .db-table {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.25rem 0.6rem;
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+    font-size: 0.7rem; font-weight: 500; color: var(--text);
+    transition: all .15s; cursor: default;
+    border-left: 3px solid transparent;
+  }
+  .db-table:hover { border-color: var(--primary); background: rgba(59,130,246,.08); }
+  .db-table.t-blue { border-left-color: var(--primary); }
+  .db-table.t-gold { border-left-color: var(--accent); }
+  .db-table.t-green { border-left-color: var(--success); }
+  .db-table.t-red { border-left-color: var(--danger); }
+  .db-table.t-purple { border-left-color: #A855F7; }
+
+  /* ── Integration Cards ──────────────────────────────────────── */
+  .integration-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+  .integration-card {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 1rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+    transition: all .2s; position: relative;
+    overflow: hidden;
+  }
+  .integration-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+  .integration-card::after {
+    content: ''; position: absolute; top: 0; right: 0;
+    width: 50px; height: 50px;
+    background: radial-gradient(circle at top right, rgba(59,130,246,.1), transparent);
+  }
+  .integration-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 700;
+  }
+  .integration-card h4 { font-size: 0.85rem; font-weight: 700; }
+  .integration-card p { font-size: 0.72rem; color: var(--text-dim); line-height: 1.5; }
+  .integration-tag-list { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+  .integration-tag {
+    background: var(--bg-3); border-radius: 4px; padding: 0.1rem 0.4rem;
+    font-size: 0.6rem; color: var(--text-dim);
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+  }
+
+  /* ── Tier Table ─────────────────────────────────────────────── */
+  .tier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  @media (max-width: 900px) { .tier-grid { grid-template-columns: 1fr; } }
+  .tier-card {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem;
+    position: relative; overflow: hidden;
+  }
+  .tier-card.featured {
+    border-color: var(--primary);
+    box-shadow: 0 0 30px var(--primary-glow);
+  }
+  .tier-card.featured::before {
+    content: 'MOST POPULAR';
+    position: absolute; top: 12px; right: -28px;
+    background: var(--primary); color: #fff;
+    font-size: 0.55rem; font-weight: 700; letter-spacing: 1px;
+    padding: 0.2rem 2rem; transform: rotate(45deg);
+  }
+  .tier-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .tier-card .tier-price {
+    font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem;
+    background: linear-gradient(90deg, var(--text), var(--text-dim));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .tier-card .tier-price span { font-size: 0.8rem; font-weight: 400; }
+  .tier-features { list-style: none; }
+  .tier-features li {
+    font-size: 0.75rem; color: var(--text-dim);
+    padding: 0.3rem 0; display: flex; align-items: flex-start; gap: 0.4rem;
+  }
+  .tier-features li::before { content: ''; min-width: 5px; min-height: 5px; border-radius: 50%; margin-top: 0.4rem; }
+  .tier-card:nth-child(1) .tier-features li::before { background: var(--text-muted); }
+  .tier-card:nth-child(2) .tier-features li::before { background: var(--primary); }
+  .tier-card:nth-child(3) .tier-features li::before { background: var(--accent); }
+
+  /* ── Auction Flow ───────────────────────────────────────────── */
+  .auction-flow {
+    display: flex; align-items: stretch; gap: 0; flex-wrap: nowrap;
+    overflow-x: auto; padding-bottom: 0.5rem;
+  }
+  .auction-step {
+    flex: 1; min-width: 115px; position: relative;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; padding: 0.75rem 0.5rem;
+  }
+  .auction-step:not(:last-child)::after {
+    content: '';
+    position: absolute; top: 28px; right: -1px;
+    width: 0; height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-left: 10px solid var(--primary);
+    z-index: 2;
+  }
+  .step-number {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;
+    border: 2px solid;
+  }
+  .step-1 .step-number { border-color: var(--text-muted); color: var(--text-muted); background: rgba(100,116,139,.1); }
+  .step-2 .step-number { border-color: var(--primary); color: var(--primary); background: rgba(59,130,246,.1); }
+  .step-3 .step-number { border-color: var(--success); color: var(--success); background: rgba(34,197,94,.1); }
+  .step-4 .step-number { border-color: var(--accent); color: var(--accent); background: rgba(255,184,0,.1); }
+  .step-5 .step-number { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,.1); }
+  .step-6 .step-number { border-color: #A855F7; color: #A855F7; background: rgba(168,85,247,.1); }
+  .step-7 .step-number { border-color: var(--success); color: var(--success); background: rgba(34,197,94,.1); }
+  .auction-step h5 { font-size: 0.75rem; font-weight: 700; margin-bottom: 0.2rem; }
+  .auction-step p { font-size: 0.65rem; color: var(--text-dim); line-height: 1.4; }
+
+  /* ── Security Layer ─────────────────────────────────────────── */
+  .security-stack {
+    display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .security-layer {
+    display: flex; align-items: center; gap: 0.75rem;
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 0.6rem 1rem;
+    border-left: 3px solid;
+  }
+  .security-layer.l-rls { border-left-color: var(--primary); }
+  .security-layer.l-rpc { border-left-color: var(--accent); }
+  .security-layer.l-edge { border-left-color: var(--success); }
+  .security-layer.l-stripe { border-left-color: var(--danger); }
+  .security-layer .sl-icon { font-size: 1rem; min-width: 24px; text-align: center; }
+  .security-layer .sl-text h5 { font-size: 0.8rem; font-weight: 600; }
+  .security-layer .sl-text p { font-size: 0.68rem; color: var(--text-dim); }
+
+  /* ── Stats Bar ──────────────────────────────────────────────── */
+  .stats-bar {
+    display: flex; flex-wrap: wrap; gap: 1.5rem; padding: 1rem 0;
+    justify-content: center;
+  }
+  .stat-item { text-align: center; }
+  .stat-value {
+    font-size: 2rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; line-height: 1.2;
+  }
+  .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ── Utility ────────────────────────────────────────────────── */
+  .mt-1 { margin-top: 0.5rem; } .mt-2 { margin-top: 1rem; } .mt-3 { margin-top: 1.5rem; }
+  .mb-1 { margin-bottom: 0.5rem; } .mb-2 { margin-bottom: 1rem; }
+  .text-center { text-align: center; }
+  .gap-1 { gap: 0.5rem; }
+  .text-xs { font-size: 0.7rem; }
+  .text-muted { color: var(--text-muted); }
+  .mono { font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace; }
+  .flex-center { display: flex; align-items: center; justify-content: center; }
+
+  /* ── Connection SVG Overlay ─────────────────────────────────── */
+  .divider {
+    height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 1rem 0;
+  }
+  .section-spacer { height: 1.5rem; }
+
+  /* ── Footer ─────────────────────────────────────────────────── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem; text-align: center;
+    color: var(--text-muted); font-size: 0.75rem;
+  }
+  .footer a { color: var(--primary); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════════════════════════ -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-area">
+      <div class="logo">LB</div>
+      <div class="header-text">
+        <h1>LithiumBuy Platform Architecture</h1>
+        <p>Institutional Lithium Procurement &amp; Trading Platform</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div class="meta-chip"><span class="dot dot-blue"></span> React + Vite</div>
+      <div class="meta-chip"><span class="dot dot-green"></span> Supabase</div>
+      <div class="meta-chip"><span class="dot dot-gold"></span> Edge Functions</div>
+      <div class="meta-chip"><span class="dot dot-blue"></span> TypeScript</div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     NAVIGATION
+     ═══════════════════════════════════════════════════════════════ -->
+<nav class="nav-bar">
+  <a href="#stats">Overview</a>
+  <a href="#routes">Routes</a>
+  <a href="#backend">Backend</a>
+  <a href="#database">Database</a>
+  <a href="#integrations">Integrations</a>
+  <a href="#tiers">Subscriptions</a>
+  <a href="#auction">Auction Flow</a>
+  <a href="#security">Security</a>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CONTENT
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="container">
+
+  <!-- ── Stats ────────────────────────────────────────────────── -->
+  <section id="stats">
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-value">28+</div><div class="stat-label">Routes</div></div>
+      <div class="stat-item"><div class="stat-value">12</div><div class="stat-label">Edge Functions</div></div>
+      <div class="stat-item"><div class="stat-value">30+</div><div class="stat-label">DB Tables</div></div>
+      <div class="stat-item"><div class="stat-value">7</div><div class="stat-label">Integrations</div></div>
+      <div class="stat-item"><div class="stat-value">3</div><div class="stat-label">Subscription Tiers</div></div>
+      <div class="stat-item"><div class="stat-value">4</div><div class="stat-label">Security Layers</div></div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- ── 1. Route Tree ────────────────────────────────────────── -->
+  <section id="routes" class="section-card full-width">
+    <div class="section-title">
+      <span class="icon icon-blue">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </span>
+      1. Route Tree
+      <span class="badge badge-blue">28+ routes</span>
+    </div>
+
+    <div class="grid-3">
+      <!-- PUBLIC -->
+      <div>
+        <div class="route-group">
+          <div class="route-group-label public">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M6 1v10M1 6h10M1.8 3.5h8.4M1.8 8.5h8.4" stroke="currentColor" stroke-width="1"/></svg>
+            Public Routes
+          </div>
+          <ul class="route-list">
+            <li class="route-item">
+              <span class="route-path">/</span>
+              <span class="route-desc">Landing page</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/auth</span>
+              <span class="route-desc">Login / Signup</span>
+            </li>
+            <li class="route-item route-indent">
+              <span class="route-path">/auth/callback</span>
+              <span class="route-desc">OAuth callback</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/password-reset</span>
+              <span class="route-desc">Password recovery</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="route-group">
+          <div class="route-group-label pro">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9.5 3,11 3.5,7.5 1,5 4.5,4.5" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+            Pro Only
+          </div>
+          <ul class="route-list">
+            <li class="route-item">
+              <span class="route-path">/ai-studio</span>
+              <span class="route-desc">AI analysis tools</span>
+              <span class="badge badge-gold">PRO</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- PROTECTED Col 1 -->
+      <div>
+        <div class="route-group">
+          <div class="route-group-label protected">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="5.5" width="8" height="5.5" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2" stroke="currentColor" stroke-width="1.5"/></svg>
+            Protected Routes
+          </div>
+          <ul class="route-list">
+            <li class="route-item">
+              <span class="route-path">/dashboard</span>
+              <span class="route-desc">Dashboard hub</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/onboarding</span>
+              <span class="route-desc">4-step setup wizard</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/marketplace</span>
+              <span class="route-desc">Product listings</span>
+            </li>
+            <li class="route-item route-indent">
+              <span class="route-path">/marketplace/:id</span>
+              <span class="route-desc">Product detail</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/rfqs</span>
+              <span class="route-desc">Request for quotes</span>
+            </li>
+            <li class="route-item route-indent">
+              <span class="route-path">/rfqs/:id</span>
+              <span class="route-desc">RFQ detail</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/bids</span>
+              <span class="route-desc">Bid management</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/auctions</span>
+              <span class="route-desc">Auction list</span>
+            </li>
+            <li class="route-item route-indent">
+              <span class="route-path">/auctions/:id</span>
+              <span class="route-desc">Auction detail + bidding</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/deals</span>
+              <span class="route-desc">Deal tracking</span>
+            </li>
+            <li class="route-item route-indent">
+              <span class="route-path">/deals/:id</span>
+              <span class="route-desc">Deal detail</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- PROTECTED Col 2 -->
+      <div>
+        <div class="route-group">
+          <div class="route-group-label protected">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="5.5" width="8" height="5.5" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2" stroke="currentColor" stroke-width="1.5"/></svg>
+            Protected Routes (cont.)
+          </div>
+          <ul class="route-list">
+            <li class="route-item">
+              <span class="route-path">/orders</span>
+              <span class="route-desc">Order management</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/purchases</span>
+              <span class="route-desc">Purchase orders</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/telebuy</span>
+              <span class="route-desc">Video negotiation</span>
+            </li>
+            <li class="route-item route-indent">
+              <span class="route-path">/telebuy/session/:id</span>
+              <span class="route-desc">Active session</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/chain-of-custody</span>
+              <span class="route-desc">Asset tracking</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/data</span>
+              <span class="route-desc">Data visualization</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/analytics</span>
+              <span class="route-desc">Business metrics</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/settings</span>
+              <span class="route-desc">Account settings</span>
+            </li>
+            <li class="route-item route-indent">
+              <span class="route-path">/settings/billing</span>
+              <span class="route-desc">Stripe billing</span>
+            </li>
+            <li class="route-item route-indent">
+              <span class="route-path">/settings/team</span>
+              <span class="route-desc">Team management</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/team</span>
+              <span class="route-desc">Team page</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/verification</span>
+              <span class="route-desc">KYC verification</span>
+            </li>
+            <li class="route-item">
+              <span class="route-path">/messages</span>
+              <span class="route-desc">Messaging</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- ── 2. Backend Architecture ──────────────────────────────── -->
+  <section id="backend" class="section-card full-width">
+    <div class="section-title">
+      <span class="icon icon-green">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="4" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="10" width="14" height="4" rx="1" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="4" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/></svg>
+      </span>
+      2. Backend Architecture &amp; Data Flow
+    </div>
+
+    <div class="flow-diagram">
+      <!-- Top: Frontend -->
+      <div class="flow-row">
+        <div class="flow-box highlight" style="min-width: 240px;">
+          <strong>Frontend</strong>
+          <small>React 18 + Vite + TypeScript</small>
+          <small>TanStack Query &middot; Zustand &middot; Tailwind</small>
+        </div>
+      </div>
+
+      <div class="flow-connector"></div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-connector"></div>
+
+      <!-- Supabase Client -->
+      <div class="flow-row">
+        <div class="flow-box gold-border" style="min-width: 280px;">
+          <strong>Supabase Client SDK</strong>
+          <small>@supabase/supabase-js &middot; Auth &middot; Realtime</small>
+        </div>
+      </div>
+
+      <div class="flow-connector"></div>
+
+      <!-- Four Branches -->
+      <div style="display:flex;justify-content:center;gap:0;width:100%;position:relative;">
+        <svg width="100%" height="40" style="position:absolute;top:0;left:0;">
+          <line x1="12.5%" y1="0" x2="12.5%" y2="40" stroke="#3B82F6" stroke-width="2" stroke-dasharray="4 2"/>
+          <line x1="37.5%" y1="0" x2="37.5%" y2="40" stroke="#FFB800" stroke-width="2" stroke-dasharray="4 2"/>
+          <line x1="62.5%" y1="0" x2="62.5%" y2="40" stroke="#22C55E" stroke-width="2" stroke-dasharray="4 2"/>
+          <line x1="87.5%" y1="0" x2="87.5%" y2="40" stroke="#A855F7" stroke-width="2" stroke-dasharray="4 2"/>
+          <line x1="12.5%" y1="0" x2="50%" y2="0" stroke="#3B82F6" stroke-width="2"/>
+          <line x1="50%" y1="0" x2="87.5%" y2="0" stroke="#A855F7" stroke-width="2"/>
+        </svg>
+        <div style="height:40px;width:100%;"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;width:100%;">
+        <!-- Direct SELECT -->
+        <div style="text-align:center;">
+          <div class="flow-box" style="border-top:3px solid var(--primary);">
+            <strong>Direct SELECT</strong>
+            <small>RLS-protected reads</small>
+            <small style="color:var(--primary);">Row Level Security</small>
+          </div>
+        </div>
+        <!-- RPC Calls -->
+        <div style="text-align:center;">
+          <div class="flow-box" style="border-top:3px solid var(--accent);">
+            <strong>RPC Calls</strong>
+            <small>SECURITY DEFINER writes</small>
+            <small style="color:var(--accent);">Stored Procedures</small>
+          </div>
+        </div>
+        <!-- Edge Functions -->
+        <div style="text-align:center;">
+          <div class="flow-box" style="border-top:3px solid var(--success);">
+            <strong>Edge Functions</strong>
+            <small>Deno runtime</small>
+            <small style="color:var(--success);">12 Functions</small>
+          </div>
+        </div>
+        <!-- Realtime -->
+        <div style="text-align:center;">
+          <div class="flow-box" style="border-top:3px solid #A855F7;">
+            <strong>Realtime</strong>
+            <small>WebSocket subscriptions</small>
+            <small style="color:#A855F7;">Live updates</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-spacer"></div>
+
+      <!-- Edge Function Details -->
+      <div style="width:100%;">
+        <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.75rem;color:var(--text-dim);">Edge Functions Detail</div>
+        <div class="flow-branch">
+          <div class="flow-branch-item">
+            <div class="fn-name">airtable-proxy</div>
+            <div class="fn-desc">Read Airtable data</div>
+          </div>
+          <div class="flow-branch-item gold-top">
+            <div class="fn-name">airtable-crud</div>
+            <div class="fn-desc">Full CRUD + subscription gating</div>
+          </div>
+          <div class="flow-branch-item green-top">
+            <div class="fn-name">perplexity-market-intel</div>
+            <div class="fn-desc">Live market data via Perplexity</div>
+          </div>
+          <div class="flow-branch-item">
+            <div class="fn-name">make-webhook</div>
+            <div class="fn-desc">Automation triggers</div>
+          </div>
+          <div class="flow-branch-item gold-top">
+            <div class="fn-name">stripe-webhook</div>
+            <div class="fn-desc">Payment event handling</div>
+          </div>
+          <div class="flow-branch-item green-top">
+            <div class="fn-name">create-checkout-session</div>
+            <div class="fn-desc">Stripe billing checkout</div>
+          </div>
+          <div class="flow-branch-item">
+            <div class="fn-name">create-portal-session</div>
+            <div class="fn-desc">Billing management portal</div>
+          </div>
+          <div class="flow-branch-item gold-top">
+            <div class="fn-name">create-daily-room</div>
+            <div class="fn-desc">Video call rooms (Daily.co)</div>
+          </div>
+          <div class="flow-branch-item green-top">
+            <div class="fn-name">elevenlabs-*</div>
+            <div class="fn-desc">Voice AI agent suite</div>
+          </div>
+          <div class="flow-branch-item">
+            <div class="fn-name">sync-to-airtable</div>
+            <div class="fn-desc">Data sync to Airtable</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-spacer"></div>
+
+      <!-- Data stores -->
+      <div class="flow-connector"></div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-connector"></div>
+
+      <div class="flow-row" style="gap: 1.5rem;">
+        <div class="flow-box green-border" style="min-width: 200px;">
+          <strong>PostgreSQL</strong>
+          <small>Supabase-managed &middot; 30+ tables</small>
+          <small>RLS policies on every table</small>
+        </div>
+        <div class="flow-box gold-border" style="min-width: 200px;">
+          <strong>Supabase Storage</strong>
+          <small>Documents &middot; Avatars &middot; Attachments</small>
+        </div>
+        <div class="flow-box" style="min-width: 200px; border-color: #A855F7;">
+          <strong>External APIs</strong>
+          <small>Airtable &middot; Stripe &middot; Daily &middot; ElevenLabs</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- ── 3. Database Tables ───────────────────────────────────── -->
+  <section id="database" class="section-card full-width">
+    <div class="section-title">
+      <span class="icon icon-gold">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="4" rx="6" ry="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 4v8c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V4" stroke="currentColor" stroke-width="1.5"/><path d="M2 8c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+      </span>
+      3. Database Schema
+      <span class="badge badge-gold">30+ tables</span>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <!-- Auth & Org -->
+        <div class="db-group">
+          <div class="db-group-label"><span>Auth &amp; Organization</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-blue">organizations</span>
+            <span class="db-table t-blue">org_members</span>
+            <span class="db-table t-blue">onboarding_profiles</span>
+            <span class="db-table t-blue">invites</span>
+          </div>
+        </div>
+
+        <!-- Business -->
+        <div class="db-group">
+          <div class="db-group-label"><span>Business / Trade</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-green">rfqs</span>
+            <span class="db-table t-green">bids</span>
+            <span class="db-table t-green">deals</span>
+            <span class="db-table t-green">auctions</span>
+            <span class="db-table t-green">auction_bids</span>
+            <span class="db-table t-green">orders</span>
+            <span class="db-table t-green">purchases</span>
+          </div>
+        </div>
+
+        <!-- Products -->
+        <div class="db-group">
+          <div class="db-group-label"><span>Products &amp; Suppliers</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-gold">products</span>
+            <span class="db-table t-gold">suppliers</span>
+            <span class="db-table t-gold">suppliers_metadata</span>
+            <span class="db-table t-gold">listings</span>
+          </div>
+        </div>
+
+        <!-- Messaging -->
+        <div class="db-group">
+          <div class="db-group-label"><span>Messaging &amp; Notifications</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-purple">messages</span>
+            <span class="db-table t-purple">notifications</span>
+            <span class="db-table t-purple">notification_preferences</span>
+          </div>
+        </div>
+
+        <!-- TeleBuy -->
+        <div class="db-group">
+          <div class="db-group-label"><span>TeleBuy / Video</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-blue">telebuy_sessions</span>
+            <span class="db-table t-blue">telebuy_session_documents</span>
+            <span class="db-table t-blue">telebuy_transcripts</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <!-- AI Agents -->
+        <div class="db-group">
+          <div class="db-group-label"><span>AI Agents</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-gold">elevenlabs_agent_configs</span>
+            <span class="db-table t-gold">telebuy_agent_sessions</span>
+            <span class="db-table t-gold">telebuy_agent_messages</span>
+          </div>
+        </div>
+
+        <!-- Knowledge -->
+        <div class="db-group">
+          <div class="db-group-label"><span>Knowledge Base</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-green">lithium_knowledge_base</span>
+          </div>
+        </div>
+
+        <!-- Market Data -->
+        <div class="db-group">
+          <div class="db-group-label"><span>Market Intelligence</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-red">market_data</span>
+            <span class="db-table t-red">price_indicators</span>
+            <span class="db-table t-red">arbitrage_opportunities</span>
+          </div>
+        </div>
+
+        <!-- Chain of Custody -->
+        <div class="db-group">
+          <div class="db-group-label"><span>Chain of Custody</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-blue">custody_events</span>
+            <span class="db-table t-blue">custody_documents</span>
+          </div>
+        </div>
+
+        <!-- Auction Leads -->
+        <div class="db-group">
+          <div class="db-group-label"><span>Auction Leads</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-gold">auction_companies</span>
+            <span class="db-table t-gold">auction_contacts</span>
+            <span class="db-table t-gold">auction_lot_definitions</span>
+          </div>
+        </div>
+
+        <!-- Billing -->
+        <div class="db-group">
+          <div class="db-group-label"><span>Billing &amp; Subscriptions</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-green">subscriptions</span>
+            <span class="db-table t-green">subscription_tiers</span>
+          </div>
+        </div>
+
+        <!-- Audit -->
+        <div class="db-group">
+          <div class="db-group-label"><span>Audit &amp; Logging</span><span class="line"></span></div>
+          <div class="db-tables">
+            <span class="db-table t-red">audit_logs</span>
+            <span class="db-table t-red">skill_invocations</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- ── 4. External Integrations ─────────────────────────────── -->
+  <section id="integrations" class="section-card full-width">
+    <div class="section-title">
+      <span class="icon icon-gold">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v4M8 11v4M1 8h4M11 8h4M3 3l2.5 2.5M10.5 10.5L13 13M13 3l-2.5 2.5M5.5 10.5L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </span>
+      4. External Integrations
+    </div>
+
+    <div class="integration-grid">
+      <!-- Airtable -->
+      <div class="integration-card">
+        <div class="integration-icon" style="background:rgba(24,160,251,.15);color:#18A0FB;">At</div>
+        <h4>Airtable</h4>
+        <p>Primary CMS for structured content and lead management data. Used for FAQs, product catalogs, and auction intelligence.</p>
+        <div class="integration-tag-list">
+          <span class="integration-tag">FAQs</span>
+          <span class="integration-tag">Products</span>
+          <span class="integration-tag">Market_Intelligence</span>
+          <span class="integration-tag">Auction_Companies</span>
+          <span class="integration-tag">Auction_Contacts</span>
+        </div>
+      </div>
+
+      <!-- Stripe -->
+      <div class="integration-card">
+        <div class="integration-icon" style="background:rgba(99,91,255,.15);color:#635BFF;">$</div>
+        <h4>Stripe</h4>
+        <p>Handles all payment processing, subscription management, checkout flows, and billing portal access.</p>
+        <div class="integration-tag-list">
+          <span class="integration-tag">Payments</span>
+          <span class="integration-tag">Subscriptions</span>
+          <span class="integration-tag">Checkout</span>
+          <span class="integration-tag">Portal</span>
+          <span class="integration-tag">Webhooks</span>
+        </div>
+      </div>
+
+      <!-- Daily.co -->
+      <div class="integration-card">
+        <div class="integration-icon" style="background:rgba(0,200,170,.15);color:#00C8AA;">D</div>
+        <h4>Daily.co</h4>
+        <p>WebRTC video infrastructure for TeleBuy sessions. Creates on-demand rooms for live negotiation calls.</p>
+        <div class="integration-tag-list">
+          <span class="integration-tag">Video Calls</span>
+          <span class="integration-tag">Room Creation</span>
+          <span class="integration-tag">WebRTC</span>
+        </div>
+      </div>
+
+      <!-- ElevenLabs -->
+      <div class="integration-card">
+        <div class="integration-icon" style="background:rgba(59,130,246,.15);color:var(--primary);">XI</div>
+        <h4>ElevenLabs</h4>
+        <p>Voice AI agents for TeleBuy sessions. Provides real-time conversational AI with natural speech synthesis.</p>
+        <div class="integration-tag-list">
+          <span class="integration-tag">Voice AI</span>
+          <span class="integration-tag">Agent Configs</span>
+          <span class="integration-tag">Transcription</span>
+        </div>
+      </div>
+
+      <!-- Perplexity -->
+      <div class="integration-card">
+        <div class="integration-icon" style="background:rgba(255,184,0,.15);color:var(--accent);">Px</div>
+        <h4>Perplexity API</h4>
+        <p>AI-powered market intelligence. Provides live lithium market data, pricing trends, and research insights.</p>
+        <div class="integration-tag-list">
+          <span class="integration-tag">Market Data</span>
+          <span class="integration-tag">Price Intel</span>
+          <span class="integration-tag">Research</span>
+        </div>
+      </div>
+
+      <!-- Make.com -->
+      <div class="integration-card">
+        <div class="integration-icon" style="background:rgba(168,85,247,.15);color:#A855F7;">M</div>
+        <h4>Make.com</h4>
+        <p>Webhook-based automation platform. Triggers workflows for notifications, data pipelines, and external integrations.</p>
+        <div class="integration-tag-list">
+          <span class="integration-tag">Webhooks</span>
+          <span class="integration-tag">Automation</span>
+          <span class="integration-tag">Workflows</span>
+        </div>
+      </div>
+
+      <!-- Google OAuth -->
+      <div class="integration-card">
+        <div class="integration-icon" style="background:rgba(234,67,53,.15);color:#EA4335;">G</div>
+        <h4>Google OAuth</h4>
+        <p>Social authentication provider. Enables one-click sign-in via Google accounts through Supabase Auth.</p>
+        <div class="integration-tag-list">
+          <span class="integration-tag">OAuth 2.0</span>
+          <span class="integration-tag">SSO</span>
+          <span class="integration-tag">Social Login</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- ── 5. Subscription Tiers ────────────────────────────────── -->
+  <section id="tiers" class="section-card full-width accent-green">
+    <div class="section-title">
+      <span class="icon icon-green">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.5"/><circle cx="5" cy="10" r="1" fill="currentColor"/></svg>
+      </span>
+      5. Subscription Tiers
+    </div>
+
+    <div class="tier-grid">
+      <!-- Free -->
+      <div class="tier-card">
+        <span class="badge badge-gray">FREE</span>
+        <h3 style="margin-top:0.5rem;">Free Tier</h3>
+        <div class="tier-price">$0 <span>/ month</span></div>
+        <ul class="tier-features">
+          <li>Basic product search</li>
+          <li>3 RFQs per month</li>
+          <li>Price data (3 lookups/day)</li>
+          <li>View marketplace listings</li>
+          <li>Standard email notifications</li>
+          <li>Community support</li>
+        </ul>
+      </div>
+
+      <!-- Pro -->
+      <div class="tier-card featured">
+        <span class="badge badge-blue">PRO</span>
+        <h3 style="margin-top:0.5rem;">Professional</h3>
+        <div class="tier-price">$99 <span>/ month</span></div>
+        <ul class="tier-features">
+          <li>All Free features included</li>
+          <li>Unlimited RFQs</li>
+          <li>TeleBuy AI video negotiation</li>
+          <li>AI Studio analysis tools</li>
+          <li>Unlimited price data</li>
+          <li>Auction participation</li>
+          <li>Deal tracking &amp; management</li>
+          <li>Chain of custody tracking</li>
+          <li>Priority support</li>
+        </ul>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="tier-card">
+        <span class="badge badge-gold">ENTERPRISE</span>
+        <h3 style="margin-top:0.5rem;">Enterprise</h3>
+        <div class="tier-price">Custom</div>
+        <ul class="tier-features">
+          <li>All Pro features included</li>
+          <li>Full API access</li>
+          <li>White-label deployment</li>
+          <li>SSO / SAML integration</li>
+          <li>Batch operations</li>
+          <li>Custom workflows</li>
+          <li>Dedicated account manager</li>
+          <li>SLA guarantee</li>
+          <li>On-premise option</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Subscription Flow -->
+    <div class="mt-3">
+      <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.75rem;color:var(--text-dim);">Subscription Flow</div>
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:center;">
+        <div class="flow-box" style="font-size:0.75rem;">
+          <strong>Signup</strong>
+          <small>Free tier auto</small>
+        </div>
+        <div class="flow-arrow horizontal">&rarr;</div>
+        <div class="flow-box" style="font-size:0.75rem;border-color:var(--primary);">
+          <strong>Upgrade CTA</strong>
+          <small>Feature gate hit</small>
+        </div>
+        <div class="flow-arrow horizontal">&rarr;</div>
+        <div class="flow-box" style="font-size:0.75rem;border-color:var(--accent);">
+          <strong>Checkout</strong>
+          <small>create-checkout-session</small>
+        </div>
+        <div class="flow-arrow horizontal">&rarr;</div>
+        <div class="flow-box" style="font-size:0.75rem;border-color:var(--success);">
+          <strong>Stripe Payment</strong>
+          <small>Card / ACH</small>
+        </div>
+        <div class="flow-arrow horizontal">&rarr;</div>
+        <div class="flow-box" style="font-size:0.75rem;border-color:var(--success);">
+          <strong>Webhook</strong>
+          <small>stripe-webhook</small>
+        </div>
+        <div class="flow-arrow horizontal">&rarr;</div>
+        <div class="flow-box" style="font-size:0.75rem;border-color:var(--primary);">
+          <strong>DB Update</strong>
+          <small>subscriptions table</small>
+        </div>
+        <div class="flow-arrow horizontal">&rarr;</div>
+        <div class="flow-box highlight" style="font-size:0.75rem;">
+          <strong>Features Unlocked</strong>
+          <small>Real-time gating</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- ── 6. Auction Flow ──────────────────────────────────────── -->
+  <section id="auction" class="section-card full-width accent-gold">
+    <div class="section-title">
+      <span class="icon icon-gold">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13l4-4m0 0l2-6 6 2-4 8-4-4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M1 15l3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </span>
+      6. Auction Lifecycle
+      <span class="badge badge-gold">Complete Flow</span>
+    </div>
+
+    <div class="auction-flow">
+      <div class="auction-step step-1">
+        <div class="step-number">1</div>
+        <h5>Create</h5>
+        <p>Seller creates auction with lot details, reserve price, and terms</p>
+      </div>
+      <div class="auction-step step-2">
+        <div class="step-number">2</div>
+        <h5>Schedule</h5>
+        <p>Set start/end times, preview period, and participant limits</p>
+      </div>
+      <div class="auction-step step-3">
+        <div class="step-number">3</div>
+        <h5>Go Live</h5>
+        <p>Auction opens for bidding. Realtime WebSocket updates begin</p>
+      </div>
+      <div class="auction-step step-4">
+        <div class="step-number">4</div>
+        <h5>Bidding</h5>
+        <p>Active bidding with anti-sniping extension timer protection</p>
+      </div>
+      <div class="auction-step step-5">
+        <div class="step-number">5</div>
+        <h5>End</h5>
+        <p>Auction closes. Winning bid determined. All parties notified</p>
+      </div>
+      <div class="auction-step step-6">
+        <div class="step-number">6</div>
+        <h5>Settle</h5>
+        <p>Payment processing, document exchange, compliance verification</p>
+      </div>
+      <div class="auction-step step-7">
+        <div class="step-number">7</div>
+        <h5>Deal</h5>
+        <p>Auto-creates deal record for tracking fulfillment &amp; custody</p>
+      </div>
+    </div>
+
+    <!-- Anti-sniping detail -->
+    <div class="mt-2" style="display:flex;gap:1rem;flex-wrap:wrap;">
+      <div style="flex:1;min-width:250px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;border-left:3px solid var(--accent);">
+        <h5 style="font-size:0.8rem;margin-bottom:0.4rem;">Anti-Sniping Protection</h5>
+        <p style="font-size:0.72rem;color:var(--text-dim);line-height:1.5;">When a bid is placed within the final minutes of an auction, the end time automatically extends by a configurable period (default: 2 minutes). This prevents last-second bid manipulation and ensures fair price discovery for all participants.</p>
+      </div>
+      <div style="flex:1;min-width:250px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;border-left:3px solid var(--primary);">
+        <h5 style="font-size:0.8rem;margin-bottom:0.4rem;">Realtime Architecture</h5>
+        <p style="font-size:0.72rem;color:var(--text-dim);line-height:1.5;">Auction state is broadcast via Supabase Realtime WebSocket channels. Every bid triggers instant UI updates across all connected participants. The auction_bids table uses RLS to protect bid amounts until auction completion.</p>
+      </div>
+      <div style="flex:1;min-width:250px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;border-left:3px solid var(--success);">
+        <h5 style="font-size:0.8rem;margin-bottom:0.4rem;">Deal Auto-Creation</h5>
+        <p style="font-size:0.72rem;color:var(--text-dim);line-height:1.5;">Upon auction settlement, a deal record is automatically generated linking the winning bidder to the seller. This feeds into the chain-of-custody tracking system for complete transaction lifecycle visibility.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- ── 7. Security Architecture ─────────────────────────────── -->
+  <section id="security" class="section-card full-width">
+    <div class="section-title">
+      <span class="icon icon-red">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L2 4v4c0 3.5 2.5 6.5 6 7.5 3.5-1 6-4 6-7.5V4L8 1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      7. Security Architecture
+    </div>
+
+    <div class="grid-2">
+      <div class="security-stack">
+        <div class="security-layer l-rls">
+          <div class="sl-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="8" width="12" height="8" rx="2" stroke="#3B82F6" stroke-width="1.5"/><path d="M6 8V5a3 3 0 016 0v3" stroke="#3B82F6" stroke-width="1.5"/></svg>
+          </div>
+          <div class="sl-text">
+            <h5>Row Level Security (RLS)</h5>
+            <p>Every table has RLS policies. Users can only access data belonging to their organization. All SELECT queries are filtered at the database level.</p>
+          </div>
+        </div>
+
+        <div class="security-layer l-rpc">
+          <div class="sl-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="#FFB800" stroke-width="1.5"/><path d="M9 5v4l3 2" stroke="#FFB800" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div class="sl-text">
+            <h5>SECURITY DEFINER RPCs</h5>
+            <p>All write operations go through stored procedures with SECURITY DEFINER. Prevents direct INSERT/UPDATE/DELETE from the client.</p>
+          </div>
+        </div>
+
+        <div class="security-layer l-edge">
+          <div class="sl-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9h12M9 3v12" stroke="#22C55E" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="9" r="7" stroke="#22C55E" stroke-width="1.5"/></svg>
+          </div>
+          <div class="sl-text">
+            <h5>Edge Function Auth</h5>
+            <p>Every edge function validates the JWT token from the Authorization header. Subscription tier is checked before gated operations execute.</p>
+          </div>
+        </div>
+
+        <div class="security-layer l-stripe">
+          <div class="sl-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 1L2 5v4c0 4.4 3 8 7 9 4-1 7-4.6 7-9V5L9 1z" stroke="#EF4444" stroke-width="1.5"/><path d="M7 9l2 2 4-4" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div class="sl-text">
+            <h5>Webhook Signature Verification</h5>
+            <p>Stripe webhooks verify the signature header against the endpoint secret. Prevents spoofed payment events and subscription manipulation.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auth Flow -->
+      <div>
+        <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.75rem;color:var(--text-dim);">Authentication Flow</div>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div class="flow-box" style="flex:1;font-size:0.75rem;">
+              <strong>User Login</strong>
+              <small>Email/Password or Google OAuth</small>
+            </div>
+          </div>
+          <div class="flow-arrow">&darr;</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div class="flow-box" style="flex:1;font-size:0.75rem;border-color:var(--primary);">
+              <strong>Supabase Auth</strong>
+              <small>JWT issued + session created</small>
+            </div>
+          </div>
+          <div class="flow-arrow">&darr;</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div class="flow-box" style="flex:1;font-size:0.75rem;border-color:var(--accent);">
+              <strong>Org Resolution</strong>
+              <small>org_members lookup &rarr; org context set</small>
+            </div>
+          </div>
+          <div class="flow-arrow">&darr;</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div class="flow-box" style="flex:1;font-size:0.75rem;border-color:var(--success);">
+              <strong>Tier Check</strong>
+              <small>subscriptions table &rarr; feature flags</small>
+            </div>
+          </div>
+          <div class="flow-arrow">&darr;</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div class="flow-box highlight" style="flex:1;font-size:0.75rem;">
+              <strong>Route Guard</strong>
+              <small>ProtectedRoute + TierGate components</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.75rem;color:var(--text-dim);">Data Access Pattern</div>
+          <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;font-size:0.72rem;color:var(--text-dim);line-height:1.6;">
+            <div style="margin-bottom:0.5rem;">
+              <span class="badge badge-blue" style="font-size:0.6rem;">READ</span>
+              <span class="mono" style="color:var(--primary);"> supabase.from('table').select()</span>
+              <span> &rarr; RLS filters by org_id</span>
+            </div>
+            <div style="margin-bottom:0.5rem;">
+              <span class="badge badge-gold" style="font-size:0.6rem;">WRITE</span>
+              <span class="mono" style="color:var(--accent);"> supabase.rpc('create_rfq', {...})</span>
+              <span> &rarr; SECURITY DEFINER</span>
+            </div>
+            <div style="margin-bottom:0.5rem;">
+              <span class="badge badge-green" style="font-size:0.6rem;">EXTERNAL</span>
+              <span class="mono" style="color:var(--success);"> supabase.functions.invoke('fn')</span>
+              <span> &rarr; JWT verified</span>
+            </div>
+            <div>
+              <span class="badge badge-purple" style="font-size:0.6rem;">REALTIME</span>
+              <span class="mono" style="color:#A855F7;"> supabase.channel('ch').on()</span>
+              <span> &rarr; RLS on broadcast</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- ── System Overview Diagram ──────────────────────────────── -->
+  <section class="section-card full-width" style="text-align:center;">
+    <div class="section-title" style="justify-content:center;">
+      <span class="icon icon-blue">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1" stroke-dasharray="3 2"/><circle cx="8" cy="1" r="1" fill="currentColor"/><circle cx="15" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="1" cy="8" r="1" fill="currentColor"/></svg>
+      </span>
+      High-Level System Overview
+    </div>
+
+    <svg viewBox="0 0 900 420" style="max-width:900px;width:100%;height:auto;margin:1rem auto 0;" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+      <defs>
+        <linearGradient id="grad-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:0.15"/>
+          <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0.05"/>
+        </linearGradient>
+        <linearGradient id="grad-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#FFB800;stop-opacity:0.15"/>
+          <stop offset="100%" style="stop-color:#FFB800;stop-opacity:0.05"/>
+        </linearGradient>
+        <linearGradient id="grad-green" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#22C55E;stop-opacity:0.15"/>
+          <stop offset="100%" style="stop-color:#22C55E;stop-opacity:0.05"/>
+        </linearGradient>
+        <linearGradient id="line-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#3B82F6"/>
+          <stop offset="100%" style="stop-color:#FFB800"/>
+        </linearGradient>
+        <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#3B82F6"/>
+        </marker>
+        <marker id="arrowGold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#FFB800"/>
+        </marker>
+        <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#22C55E"/>
+        </marker>
+      </defs>
+
+      <!-- Backgrounds -->
+      <!-- User Layer -->
+      <rect x="10" y="10" width="880" height="70" rx="12" fill="url(#grad-blue)" stroke="#3B82F6" stroke-width="1" stroke-opacity="0.3"/>
+      <text x="25" y="30" fill="#3B82F6" font-size="10" font-weight="700" opacity="0.6">CLIENT LAYER</text>
+
+      <!-- Supabase Layer -->
+      <rect x="10" y="100" width="880" height="140" rx="12" fill="url(#grad-gold)" stroke="#FFB800" stroke-width="1" stroke-opacity="0.3"/>
+      <text x="25" y="120" fill="#FFB800" font-size="10" font-weight="700" opacity="0.6">SUPABASE LAYER</text>
+
+      <!-- External Layer -->
+      <rect x="10" y="260" width="880" height="70" rx="12" fill="url(#grad-green)" stroke="#22C55E" stroke-width="1" stroke-opacity="0.3"/>
+      <text x="25" y="280" fill="#22C55E" font-size="10" font-weight="700" opacity="0.6">EXTERNAL SERVICES</text>
+
+      <!-- Data Layer -->
+      <rect x="10" y="350" width="880" height="60" rx="12" fill="url(#grad-blue)" stroke="#3B82F6" stroke-width="1" stroke-opacity="0.3"/>
+      <text x="25" y="370" fill="#3B82F6" font-size="10" font-weight="700" opacity="0.6">DATA LAYER</text>
+
+      <!-- Client boxes -->
+      <rect x="100" y="30" width="130" height="38" rx="8" fill="#1F2937" stroke="#3B82F6" stroke-width="1.5"/>
+      <text x="165" y="52" fill="#F1F5F9" font-size="11" font-weight="600" text-anchor="middle">React + Vite</text>
+
+      <rect x="260" y="30" width="130" height="38" rx="8" fill="#1F2937" stroke="#3B82F6" stroke-width="1.5"/>
+      <text x="325" y="52" fill="#F1F5F9" font-size="11" font-weight="600" text-anchor="middle">TanStack Query</text>
+
+      <rect x="420" y="30" width="100" height="38" rx="8" fill="#1F2937" stroke="#3B82F6" stroke-width="1.5"/>
+      <text x="470" y="52" fill="#F1F5F9" font-size="11" font-weight="600" text-anchor="middle">Zustand</text>
+
+      <rect x="550" y="30" width="130" height="38" rx="8" fill="#1F2937" stroke="#3B82F6" stroke-width="1.5"/>
+      <text x="615" y="52" fill="#F1F5F9" font-size="11" font-weight="600" text-anchor="middle">Tailwind CSS</text>
+
+      <rect x="710" y="30" width="130" height="38" rx="8" fill="#1F2937" stroke="#3B82F6" stroke-width="1.5"/>
+      <text x="775" y="52" fill="#F1F5F9" font-size="11" font-weight="600" text-anchor="middle">TypeScript</text>
+
+      <!-- Connection lines: Client to Supabase -->
+      <line x1="450" y1="68" x2="450" y2="130" stroke="#3B82F6" stroke-width="2" marker-end="url(#arrowBlue)" stroke-dasharray="6 3"/>
+
+      <!-- Supabase boxes -->
+      <rect x="60" y="130" width="140" height="38" rx="8" fill="#1F2937" stroke="#FFB800" stroke-width="1.5"/>
+      <text x="130" y="148" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Auth (JWT)</text>
+      <text x="130" y="160" fill="#94A3B8" font-size="8" text-anchor="middle">Email + Google OAuth</text>
+
+      <rect x="230" y="130" width="140" height="38" rx="8" fill="#1F2937" stroke="#FFB800" stroke-width="1.5"/>
+      <text x="300" y="148" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">RLS Queries</text>
+      <text x="300" y="160" fill="#94A3B8" font-size="8" text-anchor="middle">SELECT with policies</text>
+
+      <rect x="400" y="130" width="140" height="38" rx="8" fill="#1F2937" stroke="#FFB800" stroke-width="1.5"/>
+      <text x="470" y="148" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">RPC Functions</text>
+      <text x="470" y="160" fill="#94A3B8" font-size="8" text-anchor="middle">SECURITY DEFINER</text>
+
+      <rect x="570" y="130" width="140" height="38" rx="8" fill="#1F2937" stroke="#FFB800" stroke-width="1.5"/>
+      <text x="640" y="148" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Edge Functions</text>
+      <text x="640" y="160" fill="#94A3B8" font-size="8" text-anchor="middle">12 Deno workers</text>
+
+      <rect x="740" y="130" width="120" height="38" rx="8" fill="#1F2937" stroke="#A855F7" stroke-width="1.5"/>
+      <text x="800" y="148" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Realtime</text>
+      <text x="800" y="160" fill="#94A3B8" font-size="8" text-anchor="middle">WebSocket</text>
+
+      <!-- Edge Functions to Supabase Storage -->
+      <rect x="240" y="192" width="140" height="34" rx="8" fill="#1F2937" stroke="#FFB800" stroke-width="1"/>
+      <text x="310" y="213" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Supabase Storage</text>
+
+      <rect x="420" y="192" width="140" height="34" rx="8" fill="#1F2937" stroke="#FFB800" stroke-width="1"/>
+      <text x="490" y="213" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Webhook Handlers</text>
+
+      <!-- Connection lines: Supabase to External -->
+      <line x1="640" y1="168" x2="640" y2="270" stroke="#22C55E" stroke-width="2" marker-end="url(#arrowGreen)" stroke-dasharray="6 3"/>
+
+      <!-- External boxes -->
+      <rect x="60" y="278" width="100" height="38" rx="8" fill="#1F2937" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="110" y="296" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Airtable</text>
+      <text x="110" y="308" fill="#94A3B8" font-size="8" text-anchor="middle">CMS data</text>
+
+      <rect x="185" y="278" width="100" height="38" rx="8" fill="#1F2937" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="235" y="296" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Stripe</text>
+      <text x="235" y="308" fill="#94A3B8" font-size="8" text-anchor="middle">Payments</text>
+
+      <rect x="310" y="278" width="100" height="38" rx="8" fill="#1F2937" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="360" y="296" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Daily.co</text>
+      <text x="360" y="308" fill="#94A3B8" font-size="8" text-anchor="middle">Video/WebRTC</text>
+
+      <rect x="435" y="278" width="100" height="38" rx="8" fill="#1F2937" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="485" y="296" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">ElevenLabs</text>
+      <text x="485" y="308" fill="#94A3B8" font-size="8" text-anchor="middle">Voice AI</text>
+
+      <rect x="560" y="278" width="100" height="38" rx="8" fill="#1F2937" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="610" y="296" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Perplexity</text>
+      <text x="610" y="308" fill="#94A3B8" font-size="8" text-anchor="middle">Market Intel</text>
+
+      <rect x="685" y="278" width="100" height="38" rx="8" fill="#1F2937" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="735" y="296" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Make.com</text>
+      <text x="735" y="308" fill="#94A3B8" font-size="8" text-anchor="middle">Automation</text>
+
+      <rect x="810" y="278" width="70" height="38" rx="8" fill="#1F2937" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="845" y="300" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Google</text>
+
+      <!-- Data Layer boxes -->
+      <rect x="100" y="365" width="180" height="34" rx="8" fill="#1F2937" stroke="#3B82F6" stroke-width="1.5"/>
+      <text x="190" y="386" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">PostgreSQL (30+ tables)</text>
+
+      <rect x="320" y="365" width="160" height="34" rx="8" fill="#1F2937" stroke="#3B82F6" stroke-width="1.5"/>
+      <text x="400" y="386" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">RLS Policies</text>
+
+      <rect x="520" y="365" width="160" height="34" rx="8" fill="#1F2937" stroke="#3B82F6" stroke-width="1.5"/>
+      <text x="600" y="386" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">Stored Procedures</text>
+
+      <rect x="720" y="365" width="130" height="34" rx="8" fill="#1F2937" stroke="#3B82F6" stroke-width="1.5"/>
+      <text x="785" y="386" fill="#F1F5F9" font-size="10" font-weight="600" text-anchor="middle">File Storage</text>
+
+      <!-- Connection: Supabase to Data Layer -->
+      <line x1="300" y1="226" x2="300" y2="365" stroke="#FFB800" stroke-width="1.5" marker-end="url(#arrowGold)" stroke-dasharray="4 3" opacity="0.5"/>
+      <line x1="470" y1="168" x2="470" y2="365" stroke="#FFB800" stroke-width="1.5" marker-end="url(#arrowGold)" stroke-dasharray="4 3" opacity="0.5"/>
+    </svg>
+  </section>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════════════ -->
+<footer class="footer">
+  <p><strong>LithiumBuy</strong> &mdash; Institutional Lithium Procurement Platform</p>
+  <p style="margin-top:0.35rem;">Architecture document generated for internal reference. &copy; 2025 LithiumBuy. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

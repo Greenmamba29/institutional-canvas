@@ -55,9 +55,9 @@ export function VerificationBadge({ tier, showIcon = true, className }: Verifica
     },
     lithiumbuy: {
       label: 'LITHIUMBUY STANDARD',
-      bg: 'bg-accent/20',
-      text: 'text-accent',
-      border: 'border-accent/30',
+      bg: 'bg-[#1E40AF]/20',
+      text: 'text-[#3B82F6]',
+      border: 'border-[#3B82F6]/40',
       icon: BadgeCheck,
     },
   };

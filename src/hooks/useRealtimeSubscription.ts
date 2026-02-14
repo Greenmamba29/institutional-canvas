@@ -1,6 +1,6 @@
 /**
  * Realtime Subscription Hook
- * 
+ *
  * Subscribes to postgres_changes and auto-invalidates React Query cache
  * when data changes in the database
  */
@@ -21,7 +21,7 @@ interface RealtimeSubscriptionOptions {
 /**
  * Subscribe to realtime changes for a specific table
  * and automatically invalidate related React Query cache
- * 
+ *
  * @example
  * useRealtimeSubscription({
  *   table: 'rfqs',
@@ -49,7 +49,7 @@ export function useRealtimeSubscription({
       const channelName = `${table}_${event}_${filter || 'all'}`.replace(/[^a-zA-Z0-9_]/g, '_');
 
       channel = supabase.channel(channelName);
-      
+
       // Use type assertion to handle the postgres_changes subscription
       (channel as any).on(
         'postgres_changes',

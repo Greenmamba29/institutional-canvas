@@ -14,6 +14,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { useAuctions } from "@/hooks/useAuctions";
+import { VerificationBadge } from "@/components/shared/VerificationBadge";
 import type { Auction } from "@/services/auctions.service";
 
 function formatCurrency(value: number): string {
@@ -120,7 +121,6 @@ export default function Auctions() {
             <p className="text-muted-foreground">Check back later for new auctions</p>
           </div>
         )}
-
       </div>
     </LayoutShell>
   );
@@ -137,7 +137,10 @@ function AuctionCard({ auction, isLive = false }: { auction: Auction; isLive?: b
             <StatusPill status={auction.status === 'scheduled' ? 'upcoming' : auction.status === 'live' ? 'live' : 'ended'} />
             <span className="text-xs font-mono text-muted-foreground">{auction.id.slice(0, 8)}</span>
           </div>
-          <h3 className="font-semibold">{auction.title}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold">{auction.title}</h3>
+            <VerificationBadge tier="lithiumbuy" />
+          </div>
           {auction.description && (
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{auction.description}</p>
           )}
