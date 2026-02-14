@@ -7,10 +7,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-function escapeAirtableValue(value: string): string {
-  return value.replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-}
-
 export interface AirtableFAQ {
   id: string;
   question: string;

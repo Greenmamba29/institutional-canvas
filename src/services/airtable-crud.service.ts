@@ -8,7 +8,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 type AirtableAction = 'create' | 'read' | 'update' | 'delete' | 'list';
-type AirtableTable = 'FAQs' | 'Products' | 'Market_Intelligence' | 'Auction_Companies' | 'Auction_Contacts';
+type AirtableTable = 'FAQs' | 'Products' | 'Market_Intelligence' | 'Auction_Companies' | 'Auction_Contacts' | 'Prompt_Executions' | 'Decision_Log' | 'Blockers' | 'Analytics_Events' | 'GMV_Metrics';
 
 interface AirtableCrudParams {
   action: AirtableAction;

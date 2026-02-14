@@ -13,7 +13,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -23,7 +23,6 @@ const AIRTABLE_BASE_ID = Deno.env.get('AIRTABLE_BASE_ID');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-// Airtable table ID for market intelligence (configurable via env)
 const AIRTABLE_MARKET_INTEL_TABLE = Deno.env.get('AIRTABLE_MARKET_INTEL_TABLE') || 'Market_Intelligence';
 
 // ---------------------------------------------------------------------------
@@ -87,7 +86,11 @@ const SYSTEM_PROMPTS: Record<Category, string> = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function buildSupabaseClient() {
+// Use `any` to avoid strict generic inference issues with the Supabase client
+// deno-lint-ignore no-explicit-any
+type SupabaseClient = any;
+
+function buildSupabaseClient(): SupabaseClient {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error('Missing Supabase environment variables');
   }
@@ -95,12 +98,10 @@ function buildSupabaseClient() {
 }
 
 /**
- * Check rate limit for free tier users by counting today's entries
- * in the market_briefings-adjacent query log. We use the webhook_events
- * table to track per-day calls keyed on source + event_type.
+ * Check rate limit for free tier users
  */
 async function checkFreeTierRateLimit(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
 ): Promise<{ allowed: boolean; used: number; limit: number }> {
   const todayStart = new Date();
   todayStart.setUTCHours(0, 0, 0, 0);
@@ -114,7 +115,6 @@ async function checkFreeTierRateLimit(
 
   if (error) {
     console.error('[perplexity-market-intel] Rate limit check error:', error);
-    // Fail open -- allow the request but log the error
     return { allowed: true, used: 0, limit: FREE_TIER_DAILY_LIMIT };
   }
 
@@ -130,7 +130,7 @@ async function checkFreeTierRateLimit(
  * Record a free-tier usage event for rate limiting.
  */
 async function recordFreeTierUsage(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
 ): Promise<void> {
   await supabase.from('webhook_events').insert({
     event_type: 'free_tier_query',
@@ -175,22 +175,15 @@ async function callPerplexity(
 }
 
 /**
- * Derive a table name to store the result based on category.
- * - price  -> market_prices  (but we store the raw intel in market_news as a general store)
- * - news   -> market_news
- * - auction / company -> market_news (with category tag)
- *
- * We also always log the full query + response into market_briefings as a
- * dated intelligence record.
+ * Store result in database.
  */
 async function storeInDatabase(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   query: string,
   category: Category,
   content: string,
   citations: string[] | undefined,
 ): Promise<{ id: string }> {
-  // Store as a market_news entry so it shows up in the intelligence feed
   const { data: newsRow, error: newsError } = await supabase
     .from('market_news')
     .insert({
@@ -210,7 +203,7 @@ async function storeInDatabase(
     throw newsError;
   }
 
-  // Also log to webhook_events for auditability
+  // Log to webhook_events for auditability
   await supabase.from('webhook_events').insert({
     event_type: 'perplexity_query',
     source: 'perplexity-market-intel',
@@ -230,10 +223,9 @@ async function storeInDatabase(
 
 /**
  * Fetch cached/recent data from market_news for the given category.
- * Used as a fallback when the Perplexity API key is unavailable.
  */
 async function getCachedData(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   category: Category,
 ): Promise<Record<string, unknown>[]> {
   const { data, error } = await supabase
@@ -280,7 +272,7 @@ async function syncToAirtable(
             fields: {
               'Query': query,
               'Category': category,
-              'Response': content.slice(0, 100000), // Airtable long text limit
+              'Response': content.slice(0, 100000),
               'Citations': (citations ?? []).join('\n'),
               'Source': 'perplexity',
               'Timestamp': new Date().toISOString(),
@@ -309,7 +301,6 @@ async function syncToAirtable(
 // ---------------------------------------------------------------------------
 
 serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -322,9 +313,6 @@ serve(async (req: Request) => {
   }
 
   try {
-    // -----------------------------------------------------------------------
-    // 1. Parse and validate request
-    // -----------------------------------------------------------------------
     const body: MarketIntelRequest = await req.json();
     const { query, category, subscription_tier } = body;
 
@@ -353,10 +341,6 @@ serve(async (req: Request) => {
       );
     }
 
-    // -----------------------------------------------------------------------
-    // 2. Enforce subscription tier restrictions
-    // -----------------------------------------------------------------------
-
     // Free tier can only access 'price' category
     if (subscription_tier === 'free' && category !== 'price') {
       return new Response(
@@ -368,14 +352,9 @@ serve(async (req: Request) => {
       );
     }
 
-    // -----------------------------------------------------------------------
-    // 3. Initialize Supabase client
-    // -----------------------------------------------------------------------
     const supabase = buildSupabaseClient();
 
-    // -----------------------------------------------------------------------
-    // 4. Rate limiting for free tier
-    // -----------------------------------------------------------------------
+    // Rate limiting for free tier
     let rateLimitHeaders: Record<string, string> = {};
 
     if (subscription_tier === 'free') {
@@ -407,9 +386,7 @@ serve(async (req: Request) => {
       }
     }
 
-    // -----------------------------------------------------------------------
-    // 5. Call Perplexity API (or fall back to cached data)
-    // -----------------------------------------------------------------------
+    // Call Perplexity API (or fall back to cached data)
     let content: string;
     let citations: string[] | undefined;
     let rawApiResponse: PerplexityResponse | undefined;
@@ -468,28 +445,19 @@ serve(async (req: Request) => {
         );
       }
 
-      // No cache available either -- propagate the error
       throw apiError;
     }
 
-    // -----------------------------------------------------------------------
-    // 6. Store response in database
-    // -----------------------------------------------------------------------
+    // Store response in database
     const { id: recordId } = await storeInDatabase(supabase, query, category, content, citations);
 
-    // Record free-tier usage for rate limiting
     if (subscription_tier === 'free') {
       await recordFreeTierUsage(supabase);
     }
 
-    // -----------------------------------------------------------------------
-    // 7. Optionally sync to Airtable
-    // -----------------------------------------------------------------------
+    // Optionally sync to Airtable
     const airtableSynced = await syncToAirtable(query, category, content, citations);
 
-    // -----------------------------------------------------------------------
-    // 8. Build and return response
-    // -----------------------------------------------------------------------
     const responseBody: Record<string, unknown> = {
       success: true,
       cached: fromCache,
@@ -502,7 +470,6 @@ serve(async (req: Request) => {
       timestamp: new Date().toISOString(),
     };
 
-    // Enterprise tier gets the raw API response for custom processing
     if (subscription_tier === 'enterprise' && rawApiResponse) {
       responseBody.raw_api_response = rawApiResponse;
     }
