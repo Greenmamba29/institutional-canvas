@@ -1,271 +1,165 @@
 
-# Plan: Epic 4 Backend RPCs + Permanent Offline Fix
+
+# Full Production Readiness Implementation Plan
 
 ## Overview
-
-This plan addresses:
-1. **Epic 4**: Implement missing backend RPC functions (`create_order`, `update_order_status`) 
-2. **Offline Fix**: Disable the PWA service worker fallback to eliminate false "You're Offline" messages
+The merge from the external branch did not propagate any changes into the Lovable environment. This plan re-implements all missing features directly in Lovable, fixes existing bugs, connects live data pipelines, and gates features by subscription tier.
 
 ---
 
-## Part 1: Permanent Offline Message Fix
+## Phase 1: Critical Bug Fixes (Immediate)
 
-### Root Cause Analysis
+### 1.1 Fix `useRealtimeSubscriptions` Rules-of-Hooks Violation
+- **File:** `src/hooks/useRealtimeSubscription.ts`
+- **Problem:** `useRealtimeSubscriptions` calls `useRealtimeSubscription` inside `.forEach()`, violating React's Rules of Hooks
+- **Fix:** Remove the `useRealtimeSubscriptions` function entirely (it's not imported anywhere) or replace with a single `useEffect` that manages multiple channels without calling hooks in a loop
 
-The "You're Offline" message appears because of the PWA service worker configuration in `vite.config.ts`:
-- `navigateFallback: '/offline.html'` tells the service worker to serve `/offline.html` when navigation requests fail
-- Even though `navigateFallbackDenylist` excludes known routes, there are edge cases:
-  1. During initial preview loads, the service worker may intercept before the app fully hydrates
-  2. Stale service workers cached from previous builds can serve old offline fallbacks
-  3. Network timing issues on slow connections trigger the 15-second timeout
+### 1.2 Fix Airtable Formula Injection
+- **File:** `src/services/airtable.service.ts`
+- **Problem:** User inputs are string-interpolated directly into Airtable filter formulas (`{Category} = '${options.category}'`)
+- **Fix:** Add an `escapeAirtableValue()` helper that escapes single quotes and special characters before interpolation
 
-### Solution
+### 1.3 Fix Landing Page Hero Image
+- **File:** `src/pages/Landing.tsx` (line 23)
+- **Problem:** `const lithiumHeroImg = '/logo.png';` ignores the actual crystal hero image
+- **Fix:** Use `new URL('@/assets/landing/lithium-crystal-hero.png', import.meta.url).href`
 
-Completely disable the `navigateFallback` behavior since this is a SPA (Single Page App) that handles its own routing. The React app will show appropriate error states for actual network failures.
-
-**Files to Modify:**
-
-| File | Change |
-|------|--------|
-| `vite.config.ts` | Remove `navigateFallback` and `navigateFallbackDenylist` |
-| `public/offline.html` | Keep as static backup but never served by SW |
-
-**Technical Details:**
-
-```typescript
-// vite.config.ts changes
-workbox: {
-  globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-  maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-  runtimeCaching: [
-    // Keep navigation cache but without fallback
-    {
-      urlPattern: ({ request }) => request.mode === 'navigate',
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'navigation-cache',
-        networkTimeoutSeconds: 10,
-        expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 },
-      },
-    },
-    // ... other caching strategies remain
-  ],
-  // REMOVED: navigateFallback: '/offline.html'
-  // REMOVED: navigateFallbackDenylist: [...]
-  skipWaiting: true,        // Force new service worker activation
-  clientsClaim: true,       // Take control of all pages immediately
-}
-```
-
-The `skipWaiting: true` and `clientsClaim: true` options ensure:
-- New service workers immediately replace old ones (clearing stale caches)
-- The new SW takes control of all tabs without requiring a page reload
+### 1.4 Remove "Phase 2: Real-time Bidding" TODO Stub
+- **File:** `src/pages/Auctions.tsx` (lines 126-135)
+- **Problem:** Customer-visible TODO stub saying "this isn't done yet"
+- **Fix:** Remove the entire dashed-border stub section
 
 ---
 
-## Part 2: Epic 4 - Backend RPC Implementations
+## Phase 2: Auction Detail Page (Core Feature)
 
-### 2.1 Create Order RPC
+### 2.1 Create `src/pages/AuctionDetail.tsx`
+A full auction bidding page with:
+- Live countdown timer (using `useEffect` + `setInterval`)
+- Bid form with amount input and reserve price indicator
+- Bid history table showing all bids (descending by amount)
+- Auction metadata (title, description, currency, reserve, start/end dates)
+- Anti-sniping notice for live auctions
+- Loading/error/empty states per Rule 8
+- Subscription gating: Free users see read-only view, Pro/Enterprise can bid
 
-The frontend calls `supabase.rpc('create_order', {...})` but no such function exists in the database.
+### 2.2 Update Routing in `src/App.tsx`
+- Change `/auctions/:id` route from `<Auctions />` to `<AuctionDetail />`
+- Add lazy loading for the new page
 
-**Database Migration:**
-
-```sql
--- create_order RPC with audit logging
-CREATE OR REPLACE FUNCTION public.create_order(
-  p_supplier_id UUID,
-  p_total_amount NUMERIC,
-  p_currency TEXT DEFAULT 'USD',
-  p_quote_id UUID DEFAULT NULL,
-  p_org_id UUID DEFAULT NULL
-)
-RETURNS public.orders
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_order orders;
-  v_user_id UUID;
-  v_actual_org_id UUID;
-BEGIN
-  -- Kill switch check
-  IF is_system_read_only() THEN
-    RAISE EXCEPTION 'System is in read-only mode';
-  END IF;
-  
-  -- Get authenticated user
-  v_user_id := auth.uid();
-  IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
-  
-  -- Resolve org_id (use provided or lookup user's org)
-  v_actual_org_id := COALESCE(p_org_id, (
-    SELECT org_id FROM org_members 
-    WHERE user_id = v_user_id 
-    LIMIT 1
-  ));
-  
-  -- Create order
-  INSERT INTO orders (
-    supplier_id, 
-    total_amount, 
-    currency, 
-    quote_id, 
-    org_id, 
-    user_id, 
-    status, 
-    payment_status
-  )
-  VALUES (
-    p_supplier_id, 
-    p_total_amount, 
-    p_currency, 
-    p_quote_id, 
-    v_actual_org_id, 
-    v_user_id, 
-    'pending', 
-    'unpaid'
-  )
-  RETURNING * INTO v_order;
-  
-  -- Log to domain_events for audit trail
-  INSERT INTO domain_events (event_type, payload, org_id, user_id)
-  VALUES (
-    'order.created', 
-    jsonb_build_object(
-      'order_id', v_order.id,
-      'supplier_id', p_supplier_id,
-      'amount', p_total_amount
-    ), 
-    v_actual_org_id,
-    v_user_id
-  );
-  
-  RETURN v_order;
-END;
-$$;
-```
-
-### 2.2 Update Order Status RPC
-
-```sql
--- update_order_status RPC with state machine validation
-CREATE OR REPLACE FUNCTION public.update_order_status(
-  p_order_id UUID,
-  p_status TEXT,
-  p_payment_status TEXT DEFAULT NULL
-)
-RETURNS public.orders
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_order orders;
-  v_user_id UUID;
-  v_old_status TEXT;
-BEGIN
-  -- Kill switch check
-  IF is_system_read_only() THEN
-    RAISE EXCEPTION 'System is in read-only mode';
-  END IF;
-  
-  v_user_id := auth.uid();
-  IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
-  
-  -- Get current order with RLS check
-  SELECT * INTO v_order FROM orders WHERE id = p_order_id;
-  IF v_order IS NULL THEN
-    RAISE EXCEPTION 'Order not found or access denied';
-  END IF;
-  
-  v_old_status := v_order.status;
-  
-  -- Validate status transition
-  IF NOT (
-    (v_old_status = 'pending' AND p_status IN ('confirmed', 'cancelled')) OR
-    (v_old_status = 'confirmed' AND p_status IN ('processing', 'cancelled')) OR
-    (v_old_status = 'processing' AND p_status IN ('shipped', 'cancelled')) OR
-    (v_old_status = 'shipped' AND p_status IN ('delivered', 'cancelled')) OR
-    (v_old_status = 'delivered' AND p_status = 'completed')
-  ) THEN
-    RAISE EXCEPTION 'Invalid status transition from % to %', v_old_status, p_status;
-  END IF;
-  
-  -- Update order
-  UPDATE orders SET
-    status = p_status,
-    payment_status = COALESCE(p_payment_status, payment_status),
-    updated_at = now()
-  WHERE id = p_order_id
-  RETURNING * INTO v_order;
-  
-  -- Log status change
-  INSERT INTO domain_events (event_type, payload, org_id, user_id)
-  VALUES (
-    'order.status_updated',
-    jsonb_build_object(
-      'order_id', p_order_id,
-      'old_status', v_old_status,
-      'new_status', p_status
-    ),
-    v_order.org_id,
-    v_user_id
-  );
-  
-  RETURN v_order;
-END;
-$$;
-```
-
-### 2.3 Update Frontend Service
-
-Update `src/services/orders.service.ts` to remove `@ts-expect-error` flags once RPCs exist.
-
-### 2.4 Update TypeScript Types
-
-The types will auto-generate after migration, but we also need to ensure the RPC signatures are reflected in the frontend types.
+### 2.3 Update Auction Cards to Link to Detail
+- **File:** `src/pages/Auctions.tsx`
+- Make scheduled/ended auction cards link to `/auctions/:id` (currently only live cards link)
 
 ---
 
-## Part 3: Bonus - Add `/chain-of-custody` to PWA Route Cache
+## Phase 3: Airtable CRUD Edge Function + Service
 
-Since Chain of Custody was added recently, add it to the navigation cache denylist for consistency (before we remove it entirely).
+### 3.1 Add `AIRTABLE_BASE_ID` Secret
+- The `airtable-proxy` edge function already reads this env var but it's not in the secrets list
 
----
+### 3.2 Create `supabase/functions/airtable-crud/index.ts`
+Full CRUD edge function supporting:
+- **GET:** Read records from any configured Airtable table
+- **POST:** Create records (syncs to Supabase)
+- **PATCH:** Update records
+- **DELETE:** Delete records
+- Subscription gating: Free = read-only, Pro = full CRUD, Enterprise = batch operations
+- Input sanitization for formula injection prevention
+- Tables: `Market_Intelligence`, `Auction_Companies`, `Auction_Contacts`, `FAQs`, `Products`
 
-## Files to Create/Modify
+### 3.3 Create `src/services/airtable-crud.service.ts`
+Client-side service wrapping the edge function with:
+- Type-safe CRUD methods per table
+- Subscription tier checks before write operations
+- React Query integration helpers
 
-| Action | File | Purpose |
-|--------|------|---------|
-| Modify | `vite.config.ts` | Remove `navigateFallback`, add `skipWaiting`/`clientsClaim` |
-| Create | Migration SQL | Add `create_order` and `update_order_status` RPCs |
-| Modify | `src/services/orders.service.ts` | Clean up `@ts-expect-error` flags |
-| Modify | `src/integrations/supabase/types.ts` | Will regenerate after migration |
-
----
-
-## Definition of Done
-
-- [ ] PWA no longer shows false "You're Offline" messages on initial load
-- [ ] `create_order` RPC exists and is callable from frontend
-- [ ] `update_order_status` RPC exists with proper state machine validation
-- [ ] ConfirmPurchaseFlow successfully creates orders
-- [ ] Orders appear in `/orders` page after creation
-- [ ] All domain events are logged for audit trail
+### 3.4 Update `supabase/config.toml`
+Add `[functions.airtable-crud]` with `verify_jwt = false`
 
 ---
 
-## Risk Mitigation
+## Phase 4: Perplexity Market Intelligence
 
-1. **Service Worker Cache Persistence**: Users with stale SWs may still see offline page until their cache expires. The `skipWaiting: true` forces immediate activation of new SW.
+### 4.1 Create `supabase/functions/perplexity-market-intel/index.ts`
+Edge function that:
+- Calls Perplexity API for live lithium market data
+- Supports query categories: `price`, `supply`, `demand`, `regulatory`, `technology`
+- Caches results in `market_news` Supabase table
+- Subscription gating: Free = 3 price queries/day, Pro = unlimited all categories, Enterprise = raw API response
+- Uses existing `PERPLEXITY_API_KEY` secret
 
-2. **Order RLS**: The RPCs use `SECURITY DEFINER` which bypasses RLS. The functions manually check auth and log events for audit compliance.
+### 4.2 Create `src/services/market-intel.service.ts`
+Service layer calling the edge function with category and query params
 
-3. **Status Transitions**: The state machine in `update_order_status` prevents invalid transitions (e.g., can't go from `delivered` back to `pending`).
+### 4.3 Create `src/hooks/useMarketIntel.ts`
+React Query hook with:
+- Automatic polling (configurable interval)
+- Category-based query keys
+- Stale time appropriate to tier
+
+### 4.4 Update `supabase/config.toml`
+Add `[functions.perplexity-market-intel]` with `verify_jwt = false`
+
+---
+
+## Phase 5: Verification Badge + Verification Page
+
+### 5.1 Add `lithiumbuy` Tier to VerificationBadge
+- **File:** `src/components/shared/VerificationBadge.tsx`
+- Add a `lithiumbuy` tier with `BadgeCheck` icon, branded blue color scheme, label "LITHIUMBUY STANDARD"
+
+### 5.2 Connect Verification Page to Database
+- **File:** `src/pages/Verification.tsx`
+- Replace `mockVerifications` array with React Query hook fetching from `verification_requests` table (or equivalent)
+- If the table doesn't exist, show a proper `EmptyState` component instead of mock data
+
+---
+
+## Phase 6: Integration Wiring and Route Verification
+
+### 6.1 Verify All 28+ Routes
+Confirm every route in `src/App.tsx` resolves to a real page component with proper:
+- Auth guards (ProtectedRoute)
+- Subscription gates (RoleProtectedRoute)
+- Loading/error states
+
+### 6.2 Connect Dashboard Market Components
+Ensure `LivePriceTicker`, `MarketNewsFeed`, `ArbitragePanel` in `src/components/market/` use the new Perplexity market intel hook for live data instead of fallback/empty states
+
+---
+
+## Technical Details
+
+### Files to Create (6)
+1. `src/pages/AuctionDetail.tsx` -- Auction bidding page
+2. `supabase/functions/airtable-crud/index.ts` -- CRUD edge function
+3. `supabase/functions/perplexity-market-intel/index.ts` -- Market intel edge function
+4. `src/services/airtable-crud.service.ts` -- Airtable CRUD client service
+5. `src/services/market-intel.service.ts` -- Perplexity market intel service
+6. `src/hooks/useMarketIntel.ts` -- Market intel React Query hook
+
+### Files to Modify (8)
+1. `src/hooks/useRealtimeSubscription.ts` -- Remove hooks-in-loop violation
+2. `src/services/airtable.service.ts` -- Fix formula injection
+3. `src/pages/Landing.tsx` -- Fix hero image
+4. `src/pages/Auctions.tsx` -- Remove TODO stub, link all cards to detail
+5. `src/App.tsx` -- Route `/auctions/:id` to AuctionDetail
+6. `src/components/shared/VerificationBadge.tsx` -- Add lithiumbuy tier
+7. `src/pages/Verification.tsx` -- Remove mock data, connect to DB
+8. `supabase/config.toml` -- Add new edge function configs
+
+### Secrets to Add (1)
+- `AIRTABLE_BASE_ID` -- Required by existing `airtable-proxy` and new `airtable-crud`
+
+### Dependencies
+- No new npm packages required
+- All features use existing shadcn/ui components, React Query, and Supabase client
+
+### Execution Order
+1. Bug fixes first (Phase 1) -- they're independent and quick
+2. AuctionDetail page (Phase 2) -- uses existing hooks/services
+3. Edge functions (Phases 3-4) -- can be done in parallel
+4. Badge + Verification (Phase 5) -- UI only
+5. Integration wiring (Phase 6) -- final verification pass
+
