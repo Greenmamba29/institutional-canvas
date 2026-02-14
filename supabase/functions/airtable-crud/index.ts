@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 const AIRTABLE_API_KEY = Deno.env.get('AIRTABLE_API_KEY');
@@ -41,6 +41,11 @@ const ALLOWED_TABLES = new Set([
   'Market_Intelligence',
   'Auction_Companies',
   'Auction_Contacts',
+  'Prompt_Executions',
+  'Decision_Log',
+  'Blockers',
+  'Analytics_Events',
+  'GMV_Metrics',
 ]);
 
 // Airtable table name -> Supabase table name (only for tables that should sync)
