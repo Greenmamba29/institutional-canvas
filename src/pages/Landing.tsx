@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 
 // Lazy load images for performance
-const lithiumHeroImg = '/logo.png'; // Fallback to logo for now
+const lithiumHeroImg = new URL('@/assets/landing/lithium-crystal-hero.png', import.meta.url).href;
 const telebuyImg = new URL('@/assets/landing/telebuy-interface.png', import.meta.url).href;
 const dataVizImg = new URL('@/assets/landing/data-visualization.png', import.meta.url).href;
 

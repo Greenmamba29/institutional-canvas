@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
-import { Shield, CheckCircle } from 'lucide-react';
+import { Shield, CheckCircle, BadgeCheck } from 'lucide-react';
 
-export type BadgeTier = 'gold' | 'silver' | 'bronze' | 'standard' | 'basic' | 'kyc';
+export type BadgeTier = 'gold' | 'silver' | 'bronze' | 'standard' | 'basic' | 'kyc' | 'lithiumbuy';
 
 interface VerificationBadgeProps {
   tier: BadgeTier;
@@ -52,6 +52,13 @@ export function VerificationBadge({ tier, showIcon = true, className }: Verifica
       text: 'text-primary',
       border: 'border-primary/30',
       icon: Shield,
+    },
+    lithiumbuy: {
+      label: 'LB STANDARD',
+      bg: 'bg-[#1E40AF]/20',
+      text: 'text-[#3B82F6]',
+      border: 'border-[#3B82F6]/40',
+      icon: BadgeCheck,
     },
   };
 

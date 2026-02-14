@@ -40,22 +40,16 @@ export const auctionBidSkill: Skill<AuctionBidInput, AuctionBidOutput> = {
       
       const validInput = parseResult.data;
       
-      // Insert bid via direct insert (RLS handles authorization)
+      // Place bid via RPC (handles authorization and race conditions server-side)
       const insertStart = performance.now();
-      const { data: bidData, error: bidError } = await supabase
-        .from('auction_bids')
-        .insert({
-          auction_id: validInput.auctionId,
-          amount: validInput.amount,
-          currency: validInput.currency,
-          org_id: context.orgId,
-          created_by: context.userId,
-        })
-        .select()
-        .single();
-      
+      const { data: bidData, error: bidError } = await supabase.rpc('place_auction_bid', {
+        p_auction_id: validInput.auctionId,
+        p_amount: validInput.amount,
+        p_currency: validInput.currency,
+      });
+
       toolCalls.push({
-        tool: 'supabase.insert.auction_bids',
+        tool: 'supabase.rpc.place_auction_bid',
         success: !bidError,
         duration_ms: Math.round(performance.now() - insertStart),
         error: bidError?.message,

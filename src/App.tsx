@@ -18,6 +18,7 @@ import Marketplace from "./pages/Marketplace";
 import RFQs from "./pages/RFQs";
 import Bids from "./pages/Bids";
 import Auctions from "./pages/Auctions";
+import AuctionDetail from "./pages/AuctionDetail";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Verification from "./pages/Verification";
@@ -74,7 +75,7 @@ const AppContent = () => {
           <Route path="/rfqs/:id" element={<RFQs />} />
           <Route path="/bids" element={<Bids />} />
           <Route path="/auctions" element={<Auctions />} />
-          <Route path="/auctions/:id" element={<Auctions />} />
+          <Route path="/auctions/:id" element={<AuctionDetail />} />
           <Route path="/deals" element={<Deals />} />
           <Route path="/deals/:id" element={<Deals />} />
           <Route path="/orders" element={<Orders />} />

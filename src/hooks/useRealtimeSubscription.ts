@@ -77,20 +77,3 @@ export function useRealtimeSubscription({
   }, [table, event, filter, queryKey, enabled, queryClient]);
 }
 
-/**
- * Subscribe to multiple tables at once
- * 
- * @example
- * useRealtimeSubscriptions([
- *   { table: 'rfqs', queryKey: rfqKeys.all },
- *   { table: 'bids', queryKey: bidKeys.all },
- * ]);
- */
-export function useRealtimeSubscriptions(
-  subscriptions: Omit<RealtimeSubscriptionOptions, 'enabled'>[]
-) {
-  subscriptions.forEach((sub) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useRealtimeSubscription({ ...sub, enabled: true });
-  });
-}
