@@ -1,0 +1,36 @@
+name: Sync branches
+
+on:
+  push:
+    branches:
+      - 'claude/production-auction-readiness-LojnI'
+
+jobs:
+  merge-to-main:
+    name: Merge into main
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge into main
+        run: |
+          git checkout main
+          git merge origin/claude/production-auction-readiness-LojnI --no-edit -m "Merge claude/production-auction-readiness-LojnI into main (auto-sync)"
+          git push origin main
+
+      - name: Merge into lovable-dev
+        run: |
+          git checkout lovable-dev
+          git merge origin/claude/production-auction-readiness-LojnI --no-edit -m "Merge claude/production-auction-readiness-LojnI into lovable-dev (auto-sync)"
+          git push origin lovable-dev
