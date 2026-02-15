@@ -43,7 +43,7 @@ export async function createTelebuySession(params: CreateTelebuySessionParams) {
  * Update session status via RPC
  */
 export async function updateSessionStatus(sessionId: string, status: string) {
-  return callRpc<TelebuySession>('update_session_status', {
+  return callRpc<TelebuySession>('update_telebuy_session_status', {
     p_session_id: sessionId,
     p_status: status,
   });
