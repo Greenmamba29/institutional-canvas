@@ -25,7 +25,7 @@ export function useAuctions() {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!currentOrgId,
+    enabled: true,
   });
 }
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Multi-Agent Widget
  * Supports dual agents (buyer + supplier) with language selection

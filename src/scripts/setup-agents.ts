@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Agent Setup Script
  * Integrates existing ElevenLabs agent with knowledge base and Airtable

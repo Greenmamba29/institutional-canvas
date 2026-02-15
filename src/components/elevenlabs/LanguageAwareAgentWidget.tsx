@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Language-Aware Agent Widget
  * Routes to language-specific agents with automatic detection

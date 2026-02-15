@@ -108,7 +108,7 @@ export default function Messages() {
       <div className="space-y-6 animate-fade-in">
         <BreadcrumbNav items={breadcrumbs} />
         
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-1">
           <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
           <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
             <MessageSquare className="h-4 w-4 mr-2" />

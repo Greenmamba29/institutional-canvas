@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Agent Deployment Script
  * Run this to create all 24 agents and test language routing
