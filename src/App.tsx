@@ -34,6 +34,7 @@ import Onboarding from "./pages/Onboarding";
 import Purchases from "./pages/Purchases";
 import Team from "./pages/Team";
 import Landing from "./pages/Landing";
+import Recycling from "./pages/Recycling";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,6 +75,7 @@ const AppContent = () => {
           <Route path="/deals/:id" element={<Deals />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/purchases" element={<Purchases />} />
+          <Route path="/recycling" element={<Recycling />} />
           <Route path="/telebuy" element={<TeleBuy />} />
           <Route path="/telebuy/session/:id" element={<TeleBuy />} />
           
