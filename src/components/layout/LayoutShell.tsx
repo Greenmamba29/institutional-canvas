@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/context/RoleContext";
+import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { GMVSummaryPanel } from "./GMVSummaryPanel";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -22,6 +23,7 @@ import {
   Settings,
   Sparkles,
   ShieldCheck,
+  ShieldAlert,
   Users,
   Package,
   MessageSquare,
@@ -81,10 +83,16 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { uiLayoutPreference } = useRole();
+  const { isSuperAdmin } = useIsSuperAdmin();
 
   const isActive = (path: string) => location.pathname.startsWith(path);
   // UI layout determines which navigation to show - this is cosmetic, not authorization
-  const navItems = uiLayoutPreference === 'supplier' ? supplierNavItems : adminNavItems;
+  const baseNavItems = uiLayoutPreference === 'supplier' ? supplierNavItems : adminNavItems;
+  
+  // Conditionally add Admin nav item for super admins
+  const navItems = isSuperAdmin
+    ? [...baseNavItems, { label: 'Admin', path: '/admin', icon: ShieldAlert }]
+    : baseNavItems;
 
   return (
     <div className="min-h-screen bg-background flex w-full">
