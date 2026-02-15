@@ -20,8 +20,10 @@ export * from './suppliers.service';
 export * from './orders.service';
 export * from './organizations.service';
 export * from './elevenlabs.service';
-export * from './elevenlabs-multi-agent.service';
-export * from './knowledge-base.service';
-export * from './airtable.service';
-export * from './language-detection.service';
+// Re-export multi-agent without conflicting names
+export { getAgentConfig, createAgentSession, startAgentSession, endAgentSession, logAgentMessage, getConversationHistory, isMultiAgentConfigured } from './elevenlabs-multi-agent.service';
+export type { AgentRole, AgentLanguage, AgentSession, AgentMessage, AgentSessionStatus } from './elevenlabs-multi-agent.service';
+export { searchKnowledgeBase, getKnowledgeByCategory, addKnowledgeEntry, seedKnowledgeBase } from './knowledge-base.service';
+export { getAgentKnowledge } from './airtable.service';
+export { detectUserLanguage, getSupportedLanguages, getLanguageName, storeLanguagePreference } from './language-detection.service';
 export * from './daily.service';

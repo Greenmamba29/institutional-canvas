@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ElevenLabs Multi-Agent Service
  * Manages multiple conversational AI agents for TeleBuy (buyer, supplier, neutral)

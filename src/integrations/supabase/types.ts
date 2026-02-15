@@ -197,6 +197,57 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_feature_flags: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          feature_key: string
+          id: string
+          name: string
+          org_id: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          feature_key: string
+          id?: string
+          name: string
+          org_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          feature_key?: string
+          id?: string
+          name?: string
+          org_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_feature_flags_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_feature_flags_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_processing_queue: {
         Row: {
           created_at: string | null
@@ -271,6 +322,114 @@ export type Database = {
           task_type?: string
           tokens_used?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      ai_run_ledger: {
+        Row: {
+          actor_id: string | null
+          completed_at: string | null
+          error_message: string | null
+          feature_key: string
+          id: string
+          input_hash: string | null
+          metadata: Json | null
+          org_id: string | null
+          output_stored_at: string | null
+          run_id: string
+          started_at: string | null
+          status: string
+          trigger_source: string
+        }
+        Insert: {
+          actor_id?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          feature_key: string
+          id?: string
+          input_hash?: string | null
+          metadata?: Json | null
+          org_id?: string | null
+          output_stored_at?: string | null
+          run_id: string
+          started_at?: string | null
+          status?: string
+          trigger_source: string
+        }
+        Update: {
+          actor_id?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          feature_key?: string
+          id?: string
+          input_hash?: string | null
+          metadata?: Json | null
+          org_id?: string | null
+          output_stored_at?: string | null
+          run_id?: string
+          started_at?: string | null
+          status?: string
+          trigger_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_run_ledger_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_run_ledger_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arbitrage_opportunities: {
+        Row: {
+          buy_price: number
+          buy_region: string
+          confidence_score: number | null
+          detected_at: string | null
+          expires_at: string | null
+          id: string
+          product_type: string
+          profit_margin_percent: number
+          purity: string | null
+          sell_price: number
+          sell_region: string
+          status: string | null
+        }
+        Insert: {
+          buy_price: number
+          buy_region: string
+          confidence_score?: number | null
+          detected_at?: string | null
+          expires_at?: string | null
+          id?: string
+          product_type: string
+          profit_margin_percent: number
+          purity?: string | null
+          sell_price: number
+          sell_region: string
+          status?: string | null
+        }
+        Update: {
+          buy_price?: number
+          buy_region?: string
+          confidence_score?: number | null
+          detected_at?: string | null
+          expires_at?: string | null
+          id?: string
+          product_type?: string
+          profit_margin_percent?: number
+          purity?: string | null
+          sell_price?: number
+          sell_region?: string
+          status?: string | null
         }
         Relationships: []
       }
@@ -474,6 +633,75 @@ export type Database = {
           },
         ]
       }
+      bounties: {
+        Row: {
+          claimed_at: string | null
+          claimed_by: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          h3_zone: string | null
+          id: string
+          metadata: Json | null
+          required_reputation: number | null
+          required_stake: number | null
+          reward_amount: number
+          status: string | null
+          title: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_by?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          h3_zone?: string | null
+          id?: string
+          metadata?: Json | null
+          required_reputation?: number | null
+          required_stake?: number | null
+          reward_amount: number
+          status?: string | null
+          title: string
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_by?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          h3_zone?: string | null
+          id?: string
+          metadata?: Json | null
+          required_reputation?: number | null
+          required_stake?: number | null
+          reward_amount?: number
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      capabilities: {
+        Row: {
+          created_at: string
+          description: string
+          key: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          key: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          key?: string
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           certificate_url: string | null
@@ -591,6 +819,42 @@ export type Database = {
           },
         ]
       }
+      compliance_checks: {
+        Row: {
+          check_date: string | null
+          check_id: string
+          check_type: string | null
+          created_at: string | null
+          documents: string[] | null
+          findings: string | null
+          resolved: boolean | null
+          status: string | null
+          supplier_id: string | null
+        }
+        Insert: {
+          check_date?: string | null
+          check_id?: string
+          check_type?: string | null
+          created_at?: string | null
+          documents?: string[] | null
+          findings?: string | null
+          resolved?: boolean | null
+          status?: string | null
+          supplier_id?: string | null
+        }
+        Update: {
+          check_date?: string | null
+          check_id?: string
+          check_type?: string | null
+          created_at?: string | null
+          documents?: string[] | null
+          findings?: string | null
+          resolved?: boolean | null
+          status?: string | null
+          supplier_id?: string | null
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           conversation: Json | null
@@ -649,8 +913,125 @@ export type Database = {
           },
         ]
       }
+      customer_handoffs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          customer_id: string | null
+          github_repo_url: string | null
+          handoff_status: string | null
+          id: string
+          scc_scan_results: Json | null
+          scc_scan_status: string | null
+          secret_manager_path: string | null
+          template_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          github_repo_url?: string | null
+          handoff_status?: string | null
+          id?: string
+          scc_scan_results?: Json | null
+          scc_scan_status?: string | null
+          secret_manager_path?: string | null
+          template_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          github_repo_url?: string | null
+          handoff_status?: string | null
+          id?: string
+          scc_scan_results?: Json | null
+          scc_scan_status?: string | null
+          secret_manager_path?: string | null
+          template_id?: string | null
+        }
+        Relationships: []
+      }
+      deal_signatures: {
+        Row: {
+          created_at: string
+          deal_id: string | null
+          document_hash: string | null
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          purchase_id: string | null
+          signature_data: string | null
+          signature_type: string | null
+          signed_at: string
+          signer_org_id: string
+          signer_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          deal_id?: string | null
+          document_hash?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          purchase_id?: string | null
+          signature_data?: string | null
+          signature_type?: string | null
+          signed_at?: string
+          signer_org_id: string
+          signer_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string | null
+          document_hash?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          purchase_id?: string | null
+          signature_data?: string | null
+          signature_type?: string | null
+          signed_at?: string
+          signer_org_id?: string
+          signer_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_signatures_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_signatures_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_signatures_signer_org_id_fkey"
+            columns: ["signer_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_signatures_signer_org_id_fkey"
+            columns: ["signer_org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
+          airtable_id: string | null
           buyer_user_id: string
           created_at: string
           id: string
@@ -665,6 +1046,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          airtable_id?: string | null
           buyer_user_id: string
           created_at?: string
           id?: string
@@ -679,6 +1061,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          airtable_id?: string | null
           buyer_user_id?: string
           created_at?: string
           id?: string
@@ -713,6 +1096,162 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "suppliers_public"
             referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      direct_messages: {
+        Row: {
+          attachments: Json | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          read_at: string | null
+          sender_org_id: string
+          sender_user_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_org_id: string
+          sender_user_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_org_id?: string
+          sender_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "dm_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_sender_org_id_fkey"
+            columns: ["sender_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_sender_org_id_fkey"
+            columns: ["sender_org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dm_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string | null
+          org_a_id: string
+          org_b_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          org_a_id: string
+          org_b_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          org_a_id?: string
+          org_b_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_conversations_org_a_id_fkey"
+            columns: ["org_a_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_conversations_org_a_id_fkey"
+            columns: ["org_a_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_conversations_org_b_id_fkey"
+            columns: ["org_b_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_conversations_org_b_id_fkey"
+            columns: ["org_b_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      domain_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          event_type: string
+          id: string
+          org_id: string | null
+          payload: Json
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          event_type: string
+          id?: string
+          org_id?: string | null
+          payload?: Json
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          event_type?: string
+          id?: string
+          org_id?: string | null
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domain_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domain_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -825,6 +1364,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      feature_flags: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          enabled: boolean
+          id: string
+          key: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       file_activities: {
         Row: {
@@ -1181,6 +1747,66 @@ export type Database = {
         }
         Relationships: []
       }
+      kyb_verification_queue: {
+        Row: {
+          documents: Json | null
+          id: string
+          notes: string | null
+          org_id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          risk_score: number | null
+          status: string
+          submitted_at: string | null
+          verification_data: Json | null
+          verification_tier: string
+        }
+        Insert: {
+          documents?: Json | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          risk_score?: number | null
+          status?: string
+          submitted_at?: string | null
+          verification_data?: Json | null
+          verification_tier: string
+        }
+        Update: {
+          documents?: Json | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          risk_score?: number | null
+          status?: string
+          submitted_at?: string | null
+          verification_data?: Json | null
+          verification_tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyb_verification_queue_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kyb_verification_queue_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           address: string | null
@@ -1213,6 +1839,219 @@ export type Database = {
           supplier_id?: string
         }
         Relationships: []
+      }
+      market_briefings: {
+        Row: {
+          briefing_date: string
+          executive_summary: string | null
+          generated_at: string | null
+          id: string
+          key_highlights: Json | null
+          opportunities: Json | null
+          price_outlook: string | null
+          risk_factors: Json | null
+        }
+        Insert: {
+          briefing_date: string
+          executive_summary?: string | null
+          generated_at?: string | null
+          id?: string
+          key_highlights?: Json | null
+          opportunities?: Json | null
+          price_outlook?: string | null
+          risk_factors?: Json | null
+        }
+        Update: {
+          briefing_date?: string
+          executive_summary?: string | null
+          generated_at?: string | null
+          id?: string
+          key_highlights?: Json | null
+          opportunities?: Json | null
+          price_outlook?: string | null
+          risk_factors?: Json | null
+        }
+        Relationships: []
+      }
+      market_kpis: {
+        Row: {
+          change_percent: number | null
+          id: string
+          metric_name: string
+          metric_value: number
+          previous_value: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          change_percent?: number | null
+          id?: string
+          metric_name: string
+          metric_value: number
+          previous_value?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          change_percent?: number | null
+          id?: string
+          metric_name?: string
+          metric_value?: number
+          previous_value?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      market_news: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          published_at: string | null
+          sentiment: string | null
+          sentiment_score: number | null
+          source: string | null
+          summary: string | null
+          title: string
+          url: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          published_at?: string | null
+          sentiment?: string | null
+          sentiment_score?: number | null
+          source?: string | null
+          summary?: string | null
+          title: string
+          url?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          published_at?: string | null
+          sentiment?: string | null
+          sentiment_score?: number | null
+          source?: string | null
+          summary?: string | null
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      market_prices: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          market_trend: string | null
+          price_change_24h: number | null
+          price_usd: number
+          product_type: string
+          purity: string | null
+          region: string
+          source: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          market_trend?: string | null
+          price_change_24h?: number | null
+          price_usd: number
+          product_type: string
+          purity?: string | null
+          region: string
+          source?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          market_trend?: string | null
+          price_change_24h?: number | null
+          price_usd?: number
+          product_type?: string
+          purity?: string | null
+          region?: string
+          source?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      mcp_runs: {
+        Row: {
+          agent_name: string
+          completed_at: string | null
+          cost_estimate: number | null
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          input_payload: Json | null
+          metadata: Json | null
+          org_id: string | null
+          output_payload: Json | null
+          run_id: string
+          status: string
+          tokens_used: number | null
+          tool_name: string
+          user_id: string | null
+        }
+        Insert: {
+          agent_name: string
+          completed_at?: string | null
+          cost_estimate?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input_payload?: Json | null
+          metadata?: Json | null
+          org_id?: string | null
+          output_payload?: Json | null
+          run_id: string
+          status?: string
+          tokens_used?: number | null
+          tool_name: string
+          user_id?: string | null
+        }
+        Update: {
+          agent_name?: string
+          completed_at?: string | null
+          cost_estimate?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input_payload?: Json | null
+          metadata?: Json | null
+          org_id?: string | null
+          output_payload?: Json | null
+          run_id?: string
+          status?: string
+          tokens_used?: number | null
+          tool_name?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -1305,6 +2144,33 @@ export type Database = {
           title?: string
           type?: Database["public"]["Enums"]["notification_type"]
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      onboarding_profiles: {
+        Row: {
+          completed_at: string
+          created_at: string
+          declared_intent: Json
+          locked: boolean
+          profile: Database["public"]["Enums"]["onboarding_profile_type"]
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          declared_intent?: Json
+          locked?: boolean
+          profile: Database["public"]["Enums"]["onboarding_profile_type"]
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          declared_intent?: Json
+          locked?: boolean
+          profile?: Database["public"]["Enums"]["onboarding_profile_type"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -1414,34 +2280,91 @@ export type Database = {
           },
         ]
       }
+      organization_members: {
+        Row: {
+          created_at: string | null
+          id: string
+          organization_id: string
+          role: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          organization_id: string
+          role: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          organization_id?: string
+          role?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
+          airtable_id: string | null
           created_at: string
           email: string | null
+          government_id: string | null
           id: string
+          jurisdiction: string | null
           name: string
           org_type: string
+          parent_ministry: string | null
           phone: string | null
+          soe_category: string | null
           status: string
           updated_at: string | null
         }
         Insert: {
+          airtable_id?: string | null
           created_at?: string
           email?: string | null
+          government_id?: string | null
           id?: string
+          jurisdiction?: string | null
           name: string
           org_type: string
+          parent_ministry?: string | null
           phone?: string | null
+          soe_category?: string | null
           status?: string
           updated_at?: string | null
         }
         Update: {
+          airtable_id?: string | null
           created_at?: string
           email?: string | null
+          government_id?: string | null
           id?: string
+          jurisdiction?: string | null
           name?: string
           org_type?: string
+          parent_ministry?: string | null
           phone?: string | null
+          soe_category?: string | null
           status?: string
           updated_at?: string | null
         }
@@ -1657,6 +2580,29 @@ export type Database = {
           },
         ]
       }
+      profile_capabilities: {
+        Row: {
+          capability_key: string
+          profile: Database["public"]["Enums"]["onboarding_profile_type"]
+        }
+        Insert: {
+          capability_key: string
+          profile: Database["public"]["Enums"]["onboarding_profile_type"]
+        }
+        Update: {
+          capability_key?: string
+          profile?: Database["public"]["Enums"]["onboarding_profile_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_capabilities_capability_key_fkey"
+            columns: ["capability_key"]
+            isOneToOne: false
+            referencedRelation: "capabilities"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1671,6 +2617,7 @@ export type Database = {
           preferences: Json | null
           purchase: string | null
           seats: number | null
+          stripe_customer_id: string | null
           tier: string | null
           updated_at: string | null
           username: string | null
@@ -1688,6 +2635,7 @@ export type Database = {
           preferences?: Json | null
           purchase?: string | null
           seats?: number | null
+          stripe_customer_id?: string | null
           tier?: string | null
           updated_at?: string | null
           username?: string | null
@@ -1705,6 +2653,7 @@ export type Database = {
           preferences?: Json | null
           purchase?: string | null
           seats?: number | null
+          stripe_customer_id?: string | null
           tier?: string | null
           updated_at?: string | null
           username?: string | null
@@ -1929,6 +2878,48 @@ export type Database = {
           },
         ]
       }
+      release_gates: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          description: string | null
+          gate_id: string
+          gate_type: string
+          id: string
+          name: string
+          notion_page_id: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          gate_id: string
+          gate_type: string
+          id?: string
+          name: string
+          notion_page_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          gate_id?: string
+          gate_type?: string
+          id?: string
+          name?: string
+          notion_page_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           author: string
@@ -1971,8 +2962,85 @@ export type Database = {
         }
         Relationships: []
       }
+      rfq_documents: {
+        Row: {
+          ai_extracted_data: Json | null
+          ai_processed_at: string | null
+          ai_summary: string | null
+          created_at: string
+          document_type: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          org_id: string
+          processing_status: string | null
+          rfq_id: string | null
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          ai_extracted_data?: Json | null
+          ai_processed_at?: string | null
+          ai_summary?: string | null
+          created_at?: string
+          document_type?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          org_id: string
+          processing_status?: string | null
+          rfq_id?: string | null
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          ai_extracted_data?: Json | null
+          ai_processed_at?: string | null
+          ai_summary?: string | null
+          created_at?: string
+          document_type?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          org_id?: string
+          processing_status?: string | null
+          rfq_id?: string | null
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_documents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_documents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_documents_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfqs: {
         Row: {
+          airtable_id: string | null
           created_at: string
           created_by: string
           delivery_location: string | null
@@ -1988,6 +3056,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          airtable_id?: string | null
           created_at?: string
           created_by: string
           delivery_location?: string | null
@@ -2003,6 +3072,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          airtable_id?: string | null
           created_at?: string
           created_by?: string
           delivery_location?: string | null
@@ -2028,6 +3098,171 @@ export type Database = {
           {
             foreignKeyName: "rfqs_organization_id_fkey"
             columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      risk_flags: {
+        Row: {
+          description: string
+          entity_id: string
+          entity_type: string
+          flag_type: string
+          flagged_at: string | null
+          flagged_by: string | null
+          id: string
+          metadata: Json | null
+          org_id: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+        }
+        Insert: {
+          description: string
+          entity_id: string
+          entity_type: string
+          flag_type: string
+          flagged_at?: string | null
+          flagged_by?: string | null
+          id?: string
+          metadata?: Json | null
+          org_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          status?: string
+        }
+        Update: {
+          description?: string
+          entity_id?: string
+          entity_type?: string
+          flag_type?: string
+          flagged_at?: string | null
+          flagged_by?: string | null
+          id?: string
+          metadata?: Json | null
+          org_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_flags_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_flags_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      secret_access_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown
+          layer: string | null
+          secret_id: string
+          success: boolean | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          layer?: string | null
+          secret_id: string
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          layer?: string | null
+          secret_id?: string
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      skill_invocations: {
+        Row: {
+          context_snapshot: Json | null
+          created_at: string | null
+          duration_ms: number | null
+          error_code: string | null
+          error_message: string | null
+          input_hash: string | null
+          invocation_id: string
+          org_id: string | null
+          skill_name: string
+          skill_version: string
+          success: boolean
+          tool_calls: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          context_snapshot?: Json | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          input_hash?: string | null
+          invocation_id?: string
+          org_id?: string | null
+          skill_name: string
+          skill_version?: string
+          success: boolean
+          tool_calls?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          context_snapshot?: Json | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          input_hash?: string | null
+          invocation_id?: string
+          org_id?: string | null
+          skill_name?: string
+          skill_version?: string
+          success?: boolean
+          tool_calls?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_invocations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_invocations_org_id_fkey"
+            columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "supplier_directory"
             referencedColumns: ["id"]
@@ -2080,6 +3315,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      soe_organizations: {
+        Row: {
+          category: string | null
+          country: string | null
+          created_at: string | null
+          enhanced_supplier_access: boolean | null
+          government_entity: string | null
+          government_id_documents: string[] | null
+          jurisdiction: string | null
+          name: string
+          soe_id: string
+          updated_at: string | null
+          verification_status: string | null
+        }
+        Insert: {
+          category?: string | null
+          country?: string | null
+          created_at?: string | null
+          enhanced_supplier_access?: boolean | null
+          government_entity?: string | null
+          government_id_documents?: string[] | null
+          jurisdiction?: string | null
+          name: string
+          soe_id?: string
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Update: {
+          category?: string | null
+          country?: string | null
+          created_at?: string | null
+          enhanced_supplier_access?: boolean | null
+          government_entity?: string | null
+          government_id_documents?: string[] | null
+          jurisdiction?: string | null
+          name?: string
+          soe_id?: string
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Relationships: []
       }
       subscriptions: {
         Row: {
@@ -2160,6 +3437,27 @@ export type Database = {
           },
         ]
       }
+      super_admins: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       supplier_profiles: {
         Row: {
           contact_email: string | null
@@ -2198,6 +3496,7 @@ export type Database = {
       }
       suppliers: {
         Row: {
+          airtable_id: string | null
           capabilities: Json | null
           claim_status: string | null
           claim_token_hash: string | null
@@ -2209,6 +3508,7 @@ export type Database = {
           verification_tier: string | null
         }
         Insert: {
+          airtable_id?: string | null
           capabilities?: Json | null
           claim_status?: string | null
           claim_token_hash?: string | null
@@ -2220,6 +3520,7 @@ export type Database = {
           verification_tier?: string | null
         }
         Update: {
+          airtable_id?: string | null
           capabilities?: Json | null
           claim_status?: string | null
           claim_token_hash?: string | null
@@ -2312,6 +3613,7 @@ export type Database = {
         Row: {
           created_at: string | null
           ended_at: string | null
+          google_meet_link: string | null
           id: string
           meeting_id: string | null
           meeting_url: string
@@ -2325,10 +3627,12 @@ export type Database = {
           transcript: string | null
           updated_at: string | null
           user_id: string | null
+          video_provider: string
         }
         Insert: {
           created_at?: string | null
           ended_at?: string | null
+          google_meet_link?: string | null
           id?: string
           meeting_id?: string | null
           meeting_url: string
@@ -2342,10 +3646,12 @@ export type Database = {
           transcript?: string | null
           updated_at?: string | null
           user_id?: string | null
+          video_provider?: string
         }
         Update: {
           created_at?: string | null
           ended_at?: string | null
+          google_meet_link?: string | null
           id?: string
           meeting_id?: string | null
           meeting_url?: string
@@ -2359,6 +3665,7 @@ export type Database = {
           transcript?: string | null
           updated_at?: string | null
           user_id?: string | null
+          video_provider?: string
         }
         Relationships: [
           {
@@ -2370,6 +3677,69 @@ export type Database = {
           },
           {
             foreignKeyName: "telebuy_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telebuy_transcripts: {
+        Row: {
+          ai_action_items: Json | null
+          ai_key_points: Json | null
+          ai_summary: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          language: string | null
+          org_id: string
+          processing_status: string | null
+          session_id: string
+          speaker_segments: Json | null
+          transcript_text: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_action_items?: Json | null
+          ai_key_points?: Json | null
+          ai_summary?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          language?: string | null
+          org_id: string
+          processing_status?: string | null
+          session_id: string
+          speaker_segments?: Json | null
+          transcript_text?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_action_items?: Json | null
+          ai_key_points?: Json | null
+          ai_summary?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          language?: string | null
+          org_id?: string
+          processing_status?: string | null
+          session_id?: string
+          speaker_segments?: Json | null
+          transcript_text?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telebuy_transcripts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telebuy_transcripts_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "supplier_directory"
@@ -2445,6 +3815,104 @@ export type Database = {
         }
         Relationships: []
       }
+      user_authz_cache: {
+        Row: {
+          approved_zone: string | null
+          created_at: string | null
+          id: string
+          last_verified_at: string | null
+          reputation_score: number | null
+          role: string
+          subscription_status: string | null
+          tier: number | null
+          updated_at: string | null
+          user_id: string | null
+          verified_endpoint: boolean | null
+        }
+        Insert: {
+          approved_zone?: string | null
+          created_at?: string | null
+          id?: string
+          last_verified_at?: string | null
+          reputation_score?: number | null
+          role: string
+          subscription_status?: string | null
+          tier?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          verified_endpoint?: boolean | null
+        }
+        Update: {
+          approved_zone?: string | null
+          created_at?: string | null
+          id?: string
+          last_verified_at?: string | null
+          reputation_score?: number | null
+          role?: string
+          subscription_status?: string | null
+          tier?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          verified_endpoint?: boolean | null
+        }
+        Relationships: []
+      }
+      user_follows: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          follower_org_id: string
+          following_org_id: string
+          id: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          follower_org_id: string
+          following_org_id: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          follower_org_id?: string
+          following_org_id?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_follows_follower_org_id_fkey"
+            columns: ["follower_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_follows_follower_org_id_fkey"
+            columns: ["follower_org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_follows_following_org_id_fkey"
+            columns: ["following_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_follows_following_org_id_fkey"
+            columns: ["following_org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           company_name: string | null
@@ -2475,6 +3943,57 @@ export type Database = {
           role?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_id: string
+          event_type: string
+          payload: Json | null
+          status: string | null
+          trigger_date: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_id?: string
+          event_type: string
+          payload?: Json | null
+          status?: string | null
+          trigger_date?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_id?: string
+          event_type?: string
+          payload?: Json | null
+          status?: string | null
+          trigger_date?: string | null
         }
         Relationships: []
       }
@@ -2608,17 +4127,127 @@ export type Database = {
       }
     }
     Functions: {
+      add_deal_signature: {
+        Args: {
+          p_deal_id?: string
+          p_document_hash?: string
+          p_metadata?: Json
+          p_purchase_id?: string
+          p_signature_data?: string
+          p_signature_type?: string
+        }
+        Returns: {
+          created_at: string
+          deal_id: string | null
+          document_hash: string | null
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          purchase_id: string | null
+          signature_data: string | null
+          signature_type: string | null
+          signed_at: string
+          signer_org_id: string
+          signer_user_id: string
+          user_agent: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deal_signatures"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      add_session_transcript: {
+        Args: {
+          p_ai_summary?: string
+          p_session_id: string
+          p_transcript: string
+        }
+        Returns: {
+          created_at: string | null
+          ended_at: string | null
+          google_meet_link: string | null
+          id: string
+          meeting_id: string | null
+          meeting_url: string
+          notes: string | null
+          org_id: string | null
+          recording_url: string | null
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          supplier_id: string
+          transcript: string | null
+          updated_at: string | null
+          user_id: string | null
+          video_provider: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "telebuy_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       can_process: {
         Args: { p_requested?: number; p_user: string }
         Returns: Json
+      }
+      check_ai_feature_flag: {
+        Args: { p_feature_key: string; p_org_id?: string }
+        Returns: {
+          feature_status: string
+          is_enabled: boolean
+          is_shadow: boolean
+        }[]
+      }
+      check_ai_financial_isolation: {
+        Args: { p_action: string; p_trigger_source: string }
+        Returns: boolean
+      }
+      check_feature_flag: { Args: { p_key: string }; Returns: boolean }
+      check_mutual_follow: {
+        Args: { p_org_a: string; p_org_b: string }
+        Returns: boolean
+      }
+      check_release_gate: {
+        Args: { p_gate_id: string }
+        Returns: {
+          gate_status: string
+          is_open: boolean
+          requires_review: boolean
+        }[]
       }
       check_usage_limit: {
         Args: { p_tier?: string; p_user_id: string }
         Returns: Json
       }
+      complete_ai_run: {
+        Args: {
+          p_error_message?: string
+          p_output_location?: string
+          p_run_id: string
+          p_success?: boolean
+        }
+        Returns: undefined
+      }
+      complete_mcp_run: {
+        Args: {
+          p_cost_estimate?: number
+          p_duration_ms?: number
+          p_error_message?: string
+          p_id: string
+          p_output_payload?: Json
+          p_status: string
+          p_tokens_used?: number
+        }
+        Returns: boolean
+      }
       create_deal: {
         Args: { p_rfq_id: string; p_supplier_id: string; p_title: string }
         Returns: {
+          airtable_id: string | null
           buyer_user_id: string
           created_at: string
           id: string
@@ -2639,30 +4268,97 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      create_organization: {
+      create_order: {
         Args: {
-          p_email?: string
-          p_name: string
-          p_org_type: string
-          p_phone?: string
+          p_currency?: string
+          p_org_id?: string
+          p_quote_id?: string
+          p_supplier_id: string
+          p_total_amount: number
         }
         Returns: {
-          created_at: string
-          email: string | null
+          created_at: string | null
+          currency: string
           id: string
-          name: string
-          org_type: string
-          phone: string | null
+          org_id: string | null
+          payment_status: string
+          quote_id: string | null
           status: string
+          supplier_id: string
+          total_amount: number
           updated_at: string | null
+          user_id: string | null
         }
         SetofOptions: {
           from: "*"
-          to: "organizations"
+          to: "orders"
           isOneToOne: true
           isSetofReturn: false
         }
       }
+      create_organization:
+        | {
+            Args: {
+              p_email?: string
+              p_name: string
+              p_org_type: string
+              p_phone?: string
+            }
+            Returns: {
+              airtable_id: string | null
+              created_at: string
+              email: string | null
+              government_id: string | null
+              id: string
+              jurisdiction: string | null
+              name: string
+              org_type: string
+              parent_ministry: string | null
+              phone: string | null
+              soe_category: string | null
+              status: string
+              updated_at: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "organizations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_email?: string
+              p_government_id?: string
+              p_jurisdiction?: string
+              p_name: string
+              p_org_type: string
+              p_parent_ministry?: string
+              p_phone?: string
+              p_soe_category?: string
+            }
+            Returns: {
+              airtable_id: string | null
+              created_at: string
+              email: string | null
+              government_id: string | null
+              id: string
+              jurisdiction: string | null
+              name: string
+              org_type: string
+              parent_ministry: string | null
+              phone: string | null
+              soe_category: string | null
+              status: string
+              updated_at: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "organizations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       create_purchase:
         | {
             Args: {
@@ -2724,6 +4420,65 @@ export type Database = {
               isSetofReturn: false
             }
           }
+      create_quote: {
+        Args: {
+          p_expires_at?: string
+          p_notes?: string
+          p_product_id?: string
+          p_quantity?: number
+          p_requested_price?: number
+          p_supplier_id: string
+        }
+        Returns: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          notes: string | null
+          org_id: string | null
+          product_id: string | null
+          quantity: number
+          requested_price: number | null
+          status: string
+          supplier_id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "quotes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_review: {
+        Args: {
+          p_author: string
+          p_company?: string
+          p_content: string
+          p_rating: number
+          p_supplier_id: string
+          p_verified_purchase?: boolean
+        }
+        Returns: {
+          author: string
+          company: string | null
+          content: string
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          rating: number
+          supplier_id: string
+          updated_at: string | null
+          user_id: string | null
+          verified_purchase: boolean | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reviews"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_rfq: {
         Args: {
           p_delivery_location: string
@@ -2735,6 +4490,7 @@ export type Database = {
           p_title: string
         }
         Returns: {
+          airtable_id: string | null
           created_at: string
           created_by: string
           delivery_location: string | null
@@ -2756,11 +4512,81 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_telebuy_session:
+        | {
+            Args: {
+              p_meeting_url: string
+              p_notes?: string
+              p_scheduled_at: string
+              p_supplier_id: string
+            }
+            Returns: {
+              created_at: string | null
+              ended_at: string | null
+              google_meet_link: string | null
+              id: string
+              meeting_id: string | null
+              meeting_url: string
+              notes: string | null
+              org_id: string | null
+              recording_url: string | null
+              scheduled_at: string
+              started_at: string | null
+              status: string
+              supplier_id: string
+              transcript: string | null
+              updated_at: string | null
+              user_id: string | null
+              video_provider: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "telebuy_sessions"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_google_meet_link?: string
+              p_meeting_url: string
+              p_notes?: string
+              p_scheduled_at: string
+              p_supplier_id: string
+              p_video_provider?: string
+            }
+            Returns: {
+              created_at: string | null
+              ended_at: string | null
+              google_meet_link: string | null
+              id: string
+              meeting_id: string | null
+              meeting_url: string
+              notes: string | null
+              org_id: string | null
+              recording_url: string | null
+              scheduled_at: string
+              started_at: string | null
+              status: string
+              supplier_id: string
+              transcript: string | null
+              updated_at: string | null
+              user_id: string | null
+              video_provider: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "telebuy_sessions"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       current_sub: { Args: never; Returns: string }
       ensure_folder_path: {
         Args: { p_path: string; p_user: string }
         Returns: string
       }
+      follow_org: { Args: { p_target_org_id: string }; Returns: string }
       get_audit_logs: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: {
@@ -2819,6 +4645,16 @@ export type Database = {
           user_name: string
         }[]
       }
+      get_follow_status: {
+        Args: { p_target_org_id: string }
+        Returns: {
+          can_message: boolean
+          i_follow_them: boolean
+          my_follow_status: string
+          their_follow_status: string
+          they_follow_me: boolean
+        }[]
+      }
       get_latest_chat_document: {
         Args: { auth_user_id: string; doc_id: string }
         Returns: {
@@ -2856,15 +4692,21 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_market_summary: { Args: never; Returns: Json }
       get_my_organizations: {
         Args: never
         Returns: {
+          airtable_id: string | null
           created_at: string
           email: string | null
+          government_id: string | null
           id: string
+          jurisdiction: string | null
           name: string
           org_type: string
+          parent_ministry: string | null
           phone: string | null
+          soe_category: string | null
           status: string
           updated_at: string | null
         }[]
@@ -2896,6 +4738,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_or_create_conversation: {
+        Args: { p_other_org_id: string }
+        Returns: string
       }
       get_price_indicators: {
         Args: { p_limit?: number; p_region: string; p_symbol: string }
@@ -2950,9 +4796,54 @@ export type Database = {
         }
       }
       get_user_org_ids: { Args: never; Returns: string[] }
+      get_user_org_role: {
+        Args: { p_org_id?: string; p_user_id?: string }
+        Returns: {
+          member_role: string
+          org_id: string
+          org_name: string
+          org_type: string
+          subscription_tier: string
+        }[]
+      }
+      get_user_profile: {
+        Args: never
+        Returns: Database["public"]["Enums"]["onboarding_profile_type"]
+      }
+      handle_make_webhook: { Args: { payload: Json }; Returns: Json }
+      has_capability: { Args: { p_capability: string }; Returns: boolean }
       has_org_role: {
         Args: { p_org_id: string; p_role: string }
         Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      increment_review_helpful: {
+        Args: { p_review_id: string }
+        Returns: {
+          author: string
+          company: string | null
+          content: string
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          rating: number
+          supplier_id: string
+          updated_at: string | null
+          user_id: string | null
+          verified_purchase: boolean | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reviews"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       increment_usage_counters: {
         Args: {
@@ -2983,6 +4874,8 @@ export type Database = {
         Returns: Json
       }
       is_org_member: { Args: { p_org_id: string }; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
+      is_system_read_only: { Args: never; Returns: boolean }
       jwt_claim: { Args: { claim: string }; Returns: string }
       jwt_org_id: { Args: never; Returns: string }
       jwt_user_id: { Args: never; Returns: string }
@@ -3064,6 +4957,7 @@ export type Database = {
       list_rfqs: {
         Args: never
         Returns: {
+          airtable_id: string | null
           created_at: string
           created_by: string
           delivery_location: string | null
@@ -3096,6 +4990,22 @@ export type Database = {
         Returns: string
       }
       log_job_metrics: { Args: { p_job: string }; Returns: Json }
+      log_mcp_run: {
+        Args: {
+          p_agent_name: string
+          p_input_payload?: Json
+          p_metadata?: Json
+          p_org_id?: string
+          p_run_id: string
+          p_tool_name: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
+      mark_messages_read: {
+        Args: { p_conversation_id: string }
+        Returns: number
+      }
       mark_notification_read: {
         Args: { p_notification_id: string }
         Returns: boolean
@@ -3128,6 +5038,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remove_org_member: {
+        Args: { p_org_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      respond_to_follow: {
+        Args: { p_accept: boolean; p_follow_id: string }
+        Returns: boolean
+      }
       respond_to_offer: {
         Args: {
           p_deal_id: string
@@ -3135,6 +5053,7 @@ export type Database = {
           p_note: string
         }
         Returns: {
+          airtable_id: string | null
           buyer_user_id: string
           created_at: string
           id: string
@@ -3155,8 +5074,61 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      save_telebuy_transcript: {
+        Args: {
+          p_ai_action_items?: Json
+          p_ai_key_points?: Json
+          p_ai_summary?: string
+          p_duration_seconds?: number
+          p_session_id: string
+          p_speaker_segments?: Json
+          p_transcript_text: string
+        }
+        Returns: {
+          ai_action_items: Json | null
+          ai_key_points: Json | null
+          ai_summary: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          language: string | null
+          org_id: string
+          processing_status: string | null
+          session_id: string
+          speaker_segments: Json | null
+          transcript_text: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "telebuy_transcripts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      send_direct_message: {
+        Args: {
+          p_attachments?: Json
+          p_content: string
+          p_conversation_id: string
+        }
+        Returns: string
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      start_ai_run: {
+        Args: {
+          p_feature_key: string
+          p_metadata?: Json
+          p_org_id?: string
+          p_trigger_source: string
+        }
+        Returns: {
+          is_shadow: boolean
+          ledger_id: string
+          run_id: string
+        }[]
+      }
       submit_bid: {
         Args: {
           p_currency: string
@@ -3189,12 +5161,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_ai_feature_flag_status: {
+        Args: { p_feature_key: string; p_status: string }
+        Returns: boolean
+      }
       update_deal_status: {
         Args: {
           p_deal_id: string
           p_status: Database["public"]["Enums"]["deal_status"]
         }
         Returns: {
+          airtable_id: string | null
           buyer_user_id: string
           created_at: string
           id: string
@@ -3224,6 +5201,36 @@ export type Database = {
         }
         Returns: Json
       }
+      update_member_role: {
+        Args: { p_new_role: string; p_org_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      update_order_status: {
+        Args: {
+          p_order_id: string
+          p_payment_status?: string
+          p_status: string
+        }
+        Returns: {
+          created_at: string | null
+          currency: string
+          id: string
+          org_id: string | null
+          payment_status: string
+          quote_id: string | null
+          status: string
+          supplier_id: string
+          total_amount: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_purchase_status: {
         Args: { p_purchase_id: string; p_status: string }
         Returns: {
@@ -3248,9 +5255,70 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_release_gate_status: {
+        Args: { p_gate_id: string; p_status: string }
+        Returns: boolean
+      }
+      update_session_status: {
+        Args: { p_session_id: string; p_status: string }
+        Returns: {
+          created_at: string | null
+          ended_at: string | null
+          google_meet_link: string | null
+          id: string
+          meeting_id: string | null
+          meeting_url: string
+          notes: string | null
+          org_id: string | null
+          recording_url: string | null
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          supplier_id: string
+          transcript: string | null
+          updated_at: string | null
+          user_id: string | null
+          video_provider: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "telebuy_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_telebuy_notes: {
+        Args: { p_notes: string; p_session_id: string }
+        Returns: {
+          created_at: string | null
+          ended_at: string | null
+          google_meet_link: string | null
+          id: string
+          meeting_id: string | null
+          meeting_url: string
+          notes: string | null
+          org_id: string | null
+          recording_url: string | null
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          supplier_id: string
+          transcript: string | null
+          updated_at: string | null
+          user_id: string | null
+          video_provider: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "telebuy_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       withdraw_bid: { Args: { p_bid_id: string }; Returns: boolean }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       auction_status: "scheduled" | "live" | "ended" | "cancelled"
       deal_status:
         | "pending"
@@ -3268,6 +5336,7 @@ export type Database = {
         | "auction_won"
         | "system"
       offer_decision: "accepted" | "rejected"
+      onboarding_profile_type: "buyer" | "supplier" | "soe" | "investor"
       rfq_status: "draft" | "submitted" | "closed" | "cancelled"
     }
     CompositeTypes: {
@@ -3396,6 +5465,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       auction_status: ["scheduled", "live", "ended", "cancelled"],
       deal_status: [
         "pending",
@@ -3415,6 +5485,7 @@ export const Constants = {
         "system",
       ],
       offer_decision: ["accepted", "rejected"],
+      onboarding_profile_type: ["buyer", "supplier", "soe", "investor"],
       rfq_status: ["draft", "submitted", "closed", "cancelled"],
     },
   },

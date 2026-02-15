@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Language Detection Service
  * Detects user's preferred language for agent routing

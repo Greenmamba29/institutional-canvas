@@ -34,7 +34,7 @@ export async function getRfqById(rfqId: string) {
     .from('rfqs')
     .select('*')
     .eq('id', rfqId)
-    .single();
+    .maybeSingle();
   
   return { data, error };
 }
