@@ -31,7 +31,7 @@ export async function getAuctionById(auctionId: string) {
     .from('auctions')
     .select('*')
     .eq('id', auctionId)
-    .single();
+    .maybeSingle();
   
   return { data, error: error ? new Error(error.message) : null };
 }
