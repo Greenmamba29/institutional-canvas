@@ -1,107 +1,145 @@
 
-# Admin Panel: Users, Suppliers, Audit Log + Airtable API Key Management
 
-## Overview
+# MVP Fix Plan: Resolve All Page Errors and Bring to Finished Status
 
-Build a dedicated `/admin` route (accessible only to `super_admins` table members) with tabbed panels for user management, supplier oversight, audit log viewing, and Airtable API key configuration. The admin nav item is only visible in the sidebar when the logged-in user exists in `super_admins`.
+## Root Cause Analysis
+
+The screenshots show pages failing or returning empty data. After tracing through every hook, service, RLS policy, and RPC function, the issues fall into **3 systemic categories**:
 
 ---
 
-## Architecture
+## Category 1: `jwt_org_id()` Returns NULL (Affects 5+ Pages)
 
-### Admin Access Gate (Hard Rule)
+**The Problem:** Several RLS policies and RPC functions filter data using `jwt_org_id()`, which extracts `org_id` from JWT claims. Supabase Auth does not include `org_id` in its standard JWT tokens, so this function always returns NULL. Result: zero rows returned.
 
-Admin access is validated server-side via the `super_admins` table -- not from `profiles.is_admin` or client-side storage. A new hook `useIsSuperAdmin` will query:
+**Affected Pages:**
+- **RFQs** -- `list_rfqs` RPC filters by `jwt_org_id()` which returns NULL, so "No RFQs found"
+- **Bids** -- RLS policy `bids_select_org` uses `org_id = jwt_org_id()`, returns zero rows
+- **Deals** -- RLS policy `deals_select_org` uses `org_id = jwt_org_id()`, returns zero rows
+- **Auctions** -- RLS policy `auctions_select_org` uses `org_id = jwt_org_id()`, but the RPC (`list_auctions`) is SECURITY DEFINER and bypasses RLS. Shows "No auctions available" because there simply aren't any rows in the table yet.
 
-```text
-SELECT 1 FROM super_admins WHERE user_id = auth.uid()
+**Fix:** Add fallback RLS policies that use `is_org_member(org_id)` (which checks `auth.uid()` against `org_members`) so data is accessible without custom JWT claims. This pattern already works for `orders`, `telebuy_sessions`, and `rfqs`.
+
+**Database changes needed (4 new SELECT policies):**
+
+```sql
+-- Bids: allow members of the bid's org to see their bids
+CREATE POLICY "bids_select_org_member" ON public.bids
+  FOR SELECT USING (
+    org_id IN (SELECT org_id FROM org_members WHERE user_id = auth.uid())
+  );
+
+-- Deals: allow members of the deal's org to see their deals
+CREATE POLICY "deals_select_org_member" ON public.deals
+  FOR SELECT USING (
+    org_id IN (SELECT org_id FROM org_members WHERE user_id = auth.uid())
+  );
+
+-- Auctions: allow all authenticated users to view auctions (marketplace data)
+CREATE POLICY "auctions_select_authenticated" ON public.auctions
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 ```
 
-The sidebar "Admin" nav item renders ONLY when this query returns true. The `/admin` route is wrapped in `RoleProtectedRoute` with `allowedOrgTypes={['admin']}` as a first gate, plus the `super_admins` check inside the page itself as a second hard gate.
+**Fix `list_rfqs` RPC** to fall back to `org_members` lookup when `jwt_org_id()` is NULL:
+
+```sql
+CREATE OR REPLACE FUNCTION public.list_rfqs()
+RETURNS SETOF rfqs LANGUAGE sql SECURITY DEFINER AS $$
+  SELECT * FROM public.rfqs
+  WHERE organization_id IN (
+    SELECT org_id FROM org_members WHERE user_id = auth.uid()
+  )
+  ORDER BY created_at DESC;
+$$;
+```
 
 ---
 
-## New Files
+## Category 2: TeleBuy "Failed to load sessions" (Screenshot 1)
 
-### 1. `src/hooks/useIsSuperAdmin.ts`
-- React Query hook that checks `super_admins` table for current user
-- Returns `{ isSuperAdmin: boolean, isLoading: boolean }`
-- Cached for 10 minutes (stable, rarely changes)
+**The Problem:** The TeleBuy page shows "Failed to load sessions" because `useTelebuySessions` does a direct table read (`supabase.from('telebuy_sessions').select('*')`) which hits RLS. There are duplicate/conflicting RLS policies on `telebuy_sessions`:
+- `telebuy_select_org` uses `is_org_member(org_id) OR user_id = jwt_user_id()`
+- `telebuy_sessions_select_org` uses `org_id IN (SELECT get_user_org_ids())`
 
-### 2. `src/pages/Admin.tsx`
-- Main admin page with 4 tabs:
-  - **Users** -- lists `profiles` table (id, email, full_name, tier, created_at)
-  - **Suppliers** -- lists `suppliers` or `supplier_profiles` table
-  - **Audit Log** -- reads `domain_events` table (entity_type, event_type, actor, timestamp, payload preview)
-  - **Settings** -- Airtable API key input field that calls an RPC or edge function to update the secret
+Both should work via `auth.uid()`, but the error suggests `jwt_user_id()` also uses JWT claims and returns NULL.
 
-### 3. `src/components/admin/UsersPanel.tsx`
-- DataTable of all users from `profiles`
-- Columns: Name, Email, Tier, Created, Org
-- Read-only (no direct mutations per protocol)
+**Fix:** Simplify TeleBuy RLS policies -- drop conflicting duplicates and use a single clean policy based on `auth.uid()`:
 
-### 4. `src/components/admin/SuppliersPanel.tsx`
-- DataTable of suppliers from `supplier_profiles` or `suppliers`
-- Columns: Name, Status, Verification, Location
-- Read-only view
+```sql
+-- Drop conflicting policies
+DROP POLICY IF EXISTS "telebuy_select_org" ON telebuy_sessions;
+DROP POLICY IF EXISTS "telebuy_update_org" ON telebuy_sessions;
+DROP POLICY IF EXISTS "telebuy_delete_org" ON telebuy_sessions;
 
-### 5. `src/components/admin/AuditLogPanel.tsx`
-- DataTable reading from `domain_events`
-- Columns: Timestamp, Actor, Entity Type, Event Type, Payload (truncated)
-- Sorted newest-first, paginated (limit 50)
+-- Keep the working org_members-based policies (telebuy_sessions_select_org, etc.)
+```
 
-### 6. `src/components/admin/AdminSettingsPanel.tsx`
-- Airtable API Key input with masked display
-- Save button calls an edge function to securely store the key
-- Shows current connection status (tests the key via airtable-proxy)
+Also, `telebuy.service.ts` makes direct reads that are correct. The hook `useTelebuySessions` is gated by `enabled: !!currentOrgId`, which is correct -- if the org hasn't loaded yet, the query won't fire.
 
 ---
 
-## Modified Files
+## Category 3: Frontend Resilience Issues
 
-### `src/App.tsx`
-- Add `/admin` route inside `ProtectedRoute`, wrapped with `RoleProtectedRoute allowedOrgTypes={['admin']}`
+### 3a. Hooks gated by `currentOrgId` show nothing until org loads
+Several hooks use `enabled: !!currentOrgId`. If the org membership query fails or returns empty (new user with no org), these pages show errors instead of helpful empty states.
 
-### `src/components/layout/LayoutShell.tsx`
-- Add "Admin" nav item (Shield icon) to `adminNavItems` array
-- Conditionally render it only when `useIsSuperAdmin()` returns true
-- Position: after Analytics, before Settings section
+**Fix:** Update hooks to fall back gracefully. For pages like Auctions that should show marketplace data to all authenticated users, remove the `enabled: !!currentOrgId` gate.
 
----
+**Files to edit:**
+- `src/hooks/useAuctions.ts` -- Remove `enabled: !!currentOrgId` (auctions are marketplace-wide)
+- `src/hooks/useTelebuy.ts` -- Keep org gate but improve error handling
 
-## Database
+### 3b. Messages page layout clip on mobile (Screenshot 3)
+The "Messages" heading is clipped on the left edge on mobile.
 
-No schema changes needed. All required tables exist:
-- `super_admins` (user_id, granted_at, granted_by, note)
-- `profiles` (id, email, full_name, tier, created_at, org_id)
-- `suppliers` / `supplier_profiles` (supplier data)
-- `domain_events` (id, org_id, actor_user_id, entity_type, entity_id, event_type, payload, created_at)
+**Fix in `src/pages/Messages.tsx`:** Add padding/margin to the header section.
 
----
+### 3c. `getRfqById` uses `.single()` instead of `.maybeSingle()`
+Can crash when no RFQ exists.
 
-## Security Enforcement
+**Fix in `src/services/rfqs.service.ts`:** Change `.single()` to `.maybeSingle()`.
 
-1. Sidebar "Admin" link only renders if `super_admins` contains current user (server query)
-2. `/admin` route uses `RoleProtectedRoute` with `allowedOrgTypes={['admin']}`
-3. Inside Admin page, a secondary `super_admins` check prevents access even if URL is typed directly
-4. All data is read-only -- no direct table mutations
-5. Airtable key update goes through a secure edge function (not client-side)
+### 3d. `getAuctionById` uses `.single()` instead of `.maybeSingle()`
+Same issue.
+
+**Fix in `src/services/auctions.service.ts`:** Change `.single()` to `.maybeSingle()`.
 
 ---
 
-## Technical Details
+## Complete File Change Summary
 
 ```text
-File Changes Summary:
------------------------------------------------------
-NEW   src/hooks/useIsSuperAdmin.ts        (~25 lines)
-NEW   src/pages/Admin.tsx                  (~80 lines)
-NEW   src/components/admin/UsersPanel.tsx  (~70 lines)
-NEW   src/components/admin/SuppliersPanel.tsx (~70 lines)
-NEW   src/components/admin/AuditLogPanel.tsx  (~80 lines)
-NEW   src/components/admin/AdminSettingsPanel.tsx (~60 lines)
-EDIT  src/App.tsx                          (+3 lines)
-EDIT  src/components/layout/LayoutShell.tsx (+8 lines)
------------------------------------------------------
-Total: 6 new files, 2 edited files
+DATABASE MIGRATIONS (SQL):
+  1. Add fallback SELECT policies for bids, deals, auctions
+  2. Fix list_rfqs RPC to use org_members instead of jwt_org_id()
+  3. Clean up duplicate telebuy_sessions RLS policies
+
+FRONTEND FILES:
+  EDIT  src/hooks/useAuctions.ts          (~3 lines) - Remove org gate, use RPC without auth client
+  EDIT  src/services/auctions.service.ts   (~5 lines) - Add unauthenticated listAuctions overload, use .maybeSingle()
+  EDIT  src/services/rfqs.service.ts       (~1 line)  - Change .single() to .maybeSingle()
+  EDIT  src/hooks/useTelebuy.ts            (~2 lines) - Better error message on empty org
+  EDIT  src/pages/Messages.tsx             (~1 line)  - Fix mobile header clipping
 ```
+
+---
+
+## Verification After Implementation
+
+1. **TeleBuy** -- No more "Failed to load sessions" error; shows empty state or sessions
+2. **Auctions** -- Shows any auctions in DB (currently empty = shows "No auctions available" without error)
+3. **RFQs** -- Shows user's org RFQs (or empty state if none created)
+4. **Bids** -- Shows bids for user's org (or empty state)
+5. **Deals** -- Shows deals for user's org (or empty state)
+6. **Messages** -- Header no longer clipped on mobile
+7. **Orders** -- Already works (uses `is_org_member()` pattern)
+8. **Dashboard** -- Already works (uses SECURITY DEFINER RPCs)
+
+## Forward Path to MVP Completion
+
+After these fixes, the remaining work to reach MVP status:
+1. Seed demo data (auctions, RFQs, bids) so pages aren't empty for demo
+2. Connect Airtable API key via Admin Settings panel
+3. Verify Google OAuth callback URL is allowlisted in Supabase
+4. Test full user journey: Sign up -> Onboarding -> Dashboard -> Create RFQ -> Place Bid -> Award Deal -> TeleBuy session
+
