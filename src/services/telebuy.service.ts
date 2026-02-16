@@ -43,10 +43,16 @@ export async function createTelebuySession(params: CreateTelebuySessionParams) {
  * Update session status via RPC
  */
 export async function updateSessionStatus(sessionId: string, status: string) {
-  return callRpc<TelebuySession>('update_telebuy_session_status', {
+  // RPC not yet in generated types — use direct supabase.rpc with cast
+  const { data, error } = await (supabase as any).rpc('update_session_status', {
     p_session_id: sessionId,
     p_status: status,
   });
+  if (error) {
+    console.error('[RPC Error] update_session_status:', error);
+    return { data: null, error: new Error(error.message) };
+  }
+  return { data: data as TelebuySession | null, error: null };
 }
 
 /**
