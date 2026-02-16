@@ -23,8 +23,9 @@ import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
+/* ── Real DB constraint values ── */
 const RECYCLING_TYPES = ['black_mass', 'recycled_lithium', 'cathode_scrap', 'anode_scrap', 'electrolyte_recovery'] as const;
-type RecyclingType = typeof RECYCLING_TYPES[number];
+type RecyclingType = (typeof RECYCLING_TYPES)[number];
 
 const TYPE_LABELS: Record<RecyclingType, string> = {
   black_mass: 'Black Mass',
@@ -34,19 +35,40 @@ const TYPE_LABELS: Record<RecyclingType, string> = {
   electrolyte_recovery: 'Electrolyte Recovery',
 };
 
+/* availability uses hyphens per DB constraint */
 const AVAILABILITY_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  in_stock: 'default',
+  'in-stock': 'default',
   limited: 'secondary',
-  pre_order: 'outline',
-  out_of_stock: 'destructive',
+  contact: 'outline',
+  'pre-order': 'outline',
+  'out-of-stock': 'destructive',
 };
 
 const AVAILABILITY_LABEL: Record<string, string> = {
-  in_stock: 'In Stock',
+  'in-stock': 'In Stock',
   limited: 'Limited',
-  pre_order: 'Pre-Order',
-  out_of_stock: 'Out of Stock',
+  contact: 'Contact',
+  'pre-order': 'Pre-Order',
+  'out-of-stock': 'Out of Stock',
 };
+
+/* purity_level uses DB constraint values */
+const PURITY_LABELS: Record<string, string> = {
+  '99': '99% Purity',
+  '99.5': '99.5% Purity',
+  '99.9': '99.9% Purity',
+  'battery-grade': 'Battery Grade',
+  'technical-grade': 'Technical Grade',
+  'industrial-grade': 'Industrial Grade',
+};
+
+/* ESG readiness is derived: battery-grade or 99.5/99.9 = ESG Ready */
+function getEsgStatus(purityLevel: string): { label: string; ready: boolean } {
+  if (purityLevel === 'battery-grade' || purityLevel === '99.9' || purityLevel === '99.5') {
+    return { label: 'ESG Ready', ready: true };
+  }
+  return { label: 'ESG Pending', ready: false };
+}
 
 export default function Recycling() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,7 +80,8 @@ export default function Recycling() {
     queryFn: async () => {
       let query = supabase
         .from('products')
-        .select('id, name, product_type, price_per_unit, purity_level, min_order_quantity, unit, availability, currency, has_bulk_discount, bulk_discount_percentage, created_at')
+        .select('*')
+        .in('product_type', [...RECYCLING_TYPES])
         .order('created_at', { ascending: false });
 
       if (typeFilter !== 'all') {
@@ -93,12 +116,18 @@ export default function Recycling() {
     if (!listings) return [];
     if (!searchQuery) return listings;
     const q = searchQuery.toLowerCase();
-    return listings.filter((item) =>
-      item.name?.toLowerCase().includes(q) ||
-      item.product_type?.toLowerCase().includes(q) ||
-      item.purity_level?.toLowerCase().includes(q)
+    return listings.filter(
+      (item) =>
+        item.name?.toLowerCase().includes(q) ||
+        item.product_type?.toLowerCase().includes(q) ||
+        item.purity_level?.toLowerCase().includes(q)
     );
   }, [listings, searchQuery]);
+
+  const esgReadyCount = useMemo(
+    () => filteredListings.filter((l) => getEsgStatus(l.purity_level).ready).length,
+    [filteredListings]
+  );
 
   return (
     <LayoutShell>
@@ -127,7 +156,9 @@ export default function Recycling() {
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
               {RECYCLING_TYPES.map((type) => (
-                <SelectItem key={type} value={type}>{TYPE_LABELS[type]}</SelectItem>
+                <SelectItem key={type} value={type}>
+                  {TYPE_LABELS[type]}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -136,9 +167,9 @@ export default function Recycling() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={Activity} value={filteredListings.length} label="Active Listings" colorClass="bg-primary/10 text-primary" />
-          <StatCard icon={Leaf} value={(airtableData as any[])?.length ?? 0} label="ESG Certified" colorClass="bg-green-500/10 text-green-600" />
+          <StatCard icon={Leaf} value={esgReadyCount} label="ESG Ready" colorClass="bg-green-500/10 text-green-600" />
           <StatCard icon={Recycle} value={5} label="Material Types" colorClass="bg-accent/10 text-accent-foreground" />
-          <StatCard icon={ShieldCheck} value="100%" label="Chain of Custody" colorClass="bg-secondary text-foreground" />
+          <StatCard icon={ShieldCheck} value={(airtableData as unknown[])?.length ?? 0} label="Airtable Synced" colorClass="bg-secondary text-foreground" />
         </div>
 
         {/* Tabs */}
@@ -160,7 +191,13 @@ export default function Recycling() {
             <ListingsGrid listings={filteredListings.filter((l) => l.product_type === 'recycled_lithium')} isLoading={isLoading} error={error} refetch={refetch} emptyMessage="No recycled lithium listings available" />
           </TabsContent>
           <TabsContent value="scrap">
-            <ListingsGrid listings={filteredListings.filter((l) => l.product_type === 'cathode_scrap' || l.product_type === 'anode_scrap' || l.product_type === 'electrolyte_recovery')} isLoading={isLoading} error={error} refetch={refetch} emptyMessage="No scrap material listings available" />
+            <ListingsGrid
+              listings={filteredListings.filter((l) => ['cathode_scrap', 'anode_scrap', 'electrolyte_recovery'].includes(l.product_type))}
+              isLoading={isLoading}
+              error={error}
+              refetch={refetch}
+              emptyMessage="No scrap material listings available"
+            />
           </TabsContent>
         </Tabs>
       </div>
@@ -186,7 +223,13 @@ function StatCard({ icon: Icon, value, label, colorClass }: { icon: typeof Activ
 }
 
 /* ── Listings Grid ── */
-function ListingsGrid({ listings, isLoading, error, refetch, emptyMessage = 'No recycling listings found' }: {
+function ListingsGrid({
+  listings,
+  isLoading,
+  error,
+  refetch,
+  emptyMessage = 'No recycling listings found',
+}: {
   listings: Product[];
   isLoading: boolean;
   error: Error | null;
@@ -197,7 +240,7 @@ function ListingsGrid({ listings, isLoading, error, refetch, emptyMessage = 'No 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-48 w-full rounded-lg" />
+          <Skeleton key={i} className="h-56 w-full rounded-lg" />
         ))}
       </div>
     );
@@ -207,7 +250,9 @@ function ListingsGrid({ listings, isLoading, error, refetch, emptyMessage = 'No 
     return (
       <Card className="p-8 text-center">
         <p className="text-destructive mb-3">Failed to load listings</p>
-        <Button variant="outline" onClick={refetch}>Retry</Button>
+        <Button variant="outline" onClick={refetch}>
+          Retry
+        </Button>
       </Card>
     );
   }
@@ -225,41 +270,63 @@ function ListingsGrid({ listings, isLoading, error, refetch, emptyMessage = 'No 
   );
 }
 
-/* ── Product Card ── */
+/* ── Product Card with ESG + Availability badges ── */
 function RecyclingCard({ item }: { item: Product }) {
   const typeLabel = TYPE_LABELS[item.product_type as RecyclingType] || item.product_type || 'Unknown';
+  const purityLabel = PURITY_LABELS[item.purity_level] || item.purity_level || '—';
+  const esg = getEsgStatus(item.purity_level);
   const currencySymbol = item.currency === 'EUR' ? '€' : item.currency === 'GBP' ? '£' : '$';
 
   return (
     <Card className="hover:border-primary/30 transition-colors">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-base">{item.name || 'Untitled Material'}</CardTitle>
-          <Badge variant="outline" className="text-[10px] shrink-0">{typeLabel}</Badge>
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-base leading-tight">{item.name || 'Untitled Material'}</CardTitle>
+          <Badge variant="outline" className="text-[10px] shrink-0">
+            {typeLabel}
+          </Badge>
         </div>
-        <p className="text-sm text-muted-foreground">{typeLabel} material</p>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Row label="Purity" value={item.purity_level || '—'} />
+        <Row label="Purity" value={purityLabel} />
         <Row label="Min Order" value={item.min_order_quantity ? `${item.min_order_quantity} ${item.unit || 'MT'}` : '—'} />
-        <Row label="Price" value={
-          item.price_per_unit
-            ? `${currencySymbol}${Number(item.price_per_unit).toLocaleString()}/${item.unit || 'MT'}`
-            : 'RFQ'
-        } isMono />
+        <Row
+          label="Price"
+          value={
+            item.price_per_unit
+              ? `${currencySymbol}${Number(item.price_per_unit).toLocaleString()}/${item.unit || 'MT'}`
+              : 'RFQ'
+          }
+          isMono
+        />
 
+        {/* Status badges: ESG readiness + Availability + Bulk */}
         <div className="flex items-center gap-2 pt-2 flex-wrap">
+          {/* ESG Status Badge */}
+          <Badge
+            variant={esg.ready ? 'default' : 'outline'}
+            className={`text-[10px] ${esg.ready ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-amber-400 text-amber-600'}`}
+          >
+            <Leaf className="h-3 w-3 mr-1" />
+            {esg.label}
+          </Badge>
+
+          {/* Availability Badge */}
           {item.availability && (
             <Badge variant={AVAILABILITY_VARIANT[item.availability] || 'outline'} className="text-[10px]">
               {AVAILABILITY_LABEL[item.availability] || item.availability}
             </Badge>
           )}
+
+          {/* Bulk Discount Badge */}
           {item.has_bulk_discount && (
             <Badge variant="secondary" className="text-[10px]">
               <Percent className="h-3 w-3 mr-1" />
               Bulk {item.bulk_discount_percentage ? `${item.bulk_discount_percentage}%` : 'Discount'}
             </Badge>
           )}
+
+          {/* Chain of Custody Badge */}
           <Badge variant="outline" className="text-[10px]">
             <ShieldCheck className="h-3 w-3 mr-1" />
             CoC Tracked
