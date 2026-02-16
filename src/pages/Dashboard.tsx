@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { useOrganization } from "@/context/OrganizationContext";
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
@@ -19,6 +20,8 @@ import { useAuditLog } from "@/hooks/useAuditLog";
 import { usePartners } from "@/hooks/usePartners";
 import { useGMVStats, useGMVSparkline } from "@/hooks/useGMVStats";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Activity } from "lucide-react";
 
 // Fallback chart data when no real data available
 const fallbackChartData = [
@@ -45,6 +48,7 @@ const escrowedAssets = [
 ];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { viewMode } = useOrganization();
   const [activeTab, setActiveTab] = useState(viewMode === 'supplier' ? 'overview' : 'dashboard');
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
@@ -251,6 +255,14 @@ export default function Dashboard() {
         
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+          <Button
+            onClick={() => navigate('/recycling')}
+            variant="outline"
+            className="gap-2"
+          >
+            <Activity className="h-4 w-4" />
+            Recycling Marketplace
+          </Button>
         </div>
 
         <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
