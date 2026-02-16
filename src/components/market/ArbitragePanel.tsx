@@ -58,7 +58,14 @@ export function ArbitragePanel() {
 
             <div className="flex items-center gap-1 mt-2 text-[10px] text-muted-foreground">
               <Clock className="h-3 w-3" />
-              <span>Expires {formatDistanceToNow(new Date(opp.expires_at), { addSuffix: true })}</span>
+              <span>
+                {new Date(opp.expires_at) > new Date()
+                  ? `Expires ${formatDistanceToNow(new Date(opp.expires_at), { addSuffix: true })}`
+                  : 'Expired'}
+              </span>
+              {new Date(opp.expires_at) <= new Date() && (
+                <span className="ml-1 px-1 py-0.5 text-[9px] bg-muted rounded">DEMO</span>
+              )}
             </div>
           </div>
         ))}
