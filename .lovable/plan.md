@@ -1,142 +1,56 @@
 
+# Fix Sidebar Navigation, Auth Controls, and Subscription Gating
 
-# Fix Recycling Page + Schema Alignment
+## Problems Identified
 
-## The Core Problem
+1. **Mobile sidebar missing gating indicators** -- The mobile hamburger menu renders all nav items without PRO badges or lock icons, unlike the desktop sidebar which shows them.
+2. **Route-level gating is incomplete** -- Only `/ai-studio` is wrapped with `RoleProtectedRoute`. The `/telebuy` route (marked `requiresTier: 'pro'` in the sidebar) has NO route guard, so users can navigate directly to it regardless of subscription.
+3. **Mobile sidebar missing user profile section** -- The desktop sidebar header shows user name, tier, and org type, but the mobile sidebar does not.
+4. **Sidebar gating logic inconsistency** -- Items marked with `requiresTier` show a "PRO" badge on desktop but still navigate freely; they should either block navigation or redirect to the paywall.
 
-The Recycling page (`src/pages/Recycling.tsx`) references field names that DO NOT EXIST in the `products` table schema. The actual schema (from `types.ts`) has these fields:
+## Plan
 
-| Actual Field | What Recycling.tsx Uses | Status |
-|---|---|---|
-| `name` | `name` | Correct |
-| `product_type` | `product_type` | Correct |
-| `price_per_unit` | `price_per_unit` | Correct |
-| `purity_level` | `purity` / `grade` | WRONG -- should be `purity_level` |
-| `min_order_quantity` | `minimum_order_quantity` | WRONG -- should be `min_order_quantity` |
-| `unit` | `unit` | Correct |
-| `availability` | (not used) | Should show availability |
-| `currency` | (not used) | Should use for price display |
-| (does not exist) | `description` | WRONG -- field doesn't exist |
-| (does not exist) | `grade` | WRONG -- use `purity_level` |
-| (does not exist) | `certifications` | WRONG -- field doesn't exist |
+### Step 1: Fix Mobile Sidebar Gating (LayoutShell.tsx)
+Add the same tier-gating logic from the desktop nav (lines 221-224) to the mobile nav section (lines 338-357):
+- Show PRO/Enterprise badges on locked items
+- Apply opacity styling for locked items
+- Add user profile card at the bottom of mobile sidebar (name, tier, org type)
 
-## What Will Change
+### Step 2: Add Missing Route Guards (App.tsx)
+Wrap subscription-gated routes with `RoleProtectedRoute`:
+- `/telebuy` -- requires `pro` subscription
+- `/data` -- remains ungated (no `requiresTier` in nav config)
 
-### 1. Rewrite `src/pages/Recycling.tsx` to use REAL schema fields
+### Step 3: Ensure Sign Out and Settings Always Visible
+Verify both mobile and desktop sidebars consistently show:
+- Settings link
+- Billing link  
+- Sign Out button with destructive hover
 
-- Replace `item.description` with product type label (no description field exists)
-- Replace `item.grade || item.purity` with `item.purity_level`
-- Replace `item.minimum_order_quantity` with `item.min_order_quantity`
-- Replace `item.certifications` check with `item.availability` status
-- Add `item.currency` to price display instead of hardcoded `$`
-- Fix Airtable query to fetch ALL recycling types, not just black_mass
-- Remove `TYPE_ICONS` (declared but never used)
-
-### 2. No changes to routing or auth
-
-- `/recycling` route already exists in `App.tsx` line 88 -- verified working
-- Google Auth code is correct -- the 403 is a Supabase Dashboard redirect URL configuration issue (not code)
-- All other files from the uploaded `.md` already match the current codebase (verified each one)
-
-## Files Verified as Already Matching .md (NO CHANGES NEEDED)
-
-| File | Status |
-|---|---|
-| `src/lib/auth/config.ts` | Identical |
-| `src/services/telebuy.service.ts` | Matches (uses `callRpc` with `as any` cast) |
-| `src/components/shared/VerificationBadge.tsx` | Identical (includes `lithiumbuy` tier) |
-| `src/hooks/useRealtimeSubscription.ts` | Matches |
-| `src/hooks/useMarketIntel.ts` | Matches |
-| `src/services/market-intel.service.ts` | Matches |
-| `src/services/airtable-crud.service.ts` | Identical |
-| `src/hooks/useSubscriptionTier.ts` | Identical |
-| `src/hooks/useAuctionParticipants.ts` | Matches |
-| `src/services/auction-participants.service.ts` | Matches |
-
-## Technical Details
-
-### File: `src/pages/Recycling.tsx` (REWRITE)
-
-Key changes in the rewrite:
-
-- Query the `products` table using only fields that exist: `name`, `product_type`, `price_per_unit`, `purity_level`, `min_order_quantity`, `unit`, `availability`, `currency`, `has_bulk_discount`, `bulk_discount_percentage`
-- Fix Airtable query to use `OR({Type}='black_mass',{Type}='recycled_lithium',{Type}='cathode_scrap')` instead of only `{Type}='black_mass'`
-- Card display: show `purity_level` for Grade, `min_order_quantity` for Min Order, `currency` + `price_per_unit` for Price, `availability` as a badge, `has_bulk_discount` indicator
-- Remove all `any` types -- use proper Product type from generated types
-- Remove unused `TYPE_ICONS` constant
-
-### Google Auth 403 Fix (NOT a code change -- Dashboard configuration)
-
-You must add these redirect URLs in two places:
-
-**Supabase Dashboard** (Authentication > URL Configuration > Redirect URLs):
-- `https://id-preview--7bc09c97-db33-42bd-a64e-3fad7765ce5a.lovable.app/auth/callback`
-- `https://lithiumbuy.lovable.app/auth/callback`
-
-**Google Cloud Console** (APIs > Credentials > OAuth Client > Authorized redirect URIs):
-- `https://vuekwckknfjivjighhfd.supabase.co/auth/v1/callback`
-
-This is the ONLY way to fix the 403. No code change resolves this.
+These already exist in the current code for both mobile and desktop, but will be verified as part of the changes.
 
 ---
 
-## Airtable Update Report
+## Technical Details
 
-For the Recycling page and sitewide data to fully function, these Airtable tables and fields are required:
+### File: `src/components/layout/LayoutShell.tsx`
+- **Mobile nav section (~line 339)**: Mirror desktop gating logic -- compute `isLocked` per item, render `Badge` for PRO, apply `opacity-60` class
+- **Mobile user profile**: Add a small user info block above Sign Out showing `userDisplayName` and `subscriptionTier`
 
-### Products Table (Recycling page reads this)
-| Field Name | Field Type | Values/Notes |
-|---|---|---|
-| Name | Single line text | Material name |
-| Type | Single select | `black_mass`, `recycled_lithium`, `cathode_scrap`, `anode_scrap`, `electrolyte_recovery` |
-| Grade | Single line text | e.g. "Battery Grade", "Technical Grade" |
-| Specifications | Long text | Technical specs |
-| Supplier | Single line text | Supplier name |
-| Price_Range | Single line text | e.g. "$12,000-$15,000/MT" |
-| Availability | Single select | `in_stock`, `limited`, `pre_order`, `out_of_stock` |
-| Certifications | Multi-select | `ISO_14001`, `REACH`, `Basel_Convention`, `EU_Battery_Regulation` |
-| ESG_Compliant | Checkbox | Boolean |
+### File: `src/App.tsx`
+- Wrap `/telebuy` route:
+```text
+<Route element={<RoleProtectedRoute requireSubscription="pro" />}>
+  <Route path="/telebuy" element={<TeleBuy />} />
+  <Route path="/telebuy/session/:id" element={<TeleBuy />} />
+</Route>
+```
 
-### Market_Intelligence Table
-| Field | Type |
-|---|---|
-| Query | Single line text |
-| Category | Single select: `price`, `news`, `auction`, `company` |
-| Content | Long text |
-| Source | Single line text |
-| Timestamp | Date/time |
-
-### Auction_Companies Table
-| Field | Type |
-|---|---|
-| Company_Name | Single line text |
-| Company_Type | Single select |
-| Auction_Role | Single select: `buyer`, `seller`, `broker` |
-| Country | Single line text |
-| Verification_Tier | Single select: `gold`, `silver`, `bronze`, `basic` |
-| KYC_Status | Single select: `verified`, `pending`, `rejected` |
-
-### Auction_Contacts Table
-| Field | Type |
-|---|---|
-| Company_ID | Linked record (to Auction_Companies) |
-| Contact_Full_Name | Single line text |
-| Job_Title | Single line text |
-| Lead_Status | Single select: `active`, `inactive`, `prospect` |
-
-### Analytics_Events Table
-| Field | Type |
-|---|---|
-| Event_Type | Single line text |
-| Event_Data | Long text (JSON) |
-| Timestamp | Date/time |
-| User_ID | Single line text |
-
-### GMV_Metrics Table
-| Field | Type |
-|---|---|
-| Period | Single line text (e.g. "2026-Q1") |
-| Total_GMV | Currency |
-| Transaction_Count | Number |
-| Avg_Deal_Size | Currency |
-
+### Gating Rules Summary
+| Route | Required Tier | Current Guard | Fix |
+|-------|--------------|---------------|-----|
+| /ai-studio | Pro | RoleProtectedRoute | None needed |
+| /telebuy | Pro | None | Add RoleProtectedRoute |
+| /marketplace | Org type check | Sidebar filter only | Already filtered |
+| /admin | Super admin | Sidebar filter + page check | Already guarded |
+| /verification | Admin only | Sidebar filter | Already filtered |
