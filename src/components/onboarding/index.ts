@@ -7,3 +7,5 @@ export { WelcomeStep } from './WelcomeStep';
 export { RoleSelection, type UserRole } from './RoleSelection';
 export { OrganizationSetup, type CreateOrgData, type JoinOrgData } from './OrganizationSetup';
 export { FeatureTour } from './FeatureTour';
+export { WelcomeModal } from './WelcomeModal';
+export { OnboardingChecklist } from './OnboardingChecklist';

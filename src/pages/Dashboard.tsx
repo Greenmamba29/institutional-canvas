@@ -22,6 +22,8 @@ import { useGMVStats, useGMVSparkline } from "@/hooks/useGMVStats";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
+import { WelcomeModal } from "@/components/onboarding/WelcomeModal";
+import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
 
 // Fallback chart data when no real data available
 const fallbackChartData = [
@@ -267,9 +269,13 @@ export default function Dashboard() {
 
         <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
+        <OnboardingChecklist />
+
         <SystemAlert message="Chilean export quota re-allocations are live. Review updated compliance requirements." />
 
         {renderTabContent()}
+
+        <WelcomeModal />
       </div>
     </LayoutShell>
   );
