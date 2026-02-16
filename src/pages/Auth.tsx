@@ -547,17 +547,74 @@ export default function Auth() {
                         onClick={async () => {
                           setIsLoading(true);
                           try {
-                            const { error } = await supabase.auth.signInWithOAuth({
-                              provider: 'google',
-                              options: {
-                                redirectTo: `${window.location.origin}/auth/callback`,
-                                queryParams: {
-                                  access_type: 'offline',
-                                  prompt: 'consent',
+                            // Detect if running inside an iframe (e.g. Lovable preview)
+                            const isInIframe = window.self !== window.top;
+
+                            if (isInIframe) {
+                              // Popup-based OAuth for iframe environments
+                              // Google blocks OAuth inside iframes for security
+                              const { data, error } = await supabase.auth.signInWithOAuth({
+                                provider: 'google',
+                                options: {
+                                  redirectTo: `${window.location.origin}/auth/callback`,
+                                  queryParams: {
+                                    access_type: 'offline',
+                                    prompt: 'consent',
+                                  },
+                                  skipBrowserRedirect: true,
                                 },
-                              },
-                            });
-                            if (error) throw error;
+                              });
+                              if (error) throw error;
+                              if (data?.url) {
+                                // Open OAuth in a popup window
+                                const popup = window.open(
+                                  data.url,
+                                  'google-oauth',
+                                  'width=500,height=600,menubar=no,toolbar=no,location=yes,status=no'
+                                );
+
+                                if (!popup) {
+                                  toast({
+                                    title: 'Popup blocked',
+                                    description: 'Please allow popups for this site and try again.',
+                                    variant: 'destructive',
+                                  });
+                                  setIsLoading(false);
+                                  return;
+                                }
+
+                                // Poll for popup close & session establishment
+                                const pollInterval = setInterval(async () => {
+                                  if (popup.closed) {
+                                    clearInterval(pollInterval);
+                                    // Check if session was established via the callback
+                                    const { data: { session } } = await supabase.auth.getSession();
+                                    if (session) {
+                                      toast({
+                                        title: 'Welcome!',
+                                        description: 'You have successfully signed in with Google.',
+                                      });
+                                      const redirectTo = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
+                                      navigate(redirectTo, { replace: true });
+                                    }
+                                    setIsLoading(false);
+                                  }
+                                }, 500);
+                              }
+                            } else {
+                              // Standard redirect-based OAuth for non-iframe environments
+                              const { error } = await supabase.auth.signInWithOAuth({
+                                provider: 'google',
+                                options: {
+                                  redirectTo: `${window.location.origin}/auth/callback`,
+                                  queryParams: {
+                                    access_type: 'offline',
+                                    prompt: 'consent',
+                                  },
+                                },
+                              });
+                              if (error) throw error;
+                            }
                           } catch (error: any) {
                             toast({
                               title: 'Google sign in failed',
@@ -580,13 +637,57 @@ export default function Auth() {
                         onClick={async () => {
                           setIsLoading(true);
                           try {
-                            const { error } = await supabase.auth.signInWithOAuth({
-                              provider: 'apple',
-                              options: {
-                                redirectTo: `${window.location.origin}/auth/callback`,
-                              },
-                            });
-                            if (error) throw error;
+                            const isInIframe = window.self !== window.top;
+
+                            if (isInIframe) {
+                              const { data, error } = await supabase.auth.signInWithOAuth({
+                                provider: 'apple',
+                                options: {
+                                  redirectTo: `${window.location.origin}/auth/callback`,
+                                  skipBrowserRedirect: true,
+                                },
+                              });
+                              if (error) throw error;
+                              if (data?.url) {
+                                const popup = window.open(
+                                  data.url,
+                                  'apple-oauth',
+                                  'width=500,height=600,menubar=no,toolbar=no,location=yes,status=no'
+                                );
+                                if (!popup) {
+                                  toast({
+                                    title: 'Popup blocked',
+                                    description: 'Please allow popups for this site and try again.',
+                                    variant: 'destructive',
+                                  });
+                                  setIsLoading(false);
+                                  return;
+                                }
+                                const pollInterval = setInterval(async () => {
+                                  if (popup.closed) {
+                                    clearInterval(pollInterval);
+                                    const { data: { session } } = await supabase.auth.getSession();
+                                    if (session) {
+                                      toast({
+                                        title: 'Welcome!',
+                                        description: 'You have successfully signed in with Apple.',
+                                      });
+                                      const redirectTo = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
+                                      navigate(redirectTo, { replace: true });
+                                    }
+                                    setIsLoading(false);
+                                  }
+                                }, 500);
+                              }
+                            } else {
+                              const { error } = await supabase.auth.signInWithOAuth({
+                                provider: 'apple',
+                                options: {
+                                  redirectTo: `${window.location.origin}/auth/callback`,
+                                },
+                              });
+                              if (error) throw error;
+                            }
                           } catch (error: any) {
                             toast({
                               title: 'Apple sign in failed',
