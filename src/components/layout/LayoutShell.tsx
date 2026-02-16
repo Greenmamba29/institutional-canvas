@@ -5,6 +5,7 @@ import { useOrganization } from "@/context/OrganizationContext";
 import { useRole } from "@/context/RoleContext";
 import { useAuth } from "@/context/AuthContext";
 import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
+import { useSidebarCounts } from "@/hooks/useSidebarCounts";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { GMVSummaryPanelConnected } from "./GMVSummaryPanelConnected";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -68,17 +69,17 @@ interface NavItem {
 const adminNavItems: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Marketplace', path: '/marketplace', icon: Store, requiresOrgType: ['admin', 'buyer', 'soe'] },
-  { label: 'Auctions', path: '/auctions', icon: Gavel, count: 14 },
-  { label: 'Recycling', path: '/recycling', icon: Activity, count: 3 },
-  { label: 'Bids', path: '/bids', icon: Target, count: 5 },
-  { label: 'RFQs', path: '/rfqs', icon: FileText, count: 8 },
+  { label: 'Auctions', path: '/auctions', icon: Gavel },
+  { label: 'Recycling', path: '/recycling', icon: Activity },
+  { label: 'Bids', path: '/bids', icon: Target },
+  { label: 'RFQs', path: '/rfqs', icon: FileText },
   { label: 'Deals', path: '/deals', icon: Handshake },
-  { label: 'Orders', path: '/orders', icon: Package, count: 3 },
+  { label: 'Orders', path: '/orders', icon: Package },
   { label: 'TeleBuy', path: '/telebuy', icon: Video, requiresTier: 'pro' },
   { label: 'AI Studio', path: '/ai-studio', icon: Brain, requiresTier: 'pro' },
   { label: 'Data', path: '/data', icon: Database },
-  { label: 'Messages', path: '/messages', icon: MessageSquare, count: 3 },
-  { label: 'Verification', path: '/verification', icon: ShieldCheck, count: 5, requiresOrgType: ['admin'] },
+  { label: 'Messages', path: '/messages', icon: MessageSquare },
+  { label: 'Verification', path: '/verification', icon: ShieldCheck, requiresOrgType: ['admin'] },
   { label: 'Analytics', path: '/analytics', icon: TrendingUp },
   { label: 'Admin', path: '/admin', icon: Shield, requiresOrgType: ['admin'] },
 ];
@@ -86,14 +87,14 @@ const adminNavItems: NavItem[] = [
 // Supplier Navigation - MVP locked ordering
 const supplierNavItems: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Recycling', path: '/recycling', icon: Activity, count: 2 },
-  { label: 'RFQs', path: '/rfqs', icon: FileText, count: 15 },
-  { label: 'Auctions', path: '/auctions', icon: Gavel, count: 2 },
-  { label: 'Bid Activity', path: '/bids', icon: Target, count: 3 },
+  { label: 'Recycling', path: '/recycling', icon: Activity },
+  { label: 'RFQs', path: '/rfqs', icon: FileText },
+  { label: 'Auctions', path: '/auctions', icon: Gavel },
+  { label: 'Bid Activity', path: '/bids', icon: Target },
   { label: 'Deals', path: '/deals', icon: Handshake },
-  { label: 'Orders', path: '/orders', icon: Package, count: 3 },
+  { label: 'Orders', path: '/orders', icon: Package },
   { label: 'TeleBuy', path: '/telebuy', icon: Video, requiresTier: 'pro' },
-  { label: 'Messages', path: '/messages', icon: MessageSquare, count: 3 },
+  { label: 'Messages', path: '/messages', icon: MessageSquare },
   { label: 'Analytics', path: '/analytics', icon: TrendingUp },
 ];
 
@@ -110,8 +111,19 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const { orgType, subscriptionTier } = useRole();
   const { user, signOut } = useAuth();
   const { isSuperAdmin } = useIsSuperAdmin();
+  const { data: sidebarCounts } = useSidebarCounts();
 
-  // Create a key based on user.id to force re-renders when user changes
+  // Map paths to dynamic counts from real DB queries
+  const dynamicCounts: Record<string, number | undefined> = useMemo(() => ({
+    '/auctions': sidebarCounts?.auctions || undefined,
+    '/bids': sidebarCounts?.bids || undefined,
+    '/rfqs': sidebarCounts?.rfqs || undefined,
+    '/orders': sidebarCounts?.orders || undefined,
+    '/messages': sidebarCounts?.messages || undefined,
+    '/recycling': sidebarCounts?.recycling || undefined,
+    '/verification': sidebarCounts?.verification || undefined,
+  }), [sidebarCounts]);
+
   // This ensures the sidebar updates with the correct user info after sign-in/sign-out
   const userKey = user?.id || 'anonymous';
 
@@ -253,8 +265,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
                   {sidebarOpen && isLocked && (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0">PRO</Badge>
                   )}
-                  {sidebarOpen && item.count && (
-                    <CountBadge count={item.count} variant={active ? 'default' : 'accent'} />
+                  {sidebarOpen && dynamicCounts[item.path] && dynamicCounts[item.path]! > 0 && (
+                    <CountBadge count={dynamicCounts[item.path]!} variant={active ? 'default' : 'accent'} />
                   )}
                 </div>
                 {!sidebarOpen && (
@@ -372,7 +384,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
                   {isLocked && (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0">PRO</Badge>
                   )}
-                  {item.count && <CountBadge count={item.count} variant={active ? 'default' : 'accent'} />}
+                  {dynamicCounts[item.path] && dynamicCounts[item.path]! > 0 && <CountBadge count={dynamicCounts[item.path]!} variant={active ? 'default' : 'accent'} />}
                 </div>
               </Link>
             );
