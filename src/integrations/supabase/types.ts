@@ -437,29 +437,41 @@ export type Database = {
         Row: {
           amount: number
           auction_id: string
+          bidder_id: string | null
           created_at: string
           created_by: string
           currency: string
           id: string
+          ip_address: string | null
           org_id: string
+          placed_at: string | null
+          status: Database["public"]["Enums"]["auction_bid_status"] | null
         }
         Insert: {
           amount: number
           auction_id: string
+          bidder_id?: string | null
           created_at?: string
           created_by: string
           currency?: string
           id?: string
+          ip_address?: string | null
           org_id: string
+          placed_at?: string | null
+          status?: Database["public"]["Enums"]["auction_bid_status"] | null
         }
         Update: {
           amount?: number
           auction_id?: string
+          bidder_id?: string | null
           created_at?: string
           created_by?: string
           currency?: string
           id?: string
+          ip_address?: string | null
           org_id?: string
+          placed_at?: string | null
+          status?: Database["public"]["Enums"]["auction_bid_status"] | null
         }
         Relationships: [
           {
@@ -469,53 +481,138 @@ export type Database = {
             referencedRelation: "auctions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "auction_bids_bidder_id_fkey"
+            columns: ["bidder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auction_notifications: {
+        Row: {
+          auction_id: string
+          id: string
+          read_at: string | null
+          sent_at: string | null
+          type: Database["public"]["Enums"]["auction_notification_type"]
+          user_id: string
+        }
+        Insert: {
+          auction_id: string
+          id?: string
+          read_at?: string | null
+          sent_at?: string | null
+          type: Database["public"]["Enums"]["auction_notification_type"]
+          user_id: string
+        }
+        Update: {
+          auction_id?: string
+          id?: string
+          read_at?: string | null
+          sent_at?: string | null
+          type?: Database["public"]["Enums"]["auction_notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_notifications_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       auctions: {
         Row: {
+          bid_increment: number | null
           created_at: string
           created_by: string
           currency: string
+          current_bid: number | null
           description: string | null
+          end_time: string | null
           ends_at: string | null
+          extended_count: number | null
           id: string
           org_id: string
           product_id: string | null
+          product_type:
+            | Database["public"]["Enums"]["auction_product_type"]
+            | null
+          quantity: number | null
           reserve_price: number | null
+          start_time: string | null
+          starting_bid: number | null
           starts_at: string | null
           status: Database["public"]["Enums"]["auction_status"]
           title: string
+          unit: string | null
           updated_at: string
+          winner_id: string | null
         }
         Insert: {
+          bid_increment?: number | null
           created_at?: string
           created_by: string
           currency?: string
+          current_bid?: number | null
           description?: string | null
+          end_time?: string | null
           ends_at?: string | null
+          extended_count?: number | null
           id?: string
           org_id: string
           product_id?: string | null
+          product_type?:
+            | Database["public"]["Enums"]["auction_product_type"]
+            | null
+          quantity?: number | null
           reserve_price?: number | null
+          start_time?: string | null
+          starting_bid?: number | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["auction_status"]
           title: string
+          unit?: string | null
           updated_at?: string
+          winner_id?: string | null
         }
         Update: {
+          bid_increment?: number | null
           created_at?: string
           created_by?: string
           currency?: string
+          current_bid?: number | null
           description?: string | null
+          end_time?: string | null
           ends_at?: string | null
+          extended_count?: number | null
           id?: string
           org_id?: string
           product_id?: string | null
+          product_type?:
+            | Database["public"]["Enums"]["auction_product_type"]
+            | null
+          quantity?: number | null
           reserve_price?: number | null
+          start_time?: string | null
+          starting_bid?: number | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["auction_status"]
           title?: string
+          unit?: string | null
           updated_at?: string
+          winner_id?: string | null
         }
         Relationships: [
           {
@@ -523,6 +620,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auctions_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -4953,19 +5057,31 @@ export type Database = {
       list_auctions: {
         Args: never
         Returns: {
+          bid_increment: number | null
           created_at: string
           created_by: string
           currency: string
+          current_bid: number | null
           description: string | null
+          end_time: string | null
           ends_at: string | null
+          extended_count: number | null
           id: string
           org_id: string
           product_id: string | null
+          product_type:
+            | Database["public"]["Enums"]["auction_product_type"]
+            | null
+          quantity: number | null
           reserve_price: number | null
+          start_time: string | null
+          starting_bid: number | null
           starts_at: string | null
           status: Database["public"]["Enums"]["auction_status"]
           title: string
+          unit: string | null
           updated_at: string
+          winner_id: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -5096,11 +5212,15 @@ export type Database = {
         Returns: {
           amount: number
           auction_id: string
+          bidder_id: string | null
           created_at: string
           created_by: string
           currency: string
           id: string
+          ip_address: string | null
           org_id: string
+          placed_at: string | null
+          status: Database["public"]["Enums"]["auction_bid_status"] | null
         }
         SetofOptions: {
           from: "*"
@@ -5390,7 +5510,28 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
-      auction_status: "scheduled" | "live" | "ended" | "cancelled"
+      auction_bid_status: "active" | "outbid" | "withdrawn" | "winning"
+      auction_notification_type:
+        | "outbid"
+        | "winning"
+        | "auction_ending"
+        | "auction_won"
+        | "auction_lost"
+      auction_product_type:
+        | "lithium_carbonate"
+        | "lithium_hydroxide"
+        | "spodumene"
+        | "black_mass"
+        | "recycled_material"
+      auction_status:
+        | "scheduled"
+        | "live"
+        | "ended"
+        | "cancelled"
+        | "draft"
+        | "active"
+        | "closing"
+        | "closed"
       deal_status:
         | "pending"
         | "active"
@@ -5537,7 +5678,31 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
-      auction_status: ["scheduled", "live", "ended", "cancelled"],
+      auction_bid_status: ["active", "outbid", "withdrawn", "winning"],
+      auction_notification_type: [
+        "outbid",
+        "winning",
+        "auction_ending",
+        "auction_won",
+        "auction_lost",
+      ],
+      auction_product_type: [
+        "lithium_carbonate",
+        "lithium_hydroxide",
+        "spodumene",
+        "black_mass",
+        "recycled_material",
+      ],
+      auction_status: [
+        "scheduled",
+        "live",
+        "ended",
+        "cancelled",
+        "draft",
+        "active",
+        "closing",
+        "closed",
+      ],
       deal_status: [
         "pending",
         "active",
