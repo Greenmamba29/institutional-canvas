@@ -82,8 +82,11 @@ const AppContent = () => {
           <Route path="/deals/:id" element={<Deals />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/purchases" element={<Purchases />} />
-          <Route path="/telebuy" element={<TeleBuy />} />
-          <Route path="/telebuy/session/:id" element={<TeleBuy />} />
+          {/* TeleBuy - requires Pro subscription */}
+          <Route element={<RoleProtectedRoute requireSubscription="pro" />}>
+            <Route path="/telebuy" element={<TeleBuy />} />
+            <Route path="/telebuy/session/:id" element={<TeleBuy />} />
+          </Route>
           <Route path="/chain-of-custody" element={<ChainOfCustody />} />
           <Route path="/recycling" element={<Recycling />} />
           
