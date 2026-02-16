@@ -2238,6 +2238,60 @@ export type Database = {
           },
         ]
       }
+      org_invites: {
+        Row: {
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          email: string | null
+          expires_at: string
+          id: string
+          invited_by: string
+          org_id: string
+          role: string
+          token: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          email?: string | null
+          expires_at: string
+          id?: string
+          invited_by: string
+          org_id: string
+          role?: string
+          token: string
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          org_id?: string
+          role?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_members: {
         Row: {
           created_at: string | null
@@ -4222,6 +4276,23 @@ export type Database = {
       check_usage_limit: {
         Args: { p_tier?: string; p_user_id: string }
         Returns: Json
+      }
+      claim_org_membership: {
+        Args: { p_invite_token?: string; p_org_id: string }
+        Returns: {
+          created_at: string | null
+          id: string
+          invited_by: string | null
+          org_id: string
+          role: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "org_members"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       complete_ai_run: {
         Args: {
