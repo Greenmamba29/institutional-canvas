@@ -39,6 +39,7 @@ import Team from "./pages/Team";
 import Landing from "./pages/Landing";
 import ChainOfCustody from "./pages/ChainOfCustody";
 import Admin from "./pages/Admin";
+import Recycling from "./pages/Recycling";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +85,7 @@ const AppContent = () => {
           <Route path="/telebuy" element={<TeleBuy />} />
           <Route path="/telebuy/session/:id" element={<TeleBuy />} />
           <Route path="/chain-of-custody" element={<ChainOfCustody />} />
+          <Route path="/recycling" element={<Recycling />} />
           
           {/* AI Studio - requires Pro subscription */}
           <Route element={<RoleProtectedRoute requireSubscription="pro" />}>
