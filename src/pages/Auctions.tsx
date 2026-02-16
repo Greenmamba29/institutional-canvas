@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -127,6 +128,34 @@ export default function Auctions() {
 }
 
 function AuctionCard({ auction, isLive = false }: { auction: Auction; isLive?: boolean }) {
+  // Live countdown
+  const [timeLeft, setTimeLeft] = useState<string | null>(null);
+
+  useEffect(() => {
+    const target = isLive ? auction.end_time || auction.ends_at : auction.start_time || auction.starts_at;
+    if (!target) return;
+
+    const tick = () => {
+      const diff = new Date(target).getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft(null); return; }
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1_000);
+      setTimeLeft(h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`);
+    };
+    tick();
+    const id = setInterval(tick, 1_000);
+    return () => clearInterval(id);
+  }, [auction.end_time, auction.ends_at, auction.start_time, auction.starts_at, isLive]);
+
+  const productLabel = auction.product_type
+    ? auction.product_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    : null;
+
+  const minBid = auction.current_bid
+    ? auction.current_bid + (auction.bid_increment ?? 500)
+    : auction.starting_bid ?? 0;
+
   return (
     <div
       className={`card-premium p-5 ${isLive ? 'border border-destructive/20 animate-pulse-glow' : ''}`}
@@ -135,7 +164,11 @@ function AuctionCard({ auction, isLive = false }: { auction: Auction; isLive?: b
         <div>
           <div className="flex items-center gap-2 mb-1">
             <StatusPill status={auction.status === 'scheduled' ? 'upcoming' : auction.status === 'live' ? 'live' : 'ended'} />
-            <span className="text-xs font-mono text-muted-foreground">{auction.id.slice(0, 8)}</span>
+            {productLabel && (
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                {productLabel}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <h3 className="font-semibold">{auction.title}</h3>
@@ -146,30 +179,45 @@ function AuctionCard({ auction, isLive = false }: { auction: Auction; isLive?: b
           )}
         </div>
         <div className="text-right">
-          <p className="text-xs text-muted-foreground">
-            {auction.status === 'live' ? 'Ends' : auction.status === 'scheduled' ? 'Starts' : 'Ended'}
-          </p>
-          <p className="font-mono text-sm">
-            {new Date(auction.ends_at || auction.starts_at || auction.created_at).toLocaleDateString()}
-          </p>
+          {isLive && timeLeft ? (
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+              <span className="font-mono text-sm font-bold text-destructive">{timeLeft}</span>
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                {auction.status === 'scheduled' ? 'Starts' : 'Ended'}
+              </p>
+              <p className="font-mono text-sm">
+                {new Date(auction.end_time || auction.ends_at || auction.start_time || auction.starts_at || auction.created_at).toLocaleDateString()}
+              </p>
+            </>
+          )}
         </div>
       </div>
+
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div>
-          <p className="text-xs text-muted-foreground">Currency</p>
-          <p className="font-mono font-bold">{auction.currency}</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Reserve</p>
-          <p className="font-mono font-bold">
-            {auction.reserve_price ? formatCurrency(auction.reserve_price) : '-'}
+          <p className="text-xs text-muted-foreground">
+            {auction.current_bid ? 'Current Bid' : 'Starting Bid'}
+          </p>
+          <p className="font-mono font-bold text-primary">
+            {formatCurrency(auction.current_bid ?? auction.starting_bid ?? 0)}
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Status</p>
-          <p className="font-mono font-bold capitalize">{auction.status}</p>
+          <p className="text-xs text-muted-foreground">Quantity</p>
+          <p className="font-mono font-bold">
+            {auction.quantity ? `${auction.quantity} ${auction.unit || 'MT'}` : '-'}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Min Next Bid</p>
+          <p className="font-mono font-bold">{formatCurrency(minBid)}</p>
         </div>
       </div>
+
       <Link to={`/auctions/${auction.id}`}>
         {isLive ? (
           <Button className="w-full bg-gradient-primary text-primary-foreground">
