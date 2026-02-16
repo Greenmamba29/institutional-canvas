@@ -169,16 +169,22 @@ export default function AuctionDetail() {
 
     const amount = parseFloat(bidAmount);
 
-    // Validate against reserve price
-    if (auction?.reserve_price && amount < auction.reserve_price) {
-      toast.error(`Bid must meet reserve price of ${formatCurrency(auction.reserve_price, auction.currency)}`);
+    // Validate against starting bid
+    if (auction?.starting_bid && !highBid && amount < auction.starting_bid) {
+      toast.error(`Bid must be at least ${formatCurrency(auction.starting_bid, auction.currency)}`);
       return;
     }
 
-    // Validate against highest bid
-    if (highBid && amount <= highBid.amount) {
-      toast.error(`Bid must exceed current highest bid of ${formatCurrency(highBid.amount, highBid.currency)}`);
+    // Validate against highest bid + increment
+    const increment = auction?.bid_increment ?? 500;
+    if (highBid && amount < highBid.amount + increment) {
+      toast.error(`Bid must be at least ${formatCurrency(highBid.amount + increment, highBid.currency)} (current + ${formatCurrency(increment)})`);
       return;
+    }
+
+    // Validate against reserve price
+    if (auction?.reserve_price && amount < auction.reserve_price) {
+      toast.warning(`Bid is below reserve price of ${formatCurrency(auction.reserve_price, auction.currency)}`);
     }
 
     placeBid.mutate(
@@ -447,9 +453,33 @@ export default function AuctionDetail() {
               </h2>
 
               <div className="space-y-3">
+                {auction.product_type && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Product</span>
+                    <span className="font-mono font-bold capitalize">
+                      {auction.product_type.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                )}
+                {auction.quantity && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Quantity</span>
+                    <span className="font-mono font-bold">{auction.quantity} {auction.unit || 'MT'}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Currency</span>
-                  <span className="font-mono font-bold">{auction.currency}</span>
+                  <span className="text-muted-foreground">Starting Bid</span>
+                  <span className="font-mono font-bold">
+                    {auction.starting_bid != null
+                      ? formatCurrency(auction.starting_bid, auction.currency)
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Bid Increment</span>
+                  <span className="font-mono font-bold">
+                    {formatCurrency(auction.bid_increment ?? 500, auction.currency)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Reserve Price</span>
@@ -501,8 +531,10 @@ export default function AuctionDetail() {
                       step="any"
                       placeholder={
                         highBid
-                          ? `Min ${formatCurrency(highBid.amount + 1, auction.currency)}`
-                          : "Enter amount"
+                          ? `Min ${formatCurrency(highBid.amount + (auction.bid_increment ?? 500), auction.currency)}`
+                          : auction.starting_bid
+                            ? `Min ${formatCurrency(auction.starting_bid, auction.currency)}`
+                            : "Enter amount"
                       }
                       value={bidAmount}
                       onChange={(e) => setBidAmount(e.target.value)}
