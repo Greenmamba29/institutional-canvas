@@ -41,6 +41,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface LayoutShellProps {
   children: React.ReactNode;
@@ -461,18 +469,47 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
               <NotificationDropdown />
 
-              {/* User Profile */}
-              <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-border/50">
-                <div className="text-right">
-                  <p className="text-sm font-semibold">{userDisplayName}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase">
-                    {subscriptionTier ? `${subscriptionTier} TIER` : 'FREE'} • {orgType || 'USER'}
-                  </p>
-                </div>
-                <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
-                  {userInitials}
-                </div>
-              </div>
+              {/* User Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="hidden sm:flex items-center gap-2 pl-3 border-l border-border/50 cursor-pointer hover:opacity-80 transition-opacity">
+                    <div className="text-right">
+                      <p className="text-sm font-semibold">{userDisplayName}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase">
+                        {subscriptionTier ? `${subscriptionTier} TIER` : 'FREE'} • {orgType || 'USER'}
+                      </p>
+                    </div>
+                    <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
+                      {userInitials}
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-popover">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{userDisplayName}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email}</p>
+                      <Badge variant="outline" className="w-fit text-[10px] mt-1">
+                        {(subscriptionTier || 'free').toUpperCase()}
+                      </Badge>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings" className="cursor-pointer"><Settings className="h-4 w-4 mr-2" />Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings" className="cursor-pointer"><Settings className="h-4 w-4 mr-2" />Settings</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings/billing" className="cursor-pointer"><CreditCard className="h-4 w-4 mr-2" />Billing</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive focus:text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
