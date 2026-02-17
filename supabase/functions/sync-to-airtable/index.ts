@@ -18,6 +18,9 @@ const tableMapping: Record<string, string> = {
   'market_news': Deno.env.get('AIRTABLE_MARKET_NEWS_TABLE') || 'tblMarketNews',
   'arbitrage_opportunities': Deno.env.get('AIRTABLE_ARBITRAGE_TABLE') || 'tblArbitrage',
   'market_briefings': Deno.env.get('AIRTABLE_BRIEFINGS_TABLE') || 'tblBriefings',
+  // Auction mappings
+  'auctions': Deno.env.get('AIRTABLE_AUCTIONS_TABLE') || 'tblAuctions',
+  'auction_bids': Deno.env.get('AIRTABLE_AUCTION_BIDS_TABLE') || 'tblAuctionBids',
 };
 
 // Field transformers: Convert Supabase column names to Airtable field names
@@ -71,6 +74,38 @@ const fieldTransformers: Record<string, Record<string, string>> = {
     'risk_factors': 'Risk Factors',
     'opportunities': 'Opportunities',
     'generated_at': 'Generated At',
+  },
+  'auctions': {
+    'title': 'Title',
+    'description': 'Description',
+    'product_type': 'Product_Type',
+    'status': 'Status',
+    'start_time': 'Start_Time',
+    'end_time': 'End_Time',
+    'reserve_price': 'Reserve_Price',
+    'starting_bid': 'Starting_Bid',
+    'current_bid': 'Current_Bid',
+    'bid_increment': 'Bid_Increment',
+    'currency': 'Currency',
+    'quantity': 'Quantity',
+    'unit': 'Unit',
+    'winner_id': 'Winner_ID',
+    'extended_count': 'Extended_Count',
+    'org_id': 'Org_ID',
+    'created_at': 'Created_At',
+    'updated_at': 'Updated_At',
+    'starts_at': 'Start_Time',
+    'ends_at': 'End_Time',
+  },
+  'auction_bids': {
+    'auction_id': 'Auction_ID',
+    'bidder_id': 'Bidder_ID',
+    'org_id': 'Org_ID',
+    'amount': 'Amount',
+    'currency': 'Currency',
+    'status': 'Status',
+    'placed_at': 'Placed_At',
+    'ip_address': 'IP_Address',
   },
 };
 
