@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
@@ -48,6 +48,7 @@ import { LiveBidFeed } from "@/components/auction/LiveBidFeed";
 import { BidConfirmDialog } from "@/components/auction/BidConfirmDialog";
 import { AuctionTermsDialog, hasAcceptedTerms, markTermsAccepted } from "@/components/auction/AuctionTermsDialog";
 import { WatchButton } from "@/components/auction/WatchButton";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -69,19 +70,28 @@ function formatDateTime(iso: string): string {
   });
 }
 
-function getTimeRemaining(endsAt: string): string | null {
+function getTimeRemaining(endsAt: string): { text: string; totalSeconds: number } | null {
   const diff = new Date(endsAt).getTime() - Date.now();
   if (diff <= 0) return null;
 
+  const totalSeconds = Math.floor(diff / 1000);
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
   const minutes = Math.floor((diff / (1000 * 60)) % 60);
   const seconds = Math.floor((diff / 1000) % 60);
 
-  if (days > 0) return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
-  return `${minutes}m ${seconds}s`;
+  let text: string;
+  if (days > 0) text = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  else if (hours > 0) text = `${hours}h ${minutes}m ${seconds}s`;
+  else text = `${minutes}m ${seconds}s`;
+
+  return { text, totalSeconds };
 }
+
+// ---------------------------------------------------------------------------
+// Quick Bid Increments
+// ---------------------------------------------------------------------------
+const QUICK_BID_INCREMENTS = [500, 1000, 5000];
 
 // ---------------------------------------------------------------------------
 // Component
@@ -90,6 +100,7 @@ function getTimeRemaining(endsAt: string): string | null {
 export default function AuctionDetail() {
   const { id } = useParams<{ id: string }>();
   const { currentOrgId } = useCurrentOrg();
+  const bidFormRef = useRef<HTMLFormElement>(null);
 
   const {
     data: auction,
@@ -116,7 +127,7 @@ export default function AuctionDetail() {
   const [outbidDismissed, setOutbidDismissed] = useState(false);
 
   // -- Live countdown timer -------------------------------------------------
-  const [timeLeft, setTimeLeft] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<{ text: string; totalSeconds: number } | null>(null);
 
   useEffect(() => {
     if (!auction?.ends_at) return;
@@ -126,7 +137,6 @@ export default function AuctionDetail() {
       setTimeLeft(remaining);
       if (remaining === null) {
         clearInterval(interval);
-        // Auto-refetch when countdown hits zero (Task 6)
         refetch();
       }
     }, 1_000);
@@ -166,11 +176,22 @@ export default function AuctionDetail() {
     return idx === -1 ? null : idx + 1;
   }, [sortedBids, currentOrgId]);
 
-  // Task 2: Outbid detection
   const userHasBids = currentOrgId ? bids.some((b) => b.org_id === currentOrgId) : false;
   const isOutbid = userHasBids && highBid != null && highBid.org_id !== currentOrgId;
 
-  // -- Map auction status to StatusPill type --------------------------------
+  // Closing soon detection (last 10 minutes)
+  const isClosingSoon = timeLeft != null && timeLeft.totalSeconds <= 600;
+  // Critical closing (last 2 minutes)
+  const isCritical = timeLeft != null && timeLeft.totalSeconds <= 120;
+
+  // Min next bid calculation
+  const minNextBid = useMemo(() => {
+    if (!auction) return 0;
+    if (highBid) return highBid.amount + (auction.bid_increment ?? 500);
+    return auction.starting_bid ?? 0;
+  }, [auction, highBid]);
+
+  // -- Status pill mapping --------------------------------------------------
   const statusPillType =
     auction?.status === "live"
       ? "live"
@@ -181,31 +202,25 @@ export default function AuctionDetail() {
           : "ended";
 
   // -- Handlers -------------------------------------------------------------
-  const handlePlaceBid = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id || !bidAmount) return;
+  const submitBid = useCallback((amount: number) => {
+    if (!id || !auction) return;
 
-    const amount = parseFloat(bidAmount);
-    const increment = auction?.bid_increment ?? 500;
+    const increment = auction.bid_increment ?? 500;
 
-    // Validate against starting bid
-    if (auction?.starting_bid && !highBid && amount < auction.starting_bid) {
+    if (auction.starting_bid && !highBid && amount < auction.starting_bid) {
       toast.error(`Bid must be at least ${formatCurrency(auction.starting_bid, auction.currency)}`);
       return;
     }
 
-    // Validate against highest bid + increment
     if (highBid && amount < highBid.amount + increment) {
       toast.error(`Bid must be at least ${formatCurrency(highBid.amount + increment, highBid.currency)} (current + ${formatCurrency(increment)})`);
       return;
     }
 
-    // Validate against reserve price
-    if (auction?.reserve_price && amount < auction.reserve_price) {
+    if (auction.reserve_price && amount < auction.reserve_price) {
       toast.warning(`Bid is below reserve price of ${formatCurrency(auction.reserve_price, auction.currency)}`);
     }
 
-    // Task 7: Check terms acceptance first
     const userId = currentOrgId || "anonymous";
     if (!hasAcceptedTerms(userId)) {
       setPendingBidAmount(amount);
@@ -213,16 +228,26 @@ export default function AuctionDetail() {
       return;
     }
 
-    // Task 3: Show confirmation dialog
     setPendingBidAmount(amount);
     setShowConfirmDialog(true);
-  }, [id, bidAmount, auction, highBid, currentOrgId]);
+  }, [id, auction, highBid, currentOrgId]);
+
+  const handlePlaceBid = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bidAmount) return;
+    submitBid(parseFloat(bidAmount));
+  }, [bidAmount, submitBid]);
+
+  // Quick bid handler
+  const handleQuickBid = useCallback((increment: number) => {
+    const base = highBid ? highBid.amount : (auction?.starting_bid ?? 0);
+    submitBid(base + increment);
+  }, [highBid, auction, submitBid]);
 
   const handleTermsAccepted = useCallback(() => {
     const userId = currentOrgId || "anonymous";
     markTermsAccepted(userId);
     setShowTermsDialog(false);
-    // Now show confirmation dialog
     setShowConfirmDialog(true);
   }, [currentOrgId]);
 
@@ -235,16 +260,36 @@ export default function AuctionDetail() {
         p_currency: bidCurrency,
       },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
           setBidAmount("");
           setShowConfirmDialog(false);
+          setOutbidDismissed(false);
+          // Check if auction was extended
+          if (data && typeof data === 'object' && 'was_extended' in data && data.was_extended) {
+            toast.info("⏰ Auction extended by 2 minutes (anti-sniping)", { duration: 5000 });
+            refetch(); // Refresh auction data to get new end time
+          }
         },
         onError: () => {
           setShowConfirmDialog(false);
         },
       },
     );
-  }, [id, pendingBidAmount, bidCurrency, placeBid]);
+  }, [id, pendingBidAmount, bidCurrency, placeBid, refetch]);
+
+  // Keyboard shortcut: Enter to focus bid input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'b' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+        e.preventDefault();
+        (bidFormRef.current?.querySelector('input[type="number"]') as HTMLElement | null)?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // -- Loading state --------------------------------------------------------
   if (auctionLoading) {
@@ -298,6 +343,7 @@ export default function AuctionDetail() {
   // -- Render ---------------------------------------------------------------
   const isLive = auction.status === "live";
   const isEnded = auction.status === "ended" || auction.status === "cancelled";
+  const isScheduled = auction.status === "scheduled";
   const extendedCount = auction.extended_count ?? 0;
 
   return (
@@ -311,7 +357,29 @@ export default function AuctionDetail() {
           ]}
         />
 
-        {/* Task 2: Outbid Alert Banner */}
+        {/* Closing Soon Warning */}
+        {isLive && isClosingSoon && !isCritical && (
+          <Alert className="border-warning/30 bg-warning/5">
+            <Clock className="h-4 w-4 text-warning" />
+            <AlertTitle className="text-warning">Closing Soon!</AlertTitle>
+            <AlertDescription>
+              This auction ends in less than 10 minutes. Place your bid now!
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Critical Closing Warning */}
+        {isLive && isCritical && (
+          <Alert variant="destructive" className="border-destructive/30 bg-destructive/5 animate-pulse">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Final Moments!</AlertTitle>
+            <AlertDescription>
+              Less than 2 minutes remaining. Bids placed now will trigger a 2-minute extension.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Outbid Alert Banner */}
         {isOutbid && !outbidDismissed && (
           <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
             <AlertTriangle className="h-4 w-4" />
@@ -322,7 +390,7 @@ export default function AuctionDetail() {
                 size="icon"
                 className="h-6 w-6 -mr-2"
                 onClick={() => setOutbidDismissed(true)}
-                aria-label="Dismiss"
+                aria-label="Dismiss outbid alert"
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -336,7 +404,7 @@ export default function AuctionDetail() {
           </Alert>
         )}
 
-        {/* Task 6: Winner Announcement */}
+        {/* Winner Announcement */}
         {isEnded && auction.winner_id && (
           <div className="card-premium p-6 border border-primary/30 bg-primary/5">
             <div className="flex items-center gap-3">
@@ -359,20 +427,19 @@ export default function AuctionDetail() {
 
         {/* Header Row */}
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/auctions">
+          <div className="flex items-start gap-3 md:gap-4">
+            <Button variant="ghost" size="icon" asChild className="shrink-0">
+              <Link to="/auctions" aria-label="Back to auctions">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>
-            <div className="p-3 rounded-xl bg-primary/10">
-              <Gavel className="h-8 w-8 text-primary" />
+            <div className="p-2.5 md:p-3 rounded-xl bg-primary/10 shrink-0">
+              <Gavel className="h-6 w-6 md:h-8 md:w-8 text-primary" />
             </div>
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl font-bold tracking-tight">{auction.title}</h1>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight truncate">{auction.title}</h1>
                 <StatusPill status={statusPillType} />
-                {/* Task 4: Extension Indicator */}
                 {extendedCount > 0 && (
                   <TooltipProvider>
                     <Tooltip>
@@ -384,11 +451,17 @@ export default function AuctionDetail() {
                       </TooltipTrigger>
                       <TooltipContent>
                         <p className="text-xs max-w-[200px]">
-                          This auction was extended {extendedCount} time{extendedCount > 1 ? "s" : ""} due to last-minute bids (anti-sniping rule).
+                          Extended {extendedCount} time{extendedCount > 1 ? "s" : ""} due to last-minute bids (anti-sniping).
                         </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
+                )}
+                {isScheduled && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Clock className="h-3 w-3" />
+                    Scheduled
+                  </Badge>
                 )}
               </div>
               {auction.description && (
@@ -397,7 +470,6 @@ export default function AuctionDetail() {
               <span className="text-xs font-mono text-muted-foreground">{auction.id.slice(0, 8)}</span>
             </div>
           </div>
-          {/* Task 5: Watch Button */}
           <WatchButton auctionId={auction.id} variant="default" />
         </div>
 
@@ -407,27 +479,31 @@ export default function AuctionDetail() {
           <div className="lg:col-span-2 space-y-6">
             {/* Current High Bid + Countdown */}
             <div
-              className={`card-premium p-6 ${isLive ? "border border-destructive/20 animate-pulse-glow" : ""}`}
+              className={cn(
+                "card-premium p-4 md:p-6",
+                isLive && "border border-destructive/20",
+                isCritical && "animate-pulse border-destructive/40"
+              )}
             >
-              <div className="grid sm:grid-cols-2 gap-6">
+              <div className="grid sm:grid-cols-2 gap-4 md:gap-6">
                 {/* High Bid */}
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                     Current High Bid
                   </p>
                   {highBid ? (
-                    <p className="text-3xl font-bold font-mono text-primary">
+                    <p className="text-2xl md:text-3xl font-bold font-mono text-primary">
                       {formatCurrency(highBid.amount, highBid.currency)}
                     </p>
                   ) : (
-                    <p className="text-xl font-semibold text-muted-foreground">No bids yet</p>
+                    <p className="text-lg md:text-xl font-semibold text-muted-foreground">No bids yet</p>
                   )}
                   {auction.reserve_price != null && (
                     <div className="flex items-center gap-1.5 mt-2">
                       {reserveMet ? (
                         <>
-                          <CheckCircle className="h-4 w-4 text-success" />
-                          <span className="text-xs font-medium text-success">Reserve met</span>
+                          <CheckCircle className="h-4 w-4 text-primary" />
+                          <span className="text-xs font-medium text-primary">Reserve met</span>
                         </>
                       ) : (
                         <>
@@ -436,6 +512,15 @@ export default function AuctionDetail() {
                         </>
                       )}
                     </div>
+                  )}
+                  {/* Min next bid display */}
+                  {isLive && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Min next bid:{" "}
+                      <span className="font-mono font-semibold text-foreground">
+                        {formatCurrency(minNextBid, auction.currency)}
+                      </span>
+                    </p>
                   )}
                 </div>
 
@@ -446,17 +531,25 @@ export default function AuctionDetail() {
                   </p>
                   {isLive && timeLeft ? (
                     <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
-                      <p className="text-3xl font-bold font-mono">{timeLeft}</p>
+                      <span className={cn(
+                        "h-2 w-2 rounded-full animate-pulse",
+                        isCritical ? "bg-destructive" : isClosingSoon ? "bg-warning" : "bg-destructive"
+                      )} />
+                      <p className={cn(
+                        "text-2xl md:text-3xl font-bold font-mono",
+                        isCritical && "text-destructive"
+                      )}>
+                        {timeLeft.text}
+                      </p>
                     </div>
                   ) : isLive && !timeLeft ? (
                     <p className="text-xl font-semibold text-muted-foreground">Ending...</p>
                   ) : isEnded ? (
-                    <p className="text-xl font-semibold text-muted-foreground">
+                    <p className="text-lg md:text-xl font-semibold text-muted-foreground">
                       {auction.ends_at ? formatDateTime(auction.ends_at) : "-"}
                     </p>
                   ) : (
-                    <p className="text-xl font-semibold text-muted-foreground">
+                    <p className="text-lg md:text-xl font-semibold text-muted-foreground">
                       {auction.starts_at ? formatDateTime(auction.starts_at) : "-"}
                     </p>
                   )}
@@ -482,8 +575,12 @@ export default function AuctionDetail() {
               )}
             </div>
 
-            {/* Task 1: Live Bid Feed */}
-            <LiveBidFeed bids={bids} currentOrgId={currentOrgId} />
+            {/* Live Bid Feed */}
+            <LiveBidFeed
+              bids={bids}
+              currentOrgId={currentOrgId}
+              extendedCount={extendedCount}
+            />
 
             {/* Bid History Table */}
             <div className="glass-panel rounded-xl overflow-hidden">
@@ -509,50 +606,52 @@ export default function AuctionDetail() {
                   <p className="text-sm text-muted-foreground">No bids have been placed yet</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-16">#</TableHead>
-                      <TableHead>Bidder</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="text-right">Time</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedBids.map((bid, index) => {
-                      const bidderNum = bidderMap.get(bid.org_id) ?? 0;
-                      const isUserBid = currentOrgId === bid.org_id;
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-16">#</TableHead>
+                        <TableHead>Bidder</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead className="text-right hidden sm:table-cell">Time</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedBids.map((bid, index) => {
+                        const bidderNum = bidderMap.get(bid.org_id) ?? 0;
+                        const isUserBid = currentOrgId === bid.org_id;
 
-                      return (
-                        <TableRow
-                          key={bid.id}
-                          className={isUserBid ? "bg-primary/5" : undefined}
-                        >
-                          <TableCell className="font-mono text-muted-foreground">
-                            {index + 1}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            Bidder #{bidderNum}
-                            {isUserBid && (
-                              <span className="ml-2 text-xs text-primary font-semibold">(You)</span>
-                            )}
-                            {index === 0 && (
-                              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary">
-                                HIGHEST
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-mono font-bold">
-                            {formatCurrency(bid.amount, bid.currency)}
-                          </TableCell>
-                          <TableCell className="text-right text-xs text-muted-foreground">
-                            {formatDateTime(bid.created_at)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                        return (
+                          <TableRow
+                            key={bid.id}
+                            className={isUserBid ? "bg-primary/5" : undefined}
+                          >
+                            <TableCell className="font-mono text-muted-foreground">
+                              {index + 1}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              Bidder #{bidderNum}
+                              {isUserBid && (
+                                <span className="ml-2 text-xs text-primary font-semibold">(You)</span>
+                              )}
+                              {index === 0 && (
+                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary">
+                                  HIGHEST
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right font-mono font-bold">
+                              {formatCurrency(bid.amount, bid.currency)}
+                            </TableCell>
+                            <TableCell className="text-right text-xs text-muted-foreground hidden sm:table-cell">
+                              {formatDateTime(bid.created_at)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </div>
           </div>
@@ -560,7 +659,7 @@ export default function AuctionDetail() {
           {/* Right Column */}
           <div className="space-y-6">
             {/* Lot Details */}
-            <div className="glass-panel rounded-xl p-5 space-y-4">
+            <div className="glass-panel rounded-xl p-4 md:p-5 space-y-4">
               <h2 className="font-semibold flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-primary" />
                 Lot Details
@@ -605,7 +704,13 @@ export default function AuctionDetail() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Status</span>
-                  <span className="font-mono font-bold capitalize">{auction.status}</span>
+                  <Badge variant={
+                    auction.status === 'live' ? 'default' :
+                    auction.status === 'scheduled' ? 'secondary' :
+                    auction.status === 'ended' ? 'outline' : 'destructive'
+                  } className="capitalize font-mono text-xs">
+                    {auction.status}
+                  </Badge>
                 </div>
                 {auction.starts_at && (
                   <div className="flex justify-between text-sm">
@@ -623,78 +728,104 @@ export default function AuctionDetail() {
                   <span className="text-muted-foreground">Total Bids</span>
                   <span className="font-mono font-bold">{sortedBids.length}</span>
                 </div>
+                {extendedCount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Extensions</span>
+                    <span className="font-mono font-bold text-warning">{extendedCount}</span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Bid Submission Form */}
-            <div className="card-premium p-5 space-y-4">
+            <div className="card-premium p-4 md:p-5 space-y-4" id="bid-form">
               <h2 className="font-semibold flex items-center gap-2">
                 <Gavel className="h-5 w-5 text-primary" />
                 Place a Bid
               </h2>
 
               {isLive ? (
-                <form onSubmit={handlePlaceBid} className="space-y-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Bid Amount
-                    </label>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="any"
-                      placeholder={
-                        highBid
-                          ? `Min ${formatCurrency(highBid.amount + (auction.bid_increment ?? 500), auction.currency)}`
-                          : auction.starting_bid
-                            ? `Min ${formatCurrency(auction.starting_bid, auction.currency)}`
-                            : "Enter amount"
-                      }
-                      value={bidAmount}
-                      onChange={(e) => setBidAmount(e.target.value)}
-                      required
-                      className="font-mono"
-                    />
+                <div className="space-y-4">
+                  <form ref={bidFormRef} onSubmit={handlePlaceBid} className="space-y-3">
+                    <div>
+                      <label htmlFor="bid-amount" className="text-xs text-muted-foreground mb-1 block">
+                        Bid Amount ({auction.currency})
+                      </label>
+                      <Input
+                        id="bid-amount"
+                        type="number"
+                        min={0}
+                        step="any"
+                        placeholder={`Min ${formatCurrency(minNextBid, auction.currency)}`}
+                        value={bidAmount}
+                        onChange={(e) => setBidAmount(e.target.value)}
+                        required
+                        className="font-mono"
+                        aria-label={`Enter bid amount, minimum ${formatCurrency(minNextBid, auction.currency)}`}
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-primary text-primary-foreground"
+                      disabled={placeBid.isPending || !bidAmount}
+                      aria-label="Submit bid"
+                    >
+                      {placeBid.isPending ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Placing Bid...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Submit Bid
+                        </>
+                      )}
+                    </Button>
+                  </form>
+
+                  {/* Quick Bid Buttons */}
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Quick Bid</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {QUICK_BID_INCREMENTS.map((inc) => (
+                        <Button
+                          key={inc}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleQuickBid(inc)}
+                          disabled={placeBid.isPending}
+                          className="font-mono text-xs"
+                          aria-label={`Quick bid plus ${formatCurrency(inc)}`}
+                        >
+                          +{formatCurrency(inc)}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Currency
-                    </label>
-                    <Input
-                      type="text"
-                      maxLength={3}
-                      placeholder="USD"
-                      value={bidCurrency}
-                      onChange={(e) => setBidCurrency(e.target.value.toUpperCase())}
-                      required
-                      className="font-mono uppercase"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-primary text-primary-foreground"
-                    disabled={placeBid.isPending || !bidAmount}
-                  >
-                    {placeBid.isPending ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Placing Bid...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4 mr-2" />
-                        Submit Bid
-                      </>
-                    )}
-                  </Button>
-                </form>
+
+                  {/* Keyboard shortcut hint */}
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Press <kbd className="px-1 py-0.5 rounded bg-muted font-mono">B</kbd> to focus bid input
+                  </p>
+                </div>
+              ) : isScheduled ? (
+                <div className="text-center py-4">
+                  <Clock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    This auction hasn't started yet.
+                  </p>
+                  {auction.starts_at && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Starts: {formatDateTime(auction.starts_at)}
+                    </p>
+                  )}
+                </div>
               ) : (
                 <div className="text-center py-4">
                   <Timer className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground">
-                    {isEnded
-                      ? "This auction has ended. Bidding is closed."
-                      : "This auction has not started yet. Bidding will open when the auction goes live."}
+                    This auction has ended. Bidding is closed.
                   </p>
                 </div>
               )}
@@ -703,13 +834,13 @@ export default function AuctionDetail() {
             {/* Anti-Sniping Notice */}
             <div className="glass-panel rounded-xl p-4 border border-warning/20">
               <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-lg bg-warning/10">
+                <div className="p-1.5 rounded-lg bg-warning/10 shrink-0">
                   <AlertTriangle className="h-4 w-4 text-warning" />
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-warning mb-0.5">Anti-Sniping Rule</p>
                   <p className="text-xs text-muted-foreground">
-                    Bids in the last 2 minutes extend the auction by 2 minutes.
+                    Bids in the last 2 minutes extend the auction by 2 minutes. This auction has been extended {extendedCount} time{extendedCount !== 1 ? "s" : ""}.
                   </p>
                 </div>
               </div>
@@ -718,7 +849,7 @@ export default function AuctionDetail() {
         </div>
       </div>
 
-      {/* Task 3: Bid Confirmation Dialog */}
+      {/* Bid Confirmation Dialog */}
       <BidConfirmDialog
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
@@ -730,7 +861,7 @@ export default function AuctionDetail() {
         isPending={placeBid.isPending}
       />
 
-      {/* Task 7: Terms Acceptance Dialog */}
+      {/* Terms Acceptance Dialog */}
       <AuctionTermsDialog
         open={showTermsDialog}
         onOpenChange={setShowTermsDialog}

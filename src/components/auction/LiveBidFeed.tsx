@@ -1,14 +1,17 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Activity, AlertTriangle } from "lucide-react";
+import { Activity, AlertTriangle, Wifi, WifiOff, Zap } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { cn } from "@/lib/utils";
 
 type AuctionBid = Tables<"auction_bids">;
 
 interface LiveBidFeedProps {
   bids: AuctionBid[];
   currentOrgId: string | null;
+  extendedCount?: number;
+  isConnected?: boolean;
 }
 
 function timeAgo(iso: string): string {
@@ -27,16 +30,29 @@ function formatCurrency(value: number, currency = "USD"): string {
   }).format(value);
 }
 
-export function LiveBidFeed({ bids, currentOrgId }: LiveBidFeedProps) {
+export function LiveBidFeed({ bids, currentOrgId, extendedCount = 0, isConnected = true }: LiveBidFeedProps) {
+  const [newBidId, setNewBidId] = useState<string | null>(null);
+  const prevBidCountRef = useRef(bids.length);
+
   const recentBids = useMemo(
     () =>
       [...bids]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 10),
+        .slice(0, 15),
     [bids],
   );
 
-  // Check if user was outbid (has bids but not highest)
+  // Detect new bids for pulse animation
+  useEffect(() => {
+    if (bids.length > prevBidCountRef.current && recentBids.length > 0) {
+      const latestBid = recentBids[0];
+      setNewBidId(latestBid.id);
+      const timer = setTimeout(() => setNewBidId(null), 2000);
+      return () => clearTimeout(timer);
+    }
+    prevBidCountRef.current = bids.length;
+  }, [bids.length, recentBids]);
+
   const sortedByAmount = useMemo(
     () => [...bids].sort((a, b) => b.amount - a.amount),
     [bids],
@@ -54,9 +70,29 @@ export function LiveBidFeed({ bids, currentOrgId }: LiveBidFeedProps) {
           <Activity className="h-5 w-5 text-primary" />
           Live Feed
         </h2>
-        <Badge variant="secondary" className="font-mono text-xs">
-          {bids.length} bids
-        </Badge>
+        <div className="flex items-center gap-2">
+          {/* Connection status indicator */}
+          <div className={cn(
+            "flex items-center gap-1 text-xs",
+            isConnected ? "text-primary" : "text-destructive"
+          )}>
+            {isConnected ? (
+              <Wifi className="h-3 w-3" />
+            ) : (
+              <WifiOff className="h-3 w-3 animate-pulse" />
+            )}
+            <span className="hidden sm:inline">{isConnected ? "Live" : "Reconnecting..."}</span>
+          </div>
+          {extendedCount > 0 && (
+            <Badge variant="outline" className="border-warning/50 text-warning text-[10px] gap-1">
+              <Zap className="h-3 w-3" />
+              {extendedCount}x ext
+            </Badge>
+          )}
+          <Badge variant="secondary" className="font-mono text-xs">
+            {bids.length} bids
+          </Badge>
+        </div>
       </div>
 
       {isOutbid && (
@@ -66,26 +102,38 @@ export function LiveBidFeed({ bids, currentOrgId }: LiveBidFeedProps) {
         </div>
       )}
 
-      <ScrollArea className="h-[260px]">
+      <ScrollArea className="h-[300px]">
         <div className="p-2 space-y-1">
           {recentBids.map((bid, i) => {
             const isUser = currentOrgId === bid.org_id;
+            const isNew = bid.id === newBidId;
             return (
               <div
                 key={bid.id}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isUser ? "bg-primary/5" : i === 0 ? "bg-accent/50" : "hover:bg-muted/50"
-                }`}
-                style={{ animationDelay: `${i * 50}ms` }}
+                className={cn(
+                  "flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all",
+                  isUser ? "bg-primary/5" : i === 0 ? "bg-accent/50" : "hover:bg-muted/50",
+                  isNew && "ring-2 ring-primary/50 animate-pulse"
+                )}
+                role="listitem"
+                aria-label={`Bid of ${formatCurrency(bid.amount, bid.currency)} by ${isUser ? "you" : "another bidder"}`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                  <span className={cn(
+                    "h-2 w-2 rounded-full shrink-0",
+                    isNew ? "bg-primary animate-ping" : "bg-primary"
+                  )} />
                   <span className="font-medium">
-                    {isUser ? "You" : `Bidder`}
+                    {isUser ? "You" : "Bidder"}
                   </span>
                   {i === 0 && (
                     <Badge variant="outline" className="text-[10px] px-1 py-0">
                       LATEST
+                    </Badge>
+                  )}
+                  {isNew && (
+                    <Badge className="text-[10px] px-1 py-0 bg-primary/20 text-primary animate-bounce">
+                      NEW!
                     </Badge>
                   )}
                 </div>

@@ -88,7 +88,7 @@ export const auctionBidSkill: Skill<AuctionBidInput, AuctionBidOutput> = {
       const position = bids.findIndex(b => b.amount === validInput.amount) + 1;
       
       const result: AuctionBidOutput = {
-        bidId: bidData.id,
+        bidId: (bidData as Record<string, unknown>)?.id as string || '',
         status: position === 1 ? 'accepted' : 'outbid',
         currentHighBid: bids[0]?.amount || validInput.amount,
         yourPosition: position,

@@ -91,12 +91,14 @@ export function usePlaceAuctionBid() {
       const client = await getClient();
       const { data, error } = await placeAuctionBid(client, params);
       if (error) throw error;
-      return data as AuctionBid;
+      return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: auctionKeys.bids(variables.p_auction_id) });
+      queryClient.invalidateQueries({ queryKey: auctionKeys.detail(variables.p_auction_id) });
       queryClient.invalidateQueries({ queryKey: auctionKeys.list(currentOrgId) });
-      toast.success('Bid placed successfully');
+      const wasExtended = data && typeof data === 'object' && 'was_extended' in data && data.was_extended;
+      toast.success(wasExtended ? 'Bid placed — auction extended!' : 'Bid placed successfully');
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to place bid');
