@@ -1,125 +1,132 @@
 
 
-# Comprehensive Auth, Dashboard UX, and Onboarding Improvements
+# Phase 6: Production-Ready Auction System
 
-## Overview
-Five areas of work across 4 existing files and 2 new components to improve the sign-in experience, dashboard accessibility, and new user onboarding.
-
----
-
-## 1. Auth Page Enhancements (src/pages/Auth.tsx)
-
-### Email Validation
-- Add real-time email validation using a regex pattern
-- Show a green checkmark icon when valid, red X when invalid (only after user starts typing)
-- Display inline error text below the input for invalid emails
-
-### Password Strength Indicator (Sign Up mode only)
-- Add a `getPasswordStrength()` helper that returns weak/medium/strong based on length, mixed case, numbers, and special characters
-- Render a colored progress bar below the password field: red (weak), yellow (medium), green (strong)
-- Show text label beside the bar
-
-### Per-Button Loading States
-- Replace single `isLoading` boolean with an object: `{ form: false, google: false, apple: false, demo: false }`
-- Each button shows its own spinner independently
-- All buttons disabled when any action is in progress
-
-### Forgot Password Prominence
-- Change from `text-xs text-primary hover:underline` to a styled Button with `variant="link"` and larger text
-- Use cyan/primary color with an icon (KeyRound)
-
-### Success Message After Sign Up
-- Already partially implemented; ensure the toast fires with a 2-second delay before redirect to `/onboarding`
+This is a large initiative. Given frontend-only constraints (Lovable cannot create backend RPC functions or cron jobs), the plan focuses on **Week 1 MVP items** that are achievable now, clearly marking what requires backend work.
 
 ---
 
-## 2. Dashboard Header User Menu (src/components/layout/LayoutShell.tsx)
+## Current State Summary
 
-### New User Profile Dropdown in Header
-- Replace the static user profile display (lines 464-475) with an interactive dropdown menu using shadcn DropdownMenu
-- Dropdown contents:
-  - User name and email (non-clickable label)
-  - Subscription tier badge (PRO/FREE/ENTERPRISE)
-  - Profile link (to /settings)
-  - Settings link (to /settings)
-  - Billing link (to /settings/billing)
-  - Separator
-  - Sign Out button (destructive red styling)
-- This gives users instant access to essential controls without scrolling the sidebar
+**Already working:**
+- `place_auction_bid` RPC exists and is wired to the UI via `usePlaceAuctionBid` hook
+- Realtime subscriptions on `auctions` and `auction_bids` tables (auto-invalidate React Query cache)
+- Bid history table with anonymized bidders, rank indicators, and "You" labels
+- Bid increment validation in the UI
+- Countdown timers on both list and detail pages
+- `auction_notifications` table with enum types (outbid, winning, auction_ending, auction_won, auction_lost)
+- `extended_count` field on auctions table
+- `auction_bid_status` enum (active, outbid, withdrawn, winning)
 
-### Import Additions
-- Add DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger from shadcn
-- Add User, CreditCard icons (CreditCard already imported)
+**What this plan adds (frontend-only):**
 
 ---
 
-## 3. Auth Callback Improvements (src/pages/AuthCallback.tsx)
+## Task 1: Live Bid Feed Component
 
-### Better Loading State
-- Replace simple spinner with a branded loading card showing the LithiumBuy logo, animated progress bar, and "Completing authentication..." text
-- Add step indicators: "Verifying credentials...", "Setting up session...", "Redirecting..."
+Create `src/components/auction/LiveBidFeed.tsx` -- a compact real-time activity log shown on the AuctionDetail page alongside the existing bid history table.
 
-### Error State with Retry
-- Show a card with error icon, specific error message, and two buttons: "Try Again" (navigates to /auth) and "Contact Support"
-- Provider-specific error messages (detect "google" or "apple" in the error string)
+- Shows last 10 bids as a scrolling feed with animated entry
+- Highlights "You were outbid!" alerts inline
+- Displays bid count badge that updates in real-time
+- Uses existing `useAuctionBids` hook (already has realtime subscription)
 
-### First-Time User Detection
-- After successful session establishment, check if user has an organization via a quick Supabase query
-- If no org found, redirect to `/onboarding` instead of `/dashboard`
-- Store `is_new_user` flag in sessionStorage for the welcome modal
+**Files:** New `src/components/auction/LiveBidFeed.tsx`, modify `src/pages/AuctionDetail.tsx`
 
 ---
 
-## 4. Welcome Modal (NEW: src/components/onboarding/WelcomeModal.tsx)
+## Task 2: Outbid Alert Banner
 
-### Component Design
-- A shadcn Dialog that shows on first visit to the dashboard after sign-up
-- Checks `localStorage.getItem('lithiumbuy_welcome_seen')` to avoid repeat shows
-- Also checks `sessionStorage.getItem('is_new_user')` set by AuthCallback
-- Contents:
-  - Sparkles icon with gradient background
-  - "Welcome to LithiumBuy!" heading
-  - 2-3 sentence platform intro
-  - "Take a Quick Tour" button (navigates to /onboarding with tour step)
-  - "Skip for Now" button (closes modal, sets localStorage flag)
-- Sets `localStorage.setItem('lithiumbuy_welcome_seen', 'true')` on dismiss
+Add a persistent alert banner on AuctionDetail when the current user was the previous highest bidder but has been outbid.
+
+- Compare `sortedBids[0].org_id` against `currentOrgId`
+- If user has bids but is not #1, show a dismissible `Alert` with "You've been outbid! Place a new bid to regain your position."
+- Use sonner toast for the initial notification, persistent banner for ongoing state
+
+**Files:** Modify `src/pages/AuctionDetail.tsx`
 
 ---
 
-## 5. Onboarding Checklist (NEW: src/components/onboarding/OnboardingChecklist.tsx)
+## Task 3: Bid Confirmation Dialog
 
-### Component Design
-- A Card component rendered on the Dashboard page for users who haven't completed all steps
-- Checks completion via user profile data and org membership
-- Checklist items:
-  1. "Complete your profile" -- links to /settings, checked if user has `full_name` in metadata
-  2. "Explore the marketplace" -- links to /marketplace, checked via localStorage flag
-  3. "Create your first RFQ" -- links to /rfqs, checked if user has any RFQs in the database
-- Shows a progress bar (0/3, 1/3, etc.)
-- "Dismiss" button that hides permanently via localStorage
-- Integrated into Dashboard.tsx above the KPI grid for new users
+Add a confirmation step before submitting bids to prevent accidental submissions.
+
+- Show AlertDialog with bid amount, auction title, and minimum increment confirmation
+- Include "I understand this bid is binding" checkbox
+- Only then call `placeBid.mutate()`
+
+**Files:** New `src/components/auction/BidConfirmDialog.tsx`, modify `src/pages/AuctionDetail.tsx`
 
 ---
 
-## Files Modified
+## Task 4: Auction Extension Indicator
 
-| File | Changes |
-|------|---------|
-| `src/pages/Auth.tsx` | Email validation, password strength, per-button loading, forgot password styling |
-| `src/components/layout/LayoutShell.tsx` | Replace static user profile with DropdownMenu in header |
-| `src/pages/AuthCallback.tsx` | Branded loading, error retry, first-time user redirect |
-| `src/pages/Dashboard.tsx` | Import and render WelcomeModal + OnboardingChecklist |
-| `src/components/onboarding/WelcomeModal.tsx` | NEW -- welcome dialog for first-time users |
-| `src/components/onboarding/OnboardingChecklist.tsx` | NEW -- getting started checklist card |
-| `src/components/onboarding/index.ts` | Add exports for new components |
+Show visual feedback when an auction has been extended (anti-sniping).
+
+- Display "EXTENDED x{n}" badge next to the countdown when `extended_count > 0`
+- Animate the badge on change
+- Add tooltip explaining the anti-sniping rule
+
+**Files:** Modify `src/pages/AuctionDetail.tsx`
+
+---
+
+## Task 5: Auction Watch Button
+
+Create a watch/unwatch toggle so users can track auctions they are interested in.
+
+- UI-only for now (localStorage-based watchlist until backend table exists)
+- Show filled/outline eye icon
+- Filter "Watched" auctions on the Auctions list page
+- Prepare for future `auction_watchers` table migration
+
+**Files:** New `src/components/auction/WatchButton.tsx`, modify `src/pages/Auctions.tsx`
+
+---
+
+## Task 6: Auction Status Transitions in UI
+
+Handle auction lifecycle states more gracefully:
+
+- When a live auction's countdown reaches zero, auto-transition the UI to "Ending..." then refetch status
+- Show winner announcement card when `status === 'ended'` and `winner_id` is set
+- Display "Auction Won" or "Auction Lost" state for participating users
+
+**Files:** Modify `src/pages/AuctionDetail.tsx`
+
+---
+
+## Task 7: Terms Acceptance Before First Bid
+
+Add a one-time T&C acceptance flow before a user can place their first bid on any auction.
+
+- Show a dialog with auction terms on first bid attempt
+- Store acceptance in localStorage (keyed by user ID)
+- Checkbox: "I agree to the auction terms and conditions"
+- Block bid form until accepted
+
+**Files:** New `src/components/auction/AuctionTermsDialog.tsx`, modify `src/pages/AuctionDetail.tsx`
+
+---
+
+## Backend Requirements (NOT in this plan -- requires Replit)
+
+The following items need backend implementation and are documented here for handoff:
+
+1. **Anti-sniping trigger**: DB trigger on `auction_bids` INSERT to extend `end_time` by 2 minutes if bid is within last 2 minutes, increment `extended_count`, cap at 10
+2. **Auction close cron**: pg_cron or Edge Function cron to set `status = 'ended'`, determine `winner_id`, insert `auction_notifications`
+3. **Auction activate cron**: Set `status = 'live'` when `start_time <= NOW()`
+4. **Stripe escrow integration**: Payment intent creation for auction winners
+5. **Fraud detection**: Rate limiting, IP tracking, shill bid detection
+6. **Bid status management**: Update previous highest bidder's bid status to `outbid` when new bid arrives
 
 ---
 
 ## Technical Notes
 
-- All new components use shadcn/ui primitives (Dialog, Card, Progress, DropdownMenu, Badge)
-- No new dependencies required -- everything uses existing shadcn and Lucide icons
-- localStorage keys: `lithiumbuy_welcome_seen`, `lithiumbuy_marketplace_visited`, `lithiumbuy_checklist_dismissed`
-- The DropdownMenu in the header uses `bg-popover` for solid background (no transparency issues)
-- Password strength logic: weak (<8 chars), medium (8+ with mixed case or numbers), strong (12+ with upper, lower, number, special)
+- All new components use shadcn/ui + Tailwind CSS exclusively
+- No new dependencies required
+- Realtime is already wired via `useRealtimeSubscription` on both `auctions` and `auction_bids` tables
+- Bid placement uses `place_auction_bid` RPC through authenticated client (compliant with RPC-only write rule)
+- Watch feature uses localStorage as interim storage until `auction_watchers` table is created by backend
 
