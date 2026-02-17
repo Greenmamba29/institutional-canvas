@@ -88,7 +88,7 @@ export const auctionBidSkill: Skill<AuctionBidInput, AuctionBidOutput> = {
       const position = bids.findIndex(b => b.amount === validInput.amount) + 1;
       
       const result: AuctionBidOutput = {
-        bidId: (bidData as Record<string, unknown>)?.id as string || '',
+        bidId: ((bidData as Record<string, unknown>)?.bid_id as string) || '',
         status: position === 1 ? 'accepted' : 'outbid',
         currentHighBid: bids[0]?.amount || validInput.amount,
         yourPosition: position,
@@ -191,16 +191,11 @@ export const auctionSettleSkill: Skill<SettleAuctionInput, unknown> = {
         };
       }
       
-      const validInput = parseResult.data;
-      
-      // Update auction status to ended and mark winning bid
-      const { error: updateError } = await supabase
-        .from('auctions')
-        .update({ status: 'ended' })
-        .eq('id', validInput.auctionId);
-      
-      if (updateError) {
-        if (updateError.message?.includes('read-only mode')) {
+      // Call the server-side RPC to close ended auctions (handles winner selection, bid statuses, notifications)
+      const { data: rpcData, error: rpcError } = await supabase.rpc('close_ended_auctions');
+
+      if (rpcError) {
+        if (rpcError.message?.includes('read-only mode')) {
           return {
             success: false,
             error: {
@@ -210,25 +205,22 @@ export const auctionSettleSkill: Skill<SettleAuctionInput, unknown> = {
             },
           };
         }
-        
+
         return {
           success: false,
           error: {
-            code: 'UPDATE_ERROR',
-            message: updateError.message,
+            code: 'SETTLE_ERROR',
+            message: rpcError.message,
             retryable: true,
           },
         };
       }
-      
-      // Generate a deal ID (in production, this would be created via RPC)
-      const dealId = crypto.randomUUID();
-      
+
       return {
         success: true,
         data: {
-          dealId,
-          status: 'awarded',
+          closed: (rpcData as Record<string, unknown>)?.closed ?? 0,
+          status: 'settled',
         },
       };
     } catch (error: any) {
