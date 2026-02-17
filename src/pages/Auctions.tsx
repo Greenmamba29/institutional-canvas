@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Gavel,
   Clock,
@@ -12,10 +13,12 @@ import {
   DollarSign,
   ArrowUpRight,
   Timer,
-  AlertCircle
+  AlertCircle,
+  Eye,
 } from "lucide-react";
 import { useAuctions } from "@/hooks/useAuctions";
 import { VerificationBadge } from "@/components/shared/VerificationBadge";
+import { WatchButton, getWatchedIds } from "@/components/auction/WatchButton";
 import type { Auction } from "@/services/auctions.service";
 
 function formatCurrency(value: number): string {
@@ -29,10 +32,17 @@ function formatCurrency(value: number): string {
 
 export default function Auctions() {
   const { data: auctions = [], isLoading, error } = useAuctions();
+  const [filter, setFilter] = useState<"all" | "watched">("all");
 
-  const liveAuctions = auctions.filter(a => a.status === 'live');
-  const scheduledAuctions = auctions.filter(a => a.status === 'scheduled');
-  const endedAuctions = auctions.filter(a => a.status === 'ended');
+  const watchedIds = useMemo(() => getWatchedIds(), []);
+
+  const displayedAuctions = filter === "watched"
+    ? auctions.filter((a) => watchedIds.includes(a.id))
+    : auctions;
+
+  const liveAuctions = displayedAuctions.filter(a => a.status === 'live');
+  const scheduledAuctions = displayedAuctions.filter(a => a.status === 'scheduled');
+  const endedAuctions = displayedAuctions.filter(a => a.status === 'ended');
 
   if (error) {
     return (
@@ -72,6 +82,21 @@ export default function Auctions() {
           icon={Gavel}
         />
 
+        {/* Filter Tabs */}
+        <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "watched")}>
+          <TabsList>
+            <TabsTrigger value="all">All Auctions</TabsTrigger>
+            <TabsTrigger value="watched" className="gap-1.5">
+              <Eye className="h-3.5 w-3.5" />
+              Watched
+              {watchedIds.length > 0 && (
+                <span className="ml-1 text-xs bg-primary/10 text-primary rounded-full px-1.5">
+                  {watchedIds.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         {/* Live Auctions */}
         {liveAuctions.length > 0 && (
           <div className="space-y-4">
@@ -161,7 +186,7 @@ function AuctionCard({ auction, isLive = false }: { auction: Auction; isLive?: b
       className={`card-premium p-5 ${isLive ? 'border border-destructive/20 animate-pulse-glow' : ''}`}
     >
       <div className="flex items-start justify-between mb-4">
-        <div>
+        <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <StatusPill status={auction.status === 'scheduled' ? 'upcoming' : auction.status === 'live' ? 'live' : 'ended'} />
             {productLabel && (
@@ -178,22 +203,25 @@ function AuctionCard({ auction, isLive = false }: { auction: Auction; isLive?: b
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{auction.description}</p>
           )}
         </div>
-        <div className="text-right">
-          {isLive && timeLeft ? (
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
-              <span className="font-mono text-sm font-bold text-destructive">{timeLeft}</span>
-            </div>
-          ) : (
-            <>
-              <p className="text-xs text-muted-foreground">
-                {auction.status === 'scheduled' ? 'Starts' : 'Ended'}
-              </p>
-              <p className="font-mono text-sm">
-                {new Date(auction.end_time || auction.ends_at || auction.start_time || auction.starts_at || auction.created_at).toLocaleDateString()}
-              </p>
-            </>
-          )}
+        <div className="flex items-start gap-2">
+          <WatchButton auctionId={auction.id} />
+          <div className="text-right">
+            {isLive && timeLeft ? (
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                <span className="font-mono text-sm font-bold text-destructive">{timeLeft}</span>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {auction.status === 'scheduled' ? 'Starts' : 'Ended'}
+                </p>
+                <p className="font-mono text-sm">
+                  {new Date(auction.end_time || auction.ends_at || auction.start_time || auction.starts_at || auction.created_at).toLocaleDateString()}
+                </p>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
