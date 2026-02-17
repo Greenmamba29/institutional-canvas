@@ -4398,6 +4398,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      close_ended_auctions: { Args: never; Returns: Json }
       complete_ai_run: {
         Args: {
           p_error_message?: string
