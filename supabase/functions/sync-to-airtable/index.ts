@@ -116,9 +116,26 @@ function transformFields(table: string, record: Record<string, any>): Record<str
 
   const transformed: Record<string, any> = {};
   for (const [key, value] of Object.entries(record)) {
-    if (key === 'id' || key === 'created_at') continue;
-    const airtableField = transformer[key] || key;
-    if (typeof value === 'object' && value !== null) {
+    // For auctions/auction_bids, map 'id' to Auction_ID/Bid_ID
+    if (key === 'id') {
+      if (table === 'auctions') {
+        transformed['Auction_ID'] = value;
+      } else if (table === 'auction_bids') {
+        transformed['Bid_ID'] = value;
+      }
+      continue;
+    }
+    // Map created_at if transformer has it
+    if (key === 'created_at' && transformer[key]) {
+      transformed[transformer[key]] = value;
+      continue;
+    } else if (key === 'created_at') {
+      continue;
+    }
+    const airtableField = transformer[key];
+    if (!airtableField) continue; // skip unmapped fields
+    if (value === null || value === undefined) continue; // skip nulls
+    if (typeof value === 'object') {
       transformed[airtableField] = JSON.stringify(value);
     } else {
       transformed[airtableField] = value;
@@ -172,7 +189,7 @@ serve(async (req) => {
           'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ records: batchRecords }),
+        body: JSON.stringify({ records: batchRecords, typecast: true }),
       });
 
       if (!response.ok) {
@@ -230,7 +247,7 @@ serve(async (req) => {
           'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(airtableRecord),
+        body: JSON.stringify({ ...airtableRecord, typecast: true }),
       });
     }
 
