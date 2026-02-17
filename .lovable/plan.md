@@ -1,132 +1,100 @@
 
+# Automatic Auction Close + Full Airtable Sync
 
-# Phase 6: Production-Ready Auction System
-
-This is a large initiative. Given frontend-only constraints (Lovable cannot create backend RPC functions or cron jobs), the plan focuses on **Week 1 MVP items** that are achievable now, clearly marking what requires backend work.
-
----
-
-## Current State Summary
-
-**Already working:**
-- `place_auction_bid` RPC exists and is wired to the UI via `usePlaceAuctionBid` hook
-- Realtime subscriptions on `auctions` and `auction_bids` tables (auto-invalidate React Query cache)
-- Bid history table with anonymized bidders, rank indicators, and "You" labels
-- Bid increment validation in the UI
-- Countdown timers on both list and detail pages
-- `auction_notifications` table with enum types (outbid, winning, auction_ending, auction_won, auction_lost)
-- `extended_count` field on auctions table
-- `auction_bid_status` enum (active, outbid, withdrawn, winning)
-
-**What this plan adds (frontend-only):**
+## What This Does
+When an auction's end time passes, a background job will automatically:
+1. Set the auction status to "ended"
+2. Pick the highest bidder as winner
+3. Mark the winning bid as "won" and all others as "lost"
+4. Notify the winner
+5. Push all finalized data (auctions + bids) to Airtable
 
 ---
 
-## Task 1: Live Bid Feed Component
-
-Create `src/components/auction/LiveBidFeed.tsx` -- a compact real-time activity log shown on the AuctionDetail page alongside the existing bid history table.
-
-- Shows last 10 bids as a scrolling feed with animated entry
-- Highlights "You were outbid!" alerts inline
-- Displays bid count badge that updates in real-time
-- Uses existing `useAuctionBids` hook (already has realtime subscription)
-
-**Files:** New `src/components/auction/LiveBidFeed.tsx`, modify `src/pages/AuctionDetail.tsx`
+## Prerequisites (Done by AI)
+- Add the Supabase secret `AIRTABLE_AUCTION_BIDS_TABLE` with value `tbltL0vu4zomBnU3Z`
 
 ---
 
-## Task 2: Outbid Alert Banner
+## Implementation Steps
 
-Add a persistent alert banner on AuctionDetail when the current user was the previous highest bidder but has been outbid.
+### Step 1: Add the Airtable Bids Table Secret
+Set `AIRTABLE_AUCTION_BIDS_TABLE = tbltL0vu4zomBnU3Z` in Supabase Edge Function secrets.
 
-- Compare `sortedBids[0].org_id` against `currentOrgId`
-- If user has bids but is not #1, show a dismissible `Alert` with "You've been outbid! Place a new bid to regain your position."
-- Use sonner toast for the initial notification, persistent banner for ongoing state
+### Step 2: SQL Migration -- Create `close_ended_auctions()` RPC
+A new database function that runs server-side to close expired auctions:
+- Finds all auctions where `status = 'live'` AND `ends_at <= now()`
+- For each, finds the highest bid and sets `winner_id`
+- Updates auction status to `ended`
+- Marks winning bid status to `won`, all others to `lost`
+- Creates a notification for the winner (using the correct `notifications` schema: `org_id`, `body`, `entity_type`, `entity_id`)
 
-**Files:** Modify `src/pages/AuctionDetail.tsx`
+### Step 3: SQL Migration -- Enable `pg_cron` + `pg_net` and Schedule Job
+- Enable both extensions
+- Schedule a cron job running every minute that calls the `close-auctions` Edge Function via HTTP
 
----
+### Step 4: Create Edge Function `supabase/functions/close-auctions/index.ts`
+A lightweight function that:
+1. Calls `close_ended_auctions()` RPC using the service role key
+2. Fetches all auctions updated to `ended` in the last 2 minutes
+3. Pushes each to Airtable via the existing `sync-to-airtable` function
+4. Fetches all bids for those auctions and pushes them to Airtable too
+5. Returns a summary (how many closed, how many synced)
 
-## Task 3: Bid Confirmation Dialog
+### Step 5: Update `supabase/config.toml`
+Add:
+```
+[functions.close-auctions]
+verify_jwt = false
+```
 
-Add a confirmation step before submitting bids to prevent accidental submissions.
+### Step 6: Fix `src/skills/auction/index.ts` -- Remove Direct Mutation
+The `settleAuctionSkill` currently uses a forbidden direct `.update()` call. It will be changed to call the `close_ended_auctions` RPC instead, respecting the project's RPC-only write rule.
 
-- Show AlertDialog with bid amount, auction title, and minimum increment confirmation
-- Include "I understand this bid is binding" checkbox
-- Only then call `placeBid.mutate()`
-
-**Files:** New `src/components/auction/BidConfirmDialog.tsx`, modify `src/pages/AuctionDetail.tsx`
-
----
-
-## Task 4: Auction Extension Indicator
-
-Show visual feedback when an auction has been extended (anti-sniping).
-
-- Display "EXTENDED x{n}" badge next to the countdown when `extended_count > 0`
-- Animate the badge on change
-- Add tooltip explaining the anti-sniping rule
-
-**Files:** Modify `src/pages/AuctionDetail.tsx`
-
----
-
-## Task 5: Auction Watch Button
-
-Create a watch/unwatch toggle so users can track auctions they are interested in.
-
-- UI-only for now (localStorage-based watchlist until backend table exists)
-- Show filled/outline eye icon
-- Filter "Watched" auctions on the Auctions list page
-- Prepare for future `auction_watchers` table migration
-
-**Files:** New `src/components/auction/WatchButton.tsx`, modify `src/pages/Auctions.tsx`
+### Step 7: Update `src/hooks/useAuctions.ts` -- Handle `bidData` as `jsonb`
+The `place_auction_bid` RPC now returns `jsonb` (with `bid_id`, `was_extended`, `extended_count`). The `auctionBidSkill` needs to read `bidData.bid_id` instead of `bidData.id`.
 
 ---
 
-## Task 6: Auction Status Transitions in UI
+## Architecture Diagram
 
-Handle auction lifecycle states more gracefully:
-
-- When a live auction's countdown reaches zero, auto-transition the UI to "Ending..." then refetch status
-- Show winner announcement card when `status === 'ended'` and `winner_id` is set
-- Display "Auction Won" or "Auction Lost" state for participating users
-
-**Files:** Modify `src/pages/AuctionDetail.tsx`
-
----
-
-## Task 7: Terms Acceptance Before First Bid
-
-Add a one-time T&C acceptance flow before a user can place their first bid on any auction.
-
-- Show a dialog with auction terms on first bid attempt
-- Store acceptance in localStorage (keyed by user ID)
-- Checkbox: "I agree to the auction terms and conditions"
-- Block bid form until accepted
-
-**Files:** New `src/components/auction/AuctionTermsDialog.tsx`, modify `src/pages/AuctionDetail.tsx`
+```text
+Every minute:
+  pg_cron --> pg_net HTTP POST --> close-auctions Edge Function
+                                      |
+                                      v
+                              close_ended_auctions() RPC
+                                (set winner, update statuses,
+                                 notify winner)
+                                      |
+                                      v
+                              Fetch recently closed auctions + bids
+                                      |
+                                      v
+                              Call sync-to-airtable for each
+                                (auctions --> tbl4oywNOsuRrvabQ)
+                                (bids --> tbltL0vu4zomBnU3Z)
+```
 
 ---
 
-## Backend Requirements (NOT in this plan -- requires Replit)
+## Technical Details
 
-The following items need backend implementation and are documented here for handoff:
+**`close_ended_auctions()` function:**
+- `SECURITY DEFINER` with `SET search_path = public`
+- Loops through expired live auctions
+- Uses `ORDER BY amount DESC LIMIT 1` to find the winner
+- Notification insert uses `org_id` from the auction record, `body` for message text, `entity_type = 'auction'`, `entity_id = auction.id`
 
-1. **Anti-sniping trigger**: DB trigger on `auction_bids` INSERT to extend `end_time` by 2 minutes if bid is within last 2 minutes, increment `extended_count`, cap at 10
-2. **Auction close cron**: pg_cron or Edge Function cron to set `status = 'ended'`, determine `winner_id`, insert `auction_notifications`
-3. **Auction activate cron**: Set `status = 'live'` when `start_time <= NOW()`
-4. **Stripe escrow integration**: Payment intent creation for auction winners
-5. **Fraud detection**: Rate limiting, IP tracking, shill bid detection
-6. **Bid status management**: Update previous highest bidder's bid status to `outbid` when new bid arrives
+**`close-auctions` Edge Function:**
+- No JWT verification (called by pg_cron)
+- Uses `SUPABASE_SERVICE_ROLE_KEY` for RPC call
+- After closing, queries auctions with `status = 'ended' AND updated_at > now() - interval '2 minutes'`
+- For each closed auction, fetches all its bids and syncs both to Airtable
 
----
+**Settle skill fix:**
+- Replace `supabase.from('auctions').update(...)` with `supabase.rpc('close_ended_auctions')`
+- Remove the manual `dealId` generation (the RPC handles everything)
 
-## Technical Notes
-
-- All new components use shadcn/ui + Tailwind CSS exclusively
-- No new dependencies required
-- Realtime is already wired via `useRealtimeSubscription` on both `auctions` and `auction_bids` tables
-- Bid placement uses `place_auction_bid` RPC through authenticated client (compliant with RPC-only write rule)
-- Watch feature uses localStorage as interim storage until `auction_watchers` table is created by backend
-
+**Bid skill fix:**
+- Read `bidData.bid_id` instead of `bidData.id` from the jsonb return value
