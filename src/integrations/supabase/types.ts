@@ -5208,26 +5208,8 @@ export type Database = {
         }[]
       }
       place_auction_bid: {
-        Args: { p_amount: number; p_auction_id: string; p_currency: string }
-        Returns: {
-          amount: number
-          auction_id: string
-          bidder_id: string | null
-          created_at: string
-          created_by: string
-          currency: string
-          id: string
-          ip_address: string | null
-          org_id: string
-          placed_at: string | null
-          status: Database["public"]["Enums"]["auction_bid_status"] | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "auction_bids"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Args: { p_amount: number; p_auction_id: string; p_currency?: string }
+        Returns: Json
       }
       remove_org_member: {
         Args: { p_org_id: string; p_user_id: string }
