@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
@@ -6,6 +6,14 @@ import { StatusPill } from "@/components/shared/StatusPill";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Table,
   TableBody,
@@ -28,11 +36,18 @@ import {
   XCircle,
   Hash,
   Send,
+  Trophy,
+  X,
+  Zap,
 } from "lucide-react";
 import { useAuction, useAuctionBids, usePlaceAuctionBid } from "@/hooks/useAuctions";
 import { useCurrentOrg } from "@/hooks/useCurrentOrg";
 import { toast } from "sonner";
 import type { AuctionBid } from "@/services/auctions.service";
+import { LiveBidFeed } from "@/components/auction/LiveBidFeed";
+import { BidConfirmDialog } from "@/components/auction/BidConfirmDialog";
+import { AuctionTermsDialog, hasAcceptedTerms, markTermsAccepted } from "@/components/auction/AuctionTermsDialog";
+import { WatchButton } from "@/components/auction/WatchButton";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -54,10 +69,6 @@ function formatDateTime(iso: string): string {
   });
 }
 
-/**
- * Derives a human-readable countdown string from a target date.
- * Returns null when the target has already passed.
- */
 function getTimeRemaining(endsAt: string): string | null {
   const diff = new Date(endsAt).getTime() - Date.now();
   if (diff <= 0) return null;
@@ -98,23 +109,29 @@ export default function AuctionDetail() {
   const [bidAmount, setBidAmount] = useState("");
   const [bidCurrency, setBidCurrency] = useState("USD");
 
+  // -- Dialog states --------------------------------------------------------
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const [pendingBidAmount, setPendingBidAmount] = useState(0);
+  const [outbidDismissed, setOutbidDismissed] = useState(false);
+
   // -- Live countdown timer -------------------------------------------------
   const [timeLeft, setTimeLeft] = useState<string | null>(null);
 
   useEffect(() => {
     if (!auction?.ends_at) return;
-
-    // Calculate immediately, then tick every second
     setTimeLeft(getTimeRemaining(auction.ends_at));
-
     const interval = setInterval(() => {
       const remaining = getTimeRemaining(auction.ends_at!);
       setTimeLeft(remaining);
-      if (remaining === null) clearInterval(interval);
+      if (remaining === null) {
+        clearInterval(interval);
+        // Auto-refetch when countdown hits zero (Task 6)
+        refetch();
+      }
     }, 1_000);
-
     return () => clearInterval(interval);
-  }, [auction?.ends_at]);
+  }, [auction?.ends_at, refetch]);
 
   // -- Derived data ---------------------------------------------------------
   const sortedBids = useMemo(
@@ -129,12 +146,9 @@ export default function AuctionDetail() {
       ? highBid.amount >= auction.reserve_price
       : false;
 
-  // Build a stable bidder-number map keyed by org_id so the same org always
-  // gets the same anonymised label within this page view.
   const bidderMap = useMemo(() => {
     const map = new Map<string, number>();
     let counter = 0;
-    // Walk bids in descending-amount order so Bidder #1 = highest bidder
     for (const bid of sortedBids) {
       if (!map.has(bid.org_id)) {
         counter += 1;
@@ -152,6 +166,10 @@ export default function AuctionDetail() {
     return idx === -1 ? null : idx + 1;
   }, [sortedBids, currentOrgId]);
 
+  // Task 2: Outbid detection
+  const userHasBids = currentOrgId ? bids.some((b) => b.org_id === currentOrgId) : false;
+  const isOutbid = userHasBids && highBid != null && highBid.org_id !== currentOrgId;
+
   // -- Map auction status to StatusPill type --------------------------------
   const statusPillType =
     auction?.status === "live"
@@ -163,11 +181,12 @@ export default function AuctionDetail() {
           : "ended";
 
   // -- Handlers -------------------------------------------------------------
-  function handlePlaceBid(e: React.FormEvent) {
+  const handlePlaceBid = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!id || !bidAmount) return;
 
     const amount = parseFloat(bidAmount);
+    const increment = auction?.bid_increment ?? 500;
 
     // Validate against starting bid
     if (auction?.starting_bid && !highBid && amount < auction.starting_bid) {
@@ -176,7 +195,6 @@ export default function AuctionDetail() {
     }
 
     // Validate against highest bid + increment
-    const increment = auction?.bid_increment ?? 500;
     if (highBid && amount < highBid.amount + increment) {
       toast.error(`Bid must be at least ${formatCurrency(highBid.amount + increment, highBid.currency)} (current + ${formatCurrency(increment)})`);
       return;
@@ -187,19 +205,46 @@ export default function AuctionDetail() {
       toast.warning(`Bid is below reserve price of ${formatCurrency(auction.reserve_price, auction.currency)}`);
     }
 
+    // Task 7: Check terms acceptance first
+    const userId = currentOrgId || "anonymous";
+    if (!hasAcceptedTerms(userId)) {
+      setPendingBidAmount(amount);
+      setShowTermsDialog(true);
+      return;
+    }
+
+    // Task 3: Show confirmation dialog
+    setPendingBidAmount(amount);
+    setShowConfirmDialog(true);
+  }, [id, bidAmount, auction, highBid, currentOrgId]);
+
+  const handleTermsAccepted = useCallback(() => {
+    const userId = currentOrgId || "anonymous";
+    markTermsAccepted(userId);
+    setShowTermsDialog(false);
+    // Now show confirmation dialog
+    setShowConfirmDialog(true);
+  }, [currentOrgId]);
+
+  const handleConfirmBid = useCallback(() => {
+    if (!id) return;
     placeBid.mutate(
       {
         p_auction_id: id,
-        p_amount: amount,
+        p_amount: pendingBidAmount,
         p_currency: bidCurrency,
       },
       {
         onSuccess: () => {
           setBidAmount("");
+          setShowConfirmDialog(false);
+        },
+        onError: () => {
+          setShowConfirmDialog(false);
         },
       },
     );
-  }
+  }, [id, pendingBidAmount, bidCurrency, placeBid]);
 
   // -- Loading state --------------------------------------------------------
   if (auctionLoading) {
@@ -253,6 +298,7 @@ export default function AuctionDetail() {
   // -- Render ---------------------------------------------------------------
   const isLive = auction.status === "live";
   const isEnded = auction.status === "ended" || auction.status === "cancelled";
+  const extendedCount = auction.extended_count ?? 0;
 
   return (
     <LayoutShell>
@@ -264,6 +310,52 @@ export default function AuctionDetail() {
             { label: auction.title },
           ]}
         />
+
+        {/* Task 2: Outbid Alert Banner */}
+        {isOutbid && !outbidDismissed && (
+          <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle className="flex items-center justify-between">
+              You&apos;ve been outbid!
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 -mr-2"
+                onClick={() => setOutbidDismissed(true)}
+                aria-label="Dismiss"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </AlertTitle>
+            <AlertDescription>
+              Place a new bid to regain your position. Current highest bid is{" "}
+              <span className="font-mono font-bold">
+                {highBid ? formatCurrency(highBid.amount, highBid.currency) : "—"}
+              </span>.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Task 6: Winner Announcement */}
+        {isEnded && auction.winner_id && (
+          <div className="card-premium p-6 border border-primary/30 bg-primary/5">
+            <div className="flex items-center gap-3">
+              <Trophy className="h-8 w-8 text-primary" />
+              <div>
+                <h3 className="text-lg font-bold">
+                  {auction.winner_id === currentOrgId
+                    ? "🎉 You Won This Auction!"
+                    : "Auction Closed — Winner Determined"}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {auction.winner_id === currentOrgId
+                    ? "Congratulations! You will receive payment instructions shortly."
+                    : "This auction has concluded. Thank you for participating."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Header Row */}
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -280,6 +372,24 @@ export default function AuctionDetail() {
               <div className="flex items-center gap-3 mb-1">
                 <h1 className="text-2xl font-bold tracking-tight">{auction.title}</h1>
                 <StatusPill status={statusPillType} />
+                {/* Task 4: Extension Indicator */}
+                {extendedCount > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="border-warning/50 text-warning animate-pulse gap-1">
+                          <Zap className="h-3 w-3" />
+                          EXTENDED x{extendedCount}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs max-w-[200px]">
+                          This auction was extended {extendedCount} time{extendedCount > 1 ? "s" : ""} due to last-minute bids (anti-sniping rule).
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
               {auction.description && (
                 <p className="text-sm text-muted-foreground max-w-xl">{auction.description}</p>
@@ -287,6 +397,8 @@ export default function AuctionDetail() {
               <span className="text-xs font-mono text-muted-foreground">{auction.id.slice(0, 8)}</span>
             </div>
           </div>
+          {/* Task 5: Watch Button */}
+          <WatchButton auctionId={auction.id} variant="default" />
         </div>
 
         {/* Main Grid */}
@@ -310,7 +422,6 @@ export default function AuctionDetail() {
                   ) : (
                     <p className="text-xl font-semibold text-muted-foreground">No bids yet</p>
                   )}
-                  {/* Reserve indicator */}
                   {auction.reserve_price != null && (
                     <div className="flex items-center gap-1.5 mt-2">
                       {reserveMet ? (
@@ -370,6 +481,9 @@ export default function AuctionDetail() {
                 </div>
               )}
             </div>
+
+            {/* Task 1: Live Bid Feed */}
+            <LiveBidFeed bids={bids} currentOrgId={currentOrgId} />
 
             {/* Bid History Table */}
             <div className="glass-panel rounded-xl overflow-hidden">
@@ -603,6 +717,25 @@ export default function AuctionDetail() {
           </div>
         </div>
       </div>
+
+      {/* Task 3: Bid Confirmation Dialog */}
+      <BidConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        bidAmount={pendingBidAmount}
+        currency={bidCurrency}
+        auctionTitle={auction.title}
+        minIncrement={auction.bid_increment ?? 500}
+        onConfirm={handleConfirmBid}
+        isPending={placeBid.isPending}
+      />
+
+      {/* Task 7: Terms Acceptance Dialog */}
+      <AuctionTermsDialog
+        open={showTermsDialog}
+        onOpenChange={setShowTermsDialog}
+        onAccept={handleTermsAccepted}
+      />
     </LayoutShell>
   );
 }
