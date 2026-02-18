@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
   Settings as SettingsIcon,
@@ -69,7 +69,7 @@ const actionSections = [
 
 export default function Settings() {
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-8 animate-fade-in">
         <PageHeader
           title="Settings"
@@ -138,6 +138,6 @@ export default function Settings() {
           </div>
         </div>
       </div>
-    </LayoutShell>
+    </>
   );
 }

@@ -22,19 +22,17 @@ export default function Deals() {
 
   if (error) {
     return (
-      <LayoutShell>
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <AlertCircle className="h-12 w-12 text-destructive" />
-          <h2 className="text-xl font-semibold">Failed to load Deals</h2>
-          <p className="text-muted-foreground">{error.message}</p>
-        </div>
-      </LayoutShell>
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <h2 className="text-xl font-semibold">Failed to load Deals</h2>
+        <p className="text-muted-foreground">{error.message}</p>
+      </div>
     );
   }
 
   if (isLoading) {
     return (
-      <LayoutShell>
+      <>
         <PageHeader
           title="Lithium & Recycling Deals"
           description="Active supply negotiations and closed recycling agreements"
@@ -44,7 +42,7 @@ export default function Deals() {
             <Skeleton key={i} className="h-48 w-full rounded-xl" />
           ))}
         </div>
-      </LayoutShell>
+      </>
     );
   }
 

@@ -1,4 +1,4 @@
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,38 +16,33 @@ export default function Data() {
   // Grant access if user is admin OR has pro subscription
   const hasAccess = isAdmin || isPro;
 
-  // Show loading state while checking role
   if (isLoadingRole) {
     return (
-      <LayoutShell>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin h-8 w-8 border-4 border-accent border-t-transparent rounded-full" />
-        </div>
-      </LayoutShell>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin h-8 w-8 border-4 border-accent border-t-transparent rounded-full" />
+      </div>
     );
   }
 
   if (!hasAccess) {
     return (
-      <LayoutShell>
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-          <div className="p-4 rounded-full bg-accent/10 mb-6">
-            <Lock className="h-12 w-12 text-accent" />
-          </div>
-          <h1 className="text-3xl font-bold mb-3">Lithium & Recycling Data Hub</h1>
-          <p className="text-muted-foreground max-w-md mb-6">
-            Access comprehensive data on lithium procurement, black mass recycling volumes, and sustainability reports.
-          </p>
-          <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            Upgrade to Pro - $199/month
-          </Button>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <div className="p-4 rounded-full bg-accent/10 mb-6">
+          <Lock className="h-12 w-12 text-accent" />
         </div>
-      </LayoutShell>
+        <h1 className="text-3xl font-bold mb-3">Lithium & Recycling Data Hub</h1>
+        <p className="text-muted-foreground max-w-md mb-6">
+          Access comprehensive data on lithium procurement, black mass recycling volumes, and sustainability reports.
+        </p>
+        <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+          Upgrade to Pro - $199/month
+        </Button>
+      </div>
     );
   }
 
   return (
-    <LayoutShell>
+    <>
       <PageHeader
         title="Data Hub"
         description="Market data, exports, and analytics"
@@ -106,6 +101,6 @@ export default function Data() {
           </CardContent>
         </Card>
       </div>
-    </LayoutShell>
+    </>
   );
 }

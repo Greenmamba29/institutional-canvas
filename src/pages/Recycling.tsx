@@ -8,7 +8,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { listAirtableRecords } from '@/services/airtable-crud.service';
-import { LayoutShell } from '@/components/layout/LayoutShell';
+
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -130,7 +130,7 @@ export default function Recycling() {
   );
 
   return (
-    <LayoutShell>
+    <>
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <PageHeader
           title="Recycling Marketplace"
@@ -201,7 +201,7 @@ export default function Recycling() {
           </TabsContent>
         </Tabs>
       </div>
-    </LayoutShell>
+    </>
   );
 }
 

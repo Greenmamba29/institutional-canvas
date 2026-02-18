@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -80,18 +80,16 @@ export default function CompanyVerification() {
 
   if (isLoading) {
     return (
-      <LayoutShell>
-        <div className="space-y-4 animate-pulse max-w-3xl">
-          <div className="h-8 bg-secondary rounded w-64" />
-          <div className="h-32 bg-secondary rounded" />
-          <div className="h-48 bg-secondary rounded" />
-        </div>
-      </LayoutShell>
+      <div className="space-y-4 animate-pulse max-w-3xl">
+        <div className="h-8 bg-secondary rounded w-64" />
+        <div className="h-32 bg-secondary rounded" />
+        <div className="h-48 bg-secondary rounded" />
+      </div>
     );
   }
 
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6 animate-fade-in max-w-3xl">
         <PageHeader
           title="Company Verification"
@@ -266,6 +264,6 @@ export default function CompanyVerification() {
           </div>
         )}
       </div>
-    </LayoutShell>
+    </>
   );
 }

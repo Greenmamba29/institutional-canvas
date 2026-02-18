@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { Button } from "@/components/ui/button";
@@ -46,19 +46,17 @@ export default function Auctions() {
 
   if (error) {
     return (
-      <LayoutShell>
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <AlertCircle className="h-12 w-12 text-destructive" />
-          <h2 className="text-xl font-semibold">Failed to load Auctions</h2>
-          <p className="text-muted-foreground">{error.message}</p>
-        </div>
-      </LayoutShell>
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <h2 className="text-xl font-semibold">Failed to load Auctions</h2>
+        <p className="text-muted-foreground">{error.message}</p>
+      </div>
     );
   }
 
   if (isLoading) {
     return (
-      <LayoutShell>
+      <>
         <PageHeader
           title="Auctions"
           description="Weekly spot auctions for lithium and battery metals"
@@ -69,12 +67,12 @@ export default function Auctions() {
             <Skeleton key={i} className="h-48 w-full rounded-xl" />
           ))}
         </div>
-      </LayoutShell>
+      </>
     );
   }
 
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6 animate-fade-in">
         <PageHeader
           title="Lithium & Recycling Auctions"
@@ -148,7 +146,7 @@ export default function Auctions() {
           </div>
         )}
       </div>
-    </LayoutShell>
+    </>
   );
 }
 

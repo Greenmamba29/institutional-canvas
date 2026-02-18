@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { Button } from "@/components/ui/button";
@@ -72,16 +72,14 @@ export default function Marketplace() {
 
   if (error) {
     return (
-      <LayoutShell>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-destructive">Failed to load marketplace listings</p>
-        </div>
-      </LayoutShell>
+      <div className="flex items-center justify-center h-64">
+        <p className="text-destructive">Failed to load marketplace listings</p>
+      </div>
     );
   }
 
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6 animate-fade-in">
         <PageHeader
           title="Lithium & Recycling Marketplace"
@@ -273,6 +271,6 @@ export default function Marketplace() {
           </div>
         )}
       </div>
-    </LayoutShell>
+    </>
   );
 }

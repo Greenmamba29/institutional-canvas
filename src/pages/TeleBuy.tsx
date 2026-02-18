@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format, formatDistanceToNow, isToday, isTomorrow, parseISO } from 'date-fns';
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -236,7 +236,7 @@ function SessionDetailView({ sessionId }: { sessionId: string }) {
   
   if (isLoading) {
     return (
-      <LayoutShell>
+      <>
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate('/telebuy')}>
             <ArrowLeft className="h-4 w-4" />
@@ -244,13 +244,13 @@ function SessionDetailView({ sessionId }: { sessionId: string }) {
           <Skeleton className="h-8 w-48" />
         </div>
         <Skeleton className="h-[600px] w-full" />
-      </LayoutShell>
+      </>
     );
   }
   
   if (error || !session) {
     return (
-      <LayoutShell>
+      <>
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate('/telebuy')}>
             <ArrowLeft className="h-4 w-4" />
@@ -269,7 +269,7 @@ function SessionDetailView({ sessionId }: { sessionId: string }) {
             </Button>
           </CardContent>
         </Card>
-      </LayoutShell>
+      </>
     );
   }
   
@@ -277,7 +277,7 @@ function SessionDetailView({ sessionId }: { sessionId: string }) {
   const isDailySession = session.meeting_url?.includes('daily.co') || !session.meeting_url;
   
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -348,7 +348,7 @@ function SessionDetailView({ sessionId }: { sessionId: string }) {
           </Card>
         )}
       </div>
-    </LayoutShell>
+    </>
   );
 }
 
@@ -378,7 +378,7 @@ export default function TeleBuy() {
   ];
 
   return (
-    <LayoutShell>
+    <>
       <PageHeader
         title="TeleBuy Connect"
         description="Video-first negotiation platform for B2B lithium and recycling deals"
@@ -474,6 +474,6 @@ export default function TeleBuy() {
           </div>
         </div>
       </div>
-    </LayoutShell>
+    </>
   );
 }

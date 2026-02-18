@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutShell } from '@/components/layout/LayoutShell';
+
 import { PageHeader } from '@/components/shared/PageHeader';
 import { useOrganization } from '@/context/OrganizationContext';
 import { useOrgMembers, useInviteOrgMember } from '@/hooks/useOrganizations';
@@ -92,7 +92,7 @@ export default function Team() {
   };
 
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6">
         <PageHeader
           title="Team Management"
@@ -250,6 +250,6 @@ export default function Team() {
           )}
         </div>
       </div>
-    </LayoutShell>
+    </>
   );
 }

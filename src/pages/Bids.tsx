@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { DataTable } from "@/components/shared/DataTable";
@@ -126,18 +126,16 @@ export default function Bids() {
 
   if (error) {
     return (
-      <LayoutShell>
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <AlertCircle className="h-12 w-12 text-destructive" />
-          <h2 className="text-xl font-semibold">Failed to load Bids</h2>
-          <p className="text-muted-foreground">{error.message}</p>
-        </div>
-      </LayoutShell>
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <h2 className="text-xl font-semibold">Failed to load Bids</h2>
+        <p className="text-muted-foreground">{error.message}</p>
+      </div>
     );
   }
 
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6 animate-fade-in">
         <PageHeader
           title="Live Bids"
@@ -214,6 +212,6 @@ export default function Bids() {
           <DataTable columns={columns} data={filteredBids} />
         )}
       </div>
-    </LayoutShell>
+    </>
   );
 }
