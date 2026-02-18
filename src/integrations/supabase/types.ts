@@ -4484,6 +4484,23 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_review_document: {
+        Args: {
+          p_document_id: string
+          p_rejection_reason?: string
+          p_status: string
+        }
+        Returns: Json
+      }
+      admin_review_submission: {
+        Args: {
+          p_notes?: string
+          p_queue_id: string
+          p_rejection_reason?: string
+          p_status: string
+        }
+        Returns: Json
+      }
       can_process: {
         Args: { p_requested?: number; p_user: string }
         Returns: Json
@@ -4555,6 +4572,10 @@ export type Database = {
           p_tokens_used?: number
         }
         Returns: boolean
+      }
+      create_api_key: {
+        Args: { p_name: string; p_scopes?: string[] }
+        Returns: Json
       }
       create_deal: {
         Args: { p_rfq_id: string; p_supplier_id: string; p_title: string }
@@ -4967,6 +4988,7 @@ export type Database = {
           they_follow_me: boolean
         }[]
       }
+      get_kyc_status: { Args: never; Returns: Json }
       get_latest_chat_document: {
         Args: { auth_user_id: string; doc_id: string }
         Returns: {
@@ -5384,6 +5406,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      revoke_api_key: { Args: { p_key_id: string }; Returns: Json }
       save_telebuy_transcript: {
         Args: {
           p_ai_action_items?: Json
@@ -5470,6 +5493,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      submit_kyc_verification: {
+        Args: { p_notes?: string; p_tier: string }
+        Returns: Json
       }
       update_ai_feature_flag_status: {
         Args: { p_feature_key: string; p_status: string }
@@ -5624,6 +5651,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      upload_kyc_document: {
+        Args: {
+          p_document_type: string
+          p_expires_at?: string
+          p_file_name: string
+          p_file_size_bytes?: number
+          p_file_url?: string
+          p_kyb_queue_id: string
+          p_mime_type?: string
+        }
+        Returns: Json
       }
       withdraw_bid: { Args: { p_bid_id: string }; Returns: boolean }
     }
