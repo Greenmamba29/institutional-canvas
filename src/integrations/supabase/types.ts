@@ -388,6 +388,63 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          org_id: string
+          revoked_at: string | null
+          scopes: string[]
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          org_id: string
+          revoked_at?: string | null
+          scopes?: string[]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          org_id?: string
+          revoked_at?: string | null
+          scopes?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_keys_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       arbitrage_opportunities: {
         Row: {
           buy_price: number
@@ -1898,12 +1955,91 @@ export type Database = {
           {
             foreignKeyName: "kyb_verification_queue_org_id_fkey"
             columns: ["org_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "kyb_verification_queue_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "supplier_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kyc_documents: {
+        Row: {
+          airtable_id: string | null
+          created_at: string
+          document_type: string
+          expires_at: string | null
+          file_name: string
+          file_size_bytes: number | null
+          file_url: string | null
+          id: string
+          kyb_queue_id: string | null
+          mime_type: string | null
+          org_id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          airtable_id?: string | null
+          created_at?: string
+          document_type: string
+          expires_at?: string | null
+          file_name: string
+          file_size_bytes?: number | null
+          file_url?: string | null
+          id?: string
+          kyb_queue_id?: string | null
+          mime_type?: string | null
+          org_id: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          airtable_id?: string | null
+          created_at?: string
+          document_type?: string
+          expires_at?: string | null
+          file_name?: string
+          file_size_bytes?: number | null
+          file_url?: string | null
+          id?: string
+          kyb_queue_id?: string | null
+          mime_type?: string | null
+          org_id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyc_documents_kyb_queue_id_fkey"
+            columns: ["kyb_queue_id"]
+            isOneToOne: false
+            referencedRelation: "kyb_verification_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kyc_documents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kyc_documents_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "supplier_directory"
