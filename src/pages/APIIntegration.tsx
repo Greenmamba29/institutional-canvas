@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -124,7 +124,7 @@ export default function APIIntegration() {
   const revokedKeys = apiKeys.filter((k) => k.revoked_at);
 
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6 animate-fade-in max-w-4xl">
         <PageHeader
           title="API Integration"
@@ -332,6 +332,6 @@ export default function APIIntegration() {
           </DialogContent>
         </Dialog>
       </div>
-    </LayoutShell>
+    </>
   );
 }

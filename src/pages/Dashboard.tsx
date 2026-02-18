@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { useOrganization } from "@/context/OrganizationContext";
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
 import { TabBar } from "@/components/shared/TabBar";
@@ -251,32 +251,30 @@ export default function Dashboard() {
   };
 
   return (
-    <LayoutShell>
-      <div className="space-y-6 animate-fade-in">
-        <BreadcrumbNav items={breadcrumbs} />
-        
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          <Button
-            onClick={() => navigate('/recycling')}
-            variant="outline"
-            className="gap-2"
-          >
-            <Activity className="h-4 w-4" />
-            Recycling Marketplace
-          </Button>
-        </div>
-
-        <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <OnboardingChecklist />
-
-        <SystemAlert message="Chilean export quota re-allocations are live. Review updated compliance requirements." />
-
-        {renderTabContent()}
-
-        <WelcomeModal />
+    <div className="space-y-6 animate-fade-in">
+      <BreadcrumbNav items={breadcrumbs} />
+      
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        <Button
+          onClick={() => navigate('/recycling')}
+          variant="outline"
+          className="gap-2"
+        >
+          <Activity className="h-4 w-4" />
+          Recycling Marketplace
+        </Button>
       </div>
-    </LayoutShell>
+
+      <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+
+      <OnboardingChecklist />
+
+      <SystemAlert message="Chilean export quota re-allocations are live. Review updated compliance requirements." />
+
+      {renderTabContent()}
+
+      <WelcomeModal />
+    </div>
   );
 }

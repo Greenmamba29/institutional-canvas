@@ -1,4 +1,4 @@
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import { PriceTicker } from "@/components/shared/PriceTicker";
 import { KpiCard } from "@/components/shared/KpiCard";
@@ -15,7 +15,7 @@ import { priceIndicators } from "@/data/mockData";
 
 export default function Analytics() {
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6 animate-fade-in">
         <PageHeader
           title="Lithium & Recycling Analytics"
@@ -161,6 +161,6 @@ export default function Analytics() {
           </p>
         </div>
       </div>
-    </LayoutShell>
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -93,7 +93,7 @@ export default function Orders() {
 
   if (isLoading) {
     return (
-      <LayoutShell>
+      <>
         <PageHeader title="Orders" description="Track and manage your purchase orders" />
         <div className="mt-6 mb-6">
           <StatsGridSkeleton count={4} />
@@ -104,13 +104,13 @@ export default function Orders() {
             <QuoteListSkeleton count={5} />
           </CardContent>
         </Card>
-      </LayoutShell>
+      </>
     );
   }
 
   if (error) {
     return (
-      <LayoutShell>
+      <>
         <PageHeader title="Orders" description="Track and manage your purchase orders" />
         <Card className="mt-6">
           <CardContent className="p-8 text-center">
@@ -118,12 +118,12 @@ export default function Orders() {
             <p className="text-muted-foreground">Failed to load orders. Please try again.</p>
           </CardContent>
         </Card>
-      </LayoutShell>
+      </>
     );
   }
 
   return (
-    <LayoutShell>
+    <>
       <PageHeader
         title="Orders"
         description="Track and manage your purchase orders"
@@ -164,6 +164,6 @@ export default function Orders() {
           )}
         </CardContent>
       </Card>
-    </LayoutShell>
+    </>
   );
 }

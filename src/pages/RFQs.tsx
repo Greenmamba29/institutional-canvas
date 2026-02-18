@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { useOrganization } from "@/context/OrganizationContext";
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
 import { TabBar } from "@/components/shared/TabBar";
@@ -94,18 +94,16 @@ export default function RFQs() {
 
   if (error) {
     return (
-      <LayoutShell>
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <AlertCircle className="h-12 w-12 text-destructive" />
-          <h2 className="text-xl font-semibold">Failed to load RFQs</h2>
-          <p className="text-muted-foreground">{error.message}</p>
-        </div>
-      </LayoutShell>
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <h2 className="text-xl font-semibold">Failed to load RFQs</h2>
+        <p className="text-muted-foreground">{error.message}</p>
+      </div>
     );
   }
 
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6 animate-fade-in">
         <BreadcrumbNav items={[{ label: 'PLATFORM' }, { label: 'SUPPLY CHAIN' }, { label: 'LITHIUM & RECYCLING RFQs' }]} />
         
@@ -207,6 +205,6 @@ export default function RFQs() {
           )}
         </div>
       </div>
-    </LayoutShell>
+    </>
   );
 }

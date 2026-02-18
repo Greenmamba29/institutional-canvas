@@ -63,8 +63,9 @@ export function useSidebarCounts() {
   const query = useQuery({
     queryKey: ['sidebar-counts', currentOrgId],
     queryFn: () => fetchSidebarCounts(currentOrgId),
-    staleTime: 30000, // 30s
-    refetchOnWindowFocus: true,
+    staleTime: 2 * 60 * 1000,   // 2 minutes — realtime handles live updates
+    gcTime: 5 * 60 * 1000,       // 5 minutes garbage collection
+    refetchOnWindowFocus: false, // realtime subscriptions handle updates
   });
 
   // Subscribe to realtime changes on key tables

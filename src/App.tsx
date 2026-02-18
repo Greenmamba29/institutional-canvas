@@ -1,8 +1,9 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { OrganizationProvider, useOrganization } from "@/context/OrganizationContext";
 import { NotificationProvider } from "@/context/NotificationContext";
@@ -11,38 +12,42 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleProtectedRoute } from "@/components/auth/RoleProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { AppLayout } from "@/components/layout/AppLayout";
 
-// Pages
-import Dashboard from "./pages/Dashboard";
-import Marketplace from "./pages/Marketplace";
-import RFQs from "./pages/RFQs";
-import Bids from "./pages/Bids";
-import Auctions from "./pages/Auctions";
-import AuctionDetail from "./pages/AuctionDetail";
-import Analytics from "./pages/Analytics";
-import Settings from "./pages/Settings";
-import Verification from "./pages/Verification";
-import Messages from "./pages/Messages";
-import NotFound from "./pages/NotFound";
-import Deals from "./pages/Deals";
-import TeleBuy from "./pages/TeleBuy";
-import AIStudio from "./pages/AIStudio";
-import Data from "./pages/Data";
-import Orders from "./pages/Orders";
-import Billing from "./pages/Billing";
+// Public pages — small, load eagerly
+import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import PasswordReset from "./pages/PasswordReset";
+import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
-import Purchases from "./pages/Purchases";
-import Team from "./pages/Team";
-import Landing from "./pages/Landing";
-import ChainOfCustody from "./pages/ChainOfCustody";
-import Admin from "./pages/Admin";
-import Recycling from "./pages/Recycling";
-import KYCCompliance from "./pages/KYCCompliance";
-import CompanyVerification from "./pages/CompanyVerification";
-import APIIntegration from "./pages/APIIntegration";
+
+// Protected pages — lazy loaded for code splitting
+// Each import creates a separate chunk, loaded only when navigated to
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const RFQs = lazy(() => import("./pages/RFQs"));
+const Bids = lazy(() => import("./pages/Bids"));
+const Auctions = lazy(() => import("./pages/Auctions"));
+const AuctionDetail = lazy(() => import("./pages/AuctionDetail"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Verification = lazy(() => import("./pages/Verification"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Deals = lazy(() => import("./pages/Deals"));
+const TeleBuy = lazy(() => import("./pages/TeleBuy"));
+const AIStudio = lazy(() => import("./pages/AIStudio"));
+const Data = lazy(() => import("./pages/Data"));
+const Orders = lazy(() => import("./pages/Orders"));
+const Billing = lazy(() => import("./pages/Billing"));
+const Purchases = lazy(() => import("./pages/Purchases"));
+const Team = lazy(() => import("./pages/Team"));
+const ChainOfCustody = lazy(() => import("./pages/ChainOfCustody"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Recycling = lazy(() => import("./pages/Recycling"));
+const KYCCompliance = lazy(() => import("./pages/KYCCompliance"));
+const CompanyVerification = lazy(() => import("./pages/CompanyVerification"));
+const APIIntegration = lazy(() => import("./pages/APIIntegration"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,57 +68,63 @@ const AppContent = () => {
 
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/password-reset" element={<PasswordReset />} />
-        
-        {/* Protected routes - using Outlet pattern */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/marketplace/:id" element={<Marketplace />} />
-          <Route path="/rfqs" element={<RFQs />} />
-          <Route path="/rfqs/:id" element={<RFQs />} />
-          <Route path="/bids" element={<Bids />} />
-          <Route path="/auctions" element={<Auctions />} />
-          <Route path="/auctions/:id" element={<AuctionDetail />} />
-          <Route path="/deals" element={<Deals />} />
-          <Route path="/deals/:id" element={<Deals />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/purchases" element={<Purchases />} />
-          {/* TeleBuy - requires Pro subscription */}
-          <Route element={<RoleProtectedRoute requireSubscription="pro" />}>
-            <Route path="/telebuy" element={<TeleBuy />} />
-            <Route path="/telebuy/session/:id" element={<TeleBuy />} />
+      {/* Suspense boundary wraps all lazy routes — shows skeleton while chunk loads */}
+      <Suspense fallback={<LoadingScreen message="Loading..." />}>
+        <Routes>
+          {/* Public routes — no layout shell */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/password-reset" element={<PasswordReset />} />
+
+          {/* Auth guard — wraps all authenticated routes */}
+          <Route element={<ProtectedRoute />}>
+            {/* Onboarding — no persistent layout */}
+            <Route path="/onboarding" element={<Onboarding />} />
+
+            {/* Persistent layout: AppLayout renders LayoutShell ONCE.
+                Every route below shares the same sidebar instance.
+                Page transitions only re-render <Outlet />, not the sidebar. */}
+            <Route element={<AppLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/marketplace/:id" element={<Marketplace />} />
+              <Route path="/rfqs" element={<RFQs />} />
+              <Route path="/rfqs/:id" element={<RFQs />} />
+              <Route path="/bids" element={<Bids />} />
+              <Route path="/auctions" element={<Auctions />} />
+              <Route path="/auctions/:id" element={<AuctionDetail />} />
+              <Route path="/deals" element={<Deals />} />
+              <Route path="/deals/:id" element={<Deals />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/purchases" element={<Purchases />} />
+              <Route path="/chain-of-custody" element={<ChainOfCustody />} />
+              <Route path="/recycling" element={<Recycling />} />
+              <Route path="/data" element={<Data />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/billing" element={<Billing />} />
+              <Route path="/settings/team" element={<Team />} />
+              <Route path="/settings/kyc" element={<KYCCompliance />} />
+              <Route path="/settings/company-verification" element={<CompanyVerification />} />
+              <Route path="/settings/api" element={<APIIntegration />} />
+              <Route path="/team" element={<Team />} />
+              <Route path="/verification" element={<Verification />} />
+              <Route path="/messages" element={<Messages />} />
+
+              {/* Pro-gated routes */}
+              <Route element={<RoleProtectedRoute requireSubscription="pro" />}>
+                <Route path="/telebuy" element={<TeleBuy />} />
+                <Route path="/telebuy/session/:id" element={<TeleBuy />} />
+                <Route path="/ai-studio" element={<AIStudio />} />
+              </Route>
+            </Route>
           </Route>
-          <Route path="/chain-of-custody" element={<ChainOfCustody />} />
-          <Route path="/recycling" element={<Recycling />} />
-          
-          {/* AI Studio - requires Pro subscription */}
-          <Route element={<RoleProtectedRoute requireSubscription="pro" />}>
-            <Route path="/ai-studio" element={<AIStudio />} />
-          </Route>
-          
-          <Route path="/data" element={<Data />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/settings/billing" element={<Billing />} />
-          <Route path="/settings/team" element={<Team />} />
-          <Route path="/settings/kyc" element={<KYCCompliance />} />
-          <Route path="/settings/company-verification" element={<CompanyVerification />} />
-          <Route path="/settings/api" element={<APIIntegration />} />
-          <Route path="/team" element={<Team />} />
-          <Route path="/verification" element={<Verification />} />
-          <Route path="/messages" element={<Messages />} />
-        </Route>
-        
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 };

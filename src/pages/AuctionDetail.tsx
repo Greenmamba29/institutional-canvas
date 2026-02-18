@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { Button } from "@/components/ui/button";
@@ -294,49 +294,45 @@ export default function AuctionDetail() {
   // -- Loading state --------------------------------------------------------
   if (auctionLoading) {
     return (
-      <LayoutShell>
-        <div className="space-y-6">
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-10 w-72" />
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-4">
-              <Skeleton className="h-48 w-full rounded-xl" />
-              <Skeleton className="h-64 w-full rounded-xl" />
-            </div>
-            <div className="space-y-4">
-              <Skeleton className="h-48 w-full rounded-xl" />
-              <Skeleton className="h-64 w-full rounded-xl" />
-            </div>
+      <div className="space-y-6">
+        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-10 w-72" />
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-4">
+            <Skeleton className="h-48 w-full rounded-xl" />
+            <Skeleton className="h-64 w-full rounded-xl" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-48 w-full rounded-xl" />
+            <Skeleton className="h-64 w-full rounded-xl" />
           </div>
         </div>
-      </LayoutShell>
+      </div>
     );
   }
 
   // -- Error state ----------------------------------------------------------
   if (auctionError || !auction) {
     return (
-      <LayoutShell>
-        <div className="glass-panel rounded-xl p-8 text-center">
-          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Auction not found</h3>
-          <p className="text-muted-foreground mb-4">
-            The auction you are looking for does not exist or you do not have access.
-          </p>
-          <div className="flex justify-center gap-3">
-            <Button variant="outline" asChild>
-              <Link to="/auctions">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Auctions
-              </Link>
-            </Button>
-            <Button onClick={() => refetch()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
-          </div>
+      <div className="glass-panel rounded-xl p-8 text-center">
+        <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Auction not found</h3>
+        <p className="text-muted-foreground mb-4">
+          The auction you are looking for does not exist or you do not have access.
+        </p>
+        <div className="flex justify-center gap-3">
+          <Button variant="outline" asChild>
+            <Link to="/auctions">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Auctions
+            </Link>
+          </Button>
+          <Button onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
         </div>
-      </LayoutShell>
+      </div>
     );
   }
 
@@ -347,7 +343,7 @@ export default function AuctionDetail() {
   const extendedCount = auction.extended_count ?? 0;
 
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6 animate-fade-in">
         {/* Breadcrumb */}
         <BreadcrumbNav
@@ -867,6 +863,6 @@ export default function AuctionDetail() {
         onOpenChange={setShowTermsDialog}
         onAccept={handleTermsAccepted}
       />
-    </LayoutShell>
+    </>
   );
 }

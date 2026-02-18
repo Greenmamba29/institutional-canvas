@@ -333,11 +333,11 @@ export function LayoutShell({ children }: LayoutShellProps) {
       {/* Mobile sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-border transform transition-transform duration-300 lg:hidden",
+          "fixed inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-border transform transition-transform duration-300 lg:hidden flex flex-col",
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex items-center justify-between p-4 border-b border-border/50">
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-border/50">
           <Link to="/" className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-gradient-gold">
               <Sparkles className="h-5 w-5 text-accent-foreground" />
@@ -355,7 +355,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
             <X className="h-5 w-5" />
           </Button>
         </div>
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto min-h-0">
           {navItems.map((item) => {
             const active = isActive(item.path);
             const isLocked = item.requiresTier && 
@@ -391,8 +391,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
           })}
         </nav>
         
-        {/* Mobile User Profile + Bottom Nav */}
-        <div className="p-3 border-t border-border/50 space-y-2">
+        {/* Mobile User Profile + Bottom Nav — flex-shrink-0 keeps this pinned at bottom */}
+        <div className="flex-shrink-0 p-3 border-t border-border/50 space-y-2">
           {/* User info */}
           <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-secondary/30 border border-border/30">
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs">

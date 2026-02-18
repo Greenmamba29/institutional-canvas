@@ -1,4 +1,4 @@
-import { LayoutShell } from '@/components/layout/LayoutShell';
+
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusPill } from '@/components/shared/StatusPill';
 import { usePurchases } from '@/hooks/usePurchases';
@@ -77,7 +77,7 @@ export default function Purchases() {
   ];
 
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6">
         <PageHeader
           title="Purchase Orders"
@@ -146,6 +146,6 @@ export default function Purchases() {
           </div>
         )}
       </div>
-    </LayoutShell>
+    </>
   );
 }

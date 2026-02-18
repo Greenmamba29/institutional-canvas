@@ -1,4 +1,4 @@
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ const plans = [
 
 export default function Billing() {
   return (
-    <LayoutShell>
+    <>
       <PageHeader
         title="Billing & Subscription"
         description="Manage your plan and payment methods"
@@ -169,6 +169,6 @@ export default function Billing() {
           </div>
         </CardContent>
       </Card>
-    </LayoutShell>
+    </>
   );
 }

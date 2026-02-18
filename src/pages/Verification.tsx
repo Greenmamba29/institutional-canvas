@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
 import { TabBar } from "@/components/shared/TabBar";
 import { StatusPill } from "@/components/shared/StatusPill";
@@ -138,7 +138,7 @@ export default function Verification() {
   };
 
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6 animate-fade-in">
         <BreadcrumbNav items={breadcrumbs} />
 
@@ -230,6 +230,6 @@ export default function Verification() {
           />
         )}
       </div>
-    </LayoutShell>
+    </>
   );
 }

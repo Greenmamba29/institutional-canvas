@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { LayoutShell } from "@/components/layout/LayoutShell";
+
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -164,7 +164,7 @@ export default function KYCCompliance() {
   ];
 
   return (
-    <LayoutShell>
+    <>
       <div className="space-y-6 animate-fade-in max-w-4xl">
         <PageHeader
           title="KYC / Compliance"
@@ -365,6 +365,6 @@ export default function KYCCompliance() {
           </div>
         )}
       </div>
-    </LayoutShell>
+    </>
   );
 }
