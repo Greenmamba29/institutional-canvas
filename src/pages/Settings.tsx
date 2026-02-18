@@ -1,55 +1,83 @@
+import { Link } from "react-router-dom";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { Button } from "@/components/ui/button";
 import {
   Settings as SettingsIcon,
   User,
   Bell,
   Shield,
   CreditCard,
-  Globe,
-  Clock,
+  Key,
   Building2,
-  Key
+  ChevronRight,
 } from "lucide-react";
 
-export default function Settings() {
-  const settingsSections = [
-    {
-      title: 'Profile',
-      description: 'Manage your account details and preferences',
-      icon: User,
-      items: ['Personal Information', 'Company Details', 'Notification Preferences']
-    },
-    {
-      title: 'Security',
-      description: 'Password, 2FA, and access controls',
-      icon: Shield,
-      items: ['Change Password', 'Two-Factor Authentication', 'API Keys']
-    },
-    {
-      title: 'Notifications',
-      description: 'Configure alerts and updates',
-      icon: Bell,
-      items: ['Email Notifications', 'SMS Alerts', 'Price Alerts']
-    },
-    {
-      title: 'Billing',
-      description: 'Payment methods and invoices',
-      icon: CreditCard,
-      items: ['Payment Methods', 'Billing History', 'Subscription']
-    }
-  ];
+const settingsSections = [
+  {
+    title: "Profile",
+    description: "Manage your account details and preferences",
+    icon: User,
+    href: "/settings/team",
+    items: ["Personal Information", "Company Details", "Notification Preferences"],
+  },
+  {
+    title: "Security",
+    description: "Password, 2FA, and access controls",
+    icon: Shield,
+    href: "/settings",
+    items: ["Change Password", "Two-Factor Authentication", "Session Management"],
+  },
+  {
+    title: "Notifications",
+    description: "Configure alerts and updates",
+    icon: Bell,
+    href: "/settings",
+    items: ["Email Notifications", "SMS Alerts", "Price Alerts"],
+  },
+  {
+    title: "Billing",
+    description: "Payment methods and invoices",
+    icon: CreditCard,
+    href: "/settings/billing",
+    items: ["Payment Methods", "Billing History", "Subscription"],
+  },
+];
 
+const actionSections = [
+  {
+    title: "KYC / Compliance",
+    description: "Submit identity verification and compliance documents for your organization",
+    icon: Shield,
+    href: "/settings/kyc",
+    badge: "Required for Pro",
+  },
+  {
+    title: "API Integration",
+    description: "Create and manage API keys to connect external systems and webhooks",
+    icon: Key,
+    href: "/settings/api",
+    badge: null,
+  },
+  {
+    title: "Company Verification",
+    description: "Track your business verification status and manage credentials",
+    icon: Building2,
+    href: "/settings/company-verification",
+    badge: null,
+  },
+];
+
+export default function Settings() {
   return (
     <LayoutShell>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-8 animate-fade-in">
         <PageHeader
           title="Settings"
           description="Manage your account and preferences"
           icon={SettingsIcon}
         />
 
+        {/* Main Settings */}
         <div className="grid lg:grid-cols-2 gap-6">
           {settingsSections.map((section) => (
             <div key={section.title} className="card-premium p-6">
@@ -62,39 +90,50 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground">{section.description}</p>
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {section.items.map((item) => (
-                  <button
+                  <Link
                     key={item}
-                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors text-sm"
+                    to={section.href}
+                    className="flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors text-sm"
                   >
-                    {item}
-                  </button>
+                    <span>{item}</span>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Link>
                 ))}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Phase 2 Stubs */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Coming Soon</h2>
+        {/* Action Sections */}
+        <div>
+          <h2 className="text-base font-semibold mb-4">Compliance & Integration</h2>
           <div className="grid lg:grid-cols-3 gap-4">
-            {[
-              { title: 'KYC/Compliance', icon: Shield, desc: 'Identity verification and compliance documents' },
-              { title: 'API Integration', icon: Key, desc: 'Connect external systems and webhooks' },
-              { title: 'Company Verification', icon: Building2, desc: 'Business verification and credentials' }
-            ].map((stub) => (
-              <div key={stub.title} className="card-premium p-5 border-dashed border-2 border-border opacity-60">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-muted">
-                    <stub.icon className="h-5 w-5 text-muted-foreground" />
+            {actionSections.map((section) => (
+              <Link
+                key={section.title}
+                to={section.href}
+                className="card-premium p-5 hover:bg-secondary/30 transition-colors group block"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <section.icon className="h-5 w-5 text-primary" />
                   </div>
-                  <h3 className="font-semibold">{stub.title}</h3>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm">{section.title}</h3>
+                    {section.badge && (
+                      <span className="text-[10px] text-primary font-medium uppercase tracking-wide">
+                        {section.badge}
+                      </span>
+                    )}
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </div>
-                <p className="text-sm text-muted-foreground">{stub.desc}</p>
-                <p className="text-xs text-warning mt-2">Phase 2</p>
-              </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {section.description}
+                </p>
+              </Link>
             ))}
           </div>
         </div>

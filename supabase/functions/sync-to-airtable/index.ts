@@ -21,6 +21,9 @@ const tableMapping: Record<string, string> = {
   // Auction mappings
   'auctions': Deno.env.get('AIRTABLE_AUCTIONS_TABLE') || 'tblAuctions',
   'auction_bids': Deno.env.get('AIRTABLE_AUCTION_BIDS_TABLE') || 'tblAuctionBids',
+  // KYC mappings
+  'kyb_verification_queue': Deno.env.get('AIRTABLE_KYC_SUBMISSIONS_TABLE') || 'tblKYCSubmissions',
+  'kyc_documents': Deno.env.get('AIRTABLE_KYC_DOCUMENTS_TABLE') || 'tblKYCDocuments',
 };
 
 // Field transformers: Convert Supabase column names to Airtable field names
@@ -106,6 +109,31 @@ const fieldTransformers: Record<string, Record<string, string>> = {
     'status': 'Status',
     'placed_at': 'Placed_At',
     'ip_address': 'IP_Address',
+  },
+  'kyb_verification_queue': {
+    'org_id': 'Org_ID',
+    'verification_tier': 'Verification_Tier',
+    'status': 'Status',
+    'submitted_at': 'Submitted_At',
+    'reviewed_at': 'Reviewed_At',
+    'reviewer_id': 'Reviewer_ID',
+    'rejection_reason': 'Rejection_Reason',
+    'notes': 'Notes',
+    'risk_score': 'Risk_Score',
+    'created_at': 'Created_At',
+  },
+  'kyc_documents': {
+    'kyb_queue_id': 'Submission_ID',
+    'org_id': 'Org_ID',
+    'document_type': 'Document_Type',
+    'file_name': 'File_Name',
+    'file_url': 'File_URL',
+    'status': 'Status',
+    'rejection_reason': 'Rejection_Reason',
+    'expires_at': 'Expires_At',
+    'uploaded_by': 'Uploaded_By',
+    'reviewed_at': 'Reviewed_At',
+    'created_at': 'Uploaded_At',
   },
 };
 

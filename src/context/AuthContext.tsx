@@ -42,10 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      toast({
-        title: 'Signed out',
-        description: 'You have been signed out successfully.',
-      });
+      // Force full page reload to clear all React Query cache and in-memory state
+      window.location.href = '/auth';
     } catch (error: any) {
       console.error('Sign out error:', error);
       toast({

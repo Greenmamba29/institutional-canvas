@@ -40,6 +40,9 @@ import Landing from "./pages/Landing";
 import ChainOfCustody from "./pages/ChainOfCustody";
 import Admin from "./pages/Admin";
 import Recycling from "./pages/Recycling";
+import KYCCompliance from "./pages/KYCCompliance";
+import CompanyVerification from "./pages/CompanyVerification";
+import APIIntegration from "./pages/APIIntegration";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -101,6 +104,9 @@ const AppContent = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/billing" element={<Billing />} />
           <Route path="/settings/team" element={<Team />} />
+          <Route path="/settings/kyc" element={<KYCCompliance />} />
+          <Route path="/settings/company-verification" element={<CompanyVerification />} />
+          <Route path="/settings/api" element={<APIIntegration />} />
           <Route path="/team" element={<Team />} />
           <Route path="/verification" element={<Verification />} />
           <Route path="/messages" element={<Messages />} />
