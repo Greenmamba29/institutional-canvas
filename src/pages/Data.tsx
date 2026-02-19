@@ -2,21 +2,23 @@
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, Download, FileSpreadsheet, BarChart3, Lock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Paywall } from "@/components/shared/Paywall";
+import { Database, Download, FileSpreadsheet, BarChart3 } from "lucide-react";
 import { useIsAdmin, useRole } from "@/context/RoleContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useNavigate } from "react-router-dom";
 
 export default function Data() {
-  // Server-validated admin check (from org_members table)
   const isAdmin = useIsAdmin();
   const { isLoadingRole } = useRole();
-  
-  // TODO: Implement actual subscription check via useSubscription hook
-  const isPro = false; // Mock - will be replaced with subscription tier check
-  
-  // Grant access if user is admin OR has pro subscription
+  const { data: subscription, isLoading: subLoading } = useSubscription();
+  const navigate = useNavigate();
+
+  const isPro = subscription?.tier === 'pro' || subscription?.tier === 'enterprise';
   const hasAccess = isAdmin || isPro;
 
-  if (isLoadingRole) {
+  if (isLoadingRole || subLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin h-8 w-8 border-4 border-accent border-t-transparent rounded-full" />
@@ -26,18 +28,18 @@ export default function Data() {
 
   if (!hasAccess) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <div className="p-4 rounded-full bg-accent/10 mb-6">
-          <Lock className="h-12 w-12 text-accent" />
-        </div>
-        <h1 className="text-3xl font-bold mb-3">Lithium & Recycling Data Hub</h1>
-        <p className="text-muted-foreground max-w-md mb-6">
-          Access comprehensive data on lithium procurement, black mass recycling volumes, and sustainability reports.
-        </p>
-        <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-          Upgrade to Pro - $199/month
-        </Button>
-      </div>
+      <Paywall
+        feature="Data Hub"
+        description="Access comprehensive market data, export tools, and analytics for lithium procurement and recycling volumes."
+        requiredTier="pro"
+        benefits={[
+          'Real-time & historical lithium market data',
+          'Custom report generation',
+          'CSV/Excel export',
+          'Sustainability & ESG reports',
+          'Supplier performance analytics',
+        ]}
+      />
     );
   }
 
@@ -58,11 +60,15 @@ export default function Data() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Real-time and historical lithium market data.
+              Real-time and historical lithium market data including spot prices, volume, and regional trends.
             </p>
+            <div className="flex gap-2">
+              <Badge variant="secondary" className="text-xs">Live Feed</Badge>
+              <Badge variant="outline" className="text-xs">Historical</Badge>
+            </div>
             <Button variant="outline" className="w-full">
               <Download className="h-4 w-4 mr-2" />
-              Export Data
+              Export Market Data
             </Button>
           </CardContent>
         </Card>
@@ -76,9 +82,15 @@ export default function Data() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Generate custom reports and analyses.
+              Generate custom reports for RFQs, deal performance, supplier comparisons, and ESG metrics.
             </p>
+            <div className="flex gap-2">
+              <Badge variant="secondary" className="text-xs">PDF</Badge>
+              <Badge variant="outline" className="text-xs">Excel</Badge>
+              <Badge variant="outline" className="text-xs">CSV</Badge>
+            </div>
             <Button variant="outline" className="w-full">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
               Create Report
             </Button>
           </CardContent>
@@ -93,9 +105,14 @@ export default function Data() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Advanced analytics and visualization tools.
+              Advanced analytics: procurement spend, supplier reliability scores, and carbon footprint tracking.
             </p>
-            <Button variant="outline" className="w-full">
+            <div className="flex gap-2">
+              <Badge variant="secondary" className="text-xs">Interactive</Badge>
+              <Badge variant="outline" className="text-xs">Exportable</Badge>
+            </div>
+            <Button variant="outline" className="w-full" onClick={() => navigate('/analytics')}>
+              <BarChart3 className="h-4 w-4 mr-2" />
               View Analytics
             </Button>
           </CardContent>

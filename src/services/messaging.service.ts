@@ -206,7 +206,7 @@ export async function sendMessage(
   const { data, error } = await supabase.rpc('send_direct_message', {
     p_conversation_id: conversationId,
     p_content: content,
-    p_attachments: JSON.stringify(attachments)
+    p_attachments: attachments as unknown as string,
   });
 
   if (error) throw new Error(error.message);

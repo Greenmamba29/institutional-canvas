@@ -107,14 +107,15 @@ export function useRespondToFollow() {
 
 export function useConversations() {
   const { currentOrg } = useOrganization();
-  
+  const queryClient = useQueryClient();
+
   const query = useQuery<DMConversation[]>({
     queryKey: messagingKeys.conversations(currentOrg?.id),
     queryFn: () => messagingService.getConversations(currentOrg!.id),
     enabled: !!currentOrg,
   });
 
-  // Real-time subscription
+  // Real-time subscription — invalidate cache instead of calling refetch directly
   useEffect(() => {
     if (!currentOrg) return;
 
@@ -128,7 +129,7 @@ export function useConversations() {
           table: 'dm_conversations',
         },
         () => {
-          query.refetch();
+          queryClient.invalidateQueries({ queryKey: messagingKeys.conversations(currentOrg.id) });
         }
       )
       .subscribe();
@@ -136,7 +137,7 @@ export function useConversations() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentOrg, query.refetch]);
+  }, [currentOrg, queryClient]);
 
   return query;
 }
@@ -165,14 +166,15 @@ export function useStartConversation() {
 
 export function useMessages(conversationId: string | undefined) {
   const { currentOrg } = useOrganization();
-  
+  const queryClient = useQueryClient();
+
   const query = useQuery<DirectMessage[]>({
     queryKey: messagingKeys.messages(conversationId || ''),
     queryFn: () => messagingService.getMessages(conversationId!),
     enabled: !!conversationId,
   });
 
-  // Real-time subscription for new messages
+  // Real-time subscription — invalidate cache on new messages
   useEffect(() => {
     if (!conversationId) return;
 
@@ -187,7 +189,7 @@ export function useMessages(conversationId: string | undefined) {
           filter: `conversation_id=eq.${conversationId}`,
         },
         () => {
-          query.refetch();
+          queryClient.invalidateQueries({ queryKey: messagingKeys.messages(conversationId) });
         }
       )
       .subscribe();
@@ -195,7 +197,7 @@ export function useMessages(conversationId: string | undefined) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, query.refetch]);
+  }, [conversationId, queryClient]);
 
   // Mark as read when viewing
   useEffect(() => {
@@ -231,50 +233,33 @@ export function useSendMessage() {
 
 export function useUnreadCount() {
   const { currentOrg } = useOrganization();
+  const queryClient = useQueryClient();
 
   const query = useQuery<number>({
     queryKey: messagingKeys.unreadCount(currentOrg?.id),
     queryFn: () => messagingService.getUnreadCount(currentOrg!.id),
     enabled: !!currentOrg,
-    staleTime: 0, // Always consider stale to use realtime
+    staleTime: 0,
   });
 
-  // Real-time subscription for new messages (updates unread count instantly)
+  // Real-time subscription — invalidate on new/updated messages
   useEffect(() => {
     if (!currentOrg) return;
 
     const channel = supabase
       .channel('unread_messages_count')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'direct_messages',
-        },
-        () => {
-          // Refetch unread count when new message arrives
-          query.refetch();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'direct_messages',
-          // When messages are marked as read
-        },
-        () => {
-          query.refetch();
-        }
-      )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, () => {
+        queryClient.invalidateQueries({ queryKey: messagingKeys.unreadCount(currentOrg.id) });
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'direct_messages' }, () => {
+        queryClient.invalidateQueries({ queryKey: messagingKeys.unreadCount(currentOrg.id) });
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentOrg, query.refetch]);
+  }, [currentOrg, queryClient]);
 
   return query;
 }
