@@ -65,37 +65,39 @@ interface NavItem {
   requiresTier?: 'pro' | 'enterprise';
 }
 
-// Buyer/Admin Navigation - MVP locked ordering
+// Buyer/Admin Navigation
+// requiresTier controls the lock badge shown in the sidebar.
+// Route-level gating is enforced separately in App.tsx via RoleProtectedRoute.
 const adminNavItems: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Marketplace', path: '/marketplace', icon: Store, requiresOrgType: ['admin', 'buyer', 'soe'] },
-  { label: 'Auctions', path: '/auctions', icon: Gavel },
-  { label: 'Recycling', path: '/recycling', icon: Activity },
   { label: 'Bids', path: '/bids', icon: Target },
   { label: 'RFQs', path: '/rfqs', icon: FileText },
   { label: 'Deals', path: '/deals', icon: Handshake },
   { label: 'Orders', path: '/orders', icon: Package },
-  { label: 'TeleBuy', path: '/telebuy', icon: Video, requiresTier: 'pro' },
-  { label: 'AI Studio', path: '/ai-studio', icon: Brain, requiresTier: 'pro' },
-  { label: 'Data', path: '/data', icon: Database },
-  { label: 'Messages', path: '/messages', icon: MessageSquare },
+  { label: 'Analytics', path: '/analytics', icon: TrendingUp, requiresTier: 'pro' },
+  { label: 'Data', path: '/data', icon: Database, requiresTier: 'pro' },
+  { label: 'Auctions', path: '/auctions', icon: Gavel, requiresTier: 'enterprise' },
+  { label: 'Recycling', path: '/recycling', icon: Activity, requiresTier: 'enterprise' },
+  { label: 'TeleBuy', path: '/telebuy', icon: Video, requiresTier: 'enterprise' },
+  { label: 'AI Studio', path: '/ai-studio', icon: Brain, requiresTier: 'enterprise' },
+  { label: 'Messages', path: '/messages', icon: MessageSquare, requiresTier: 'enterprise' },
   { label: 'Verification', path: '/verification', icon: ShieldCheck, requiresOrgType: ['admin'] },
-  { label: 'Analytics', path: '/analytics', icon: TrendingUp },
   { label: 'Admin', path: '/admin', icon: Shield, requiresOrgType: ['admin'] },
 ];
 
-// Supplier Navigation - MVP locked ordering
+// Supplier Navigation
 const supplierNavItems: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Recycling', path: '/recycling', icon: Activity },
   { label: 'RFQs', path: '/rfqs', icon: FileText },
-  { label: 'Auctions', path: '/auctions', icon: Gavel },
   { label: 'Bid Activity', path: '/bids', icon: Target },
   { label: 'Deals', path: '/deals', icon: Handshake },
   { label: 'Orders', path: '/orders', icon: Package },
-  { label: 'TeleBuy', path: '/telebuy', icon: Video, requiresTier: 'pro' },
-  { label: 'Messages', path: '/messages', icon: MessageSquare },
-  { label: 'Analytics', path: '/analytics', icon: TrendingUp },
+  { label: 'Analytics', path: '/analytics', icon: TrendingUp, requiresTier: 'pro' },
+  { label: 'Auctions', path: '/auctions', icon: Gavel, requiresTier: 'enterprise' },
+  { label: 'Recycling', path: '/recycling', icon: Activity, requiresTier: 'enterprise' },
+  { label: 'TeleBuy', path: '/telebuy', icon: Video, requiresTier: 'enterprise' },
+  { label: 'Messages', path: '/messages', icon: MessageSquare, requiresTier: 'enterprise' },
 ];
 
 const bottomNavItems = [
@@ -238,11 +240,12 @@ export function LayoutShell({ children }: LayoutShellProps) {
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin">
           {navItems.map((item) => {
             const active = isActive(item.path);
-            const isLocked = item.requiresTier && 
-              subscriptionTier !== item.requiresTier && 
-              subscriptionTier !== 'enterprise' &&
-              orgType !== 'admin';
-            
+            const tierRank = { pro: 1, enterprise: 2 };
+            const userRank = subscriptionTier === 'enterprise' ? 2 : subscriptionTier === 'pro' ? 1 : 0;
+            const requiredRank = item.requiresTier ? tierRank[item.requiresTier] : 0;
+            const isLocked = orgType !== 'admin' && requiredRank > userRank;
+            const lockLabel = item.requiresTier === 'enterprise' ? 'ENT' : 'PRO';
+
             return (
               <Link
                 key={item.path}
@@ -263,7 +266,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   {sidebarOpen && isLocked && (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">PRO</Badge>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">{lockLabel}</Badge>
                   )}
                   {sidebarOpen && dynamicCounts[item.path] && dynamicCounts[item.path]! > 0 && (
                     <CountBadge count={dynamicCounts[item.path]!} variant={active ? 'default' : 'accent'} />
@@ -272,7 +275,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
                 {!sidebarOpen && (
                   <span className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
                     {item.label}
-                    {isLocked && ' (Pro)'}
+                    {isLocked && ` (${lockLabel})`}
                   </span>
                 )}
               </Link>
@@ -358,11 +361,12 @@ export function LayoutShell({ children }: LayoutShellProps) {
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto min-h-0">
           {navItems.map((item) => {
             const active = isActive(item.path);
-            const isLocked = item.requiresTier && 
-              subscriptionTier !== item.requiresTier && 
-              subscriptionTier !== 'enterprise' &&
-              orgType !== 'admin';
-            
+            const tierRank = { pro: 1, enterprise: 2 };
+            const userRank = subscriptionTier === 'enterprise' ? 2 : subscriptionTier === 'pro' ? 1 : 0;
+            const requiredRank = item.requiresTier ? tierRank[item.requiresTier] : 0;
+            const isLocked = orgType !== 'admin' && requiredRank > userRank;
+            const lockLabel = item.requiresTier === 'enterprise' ? 'ENT' : 'PRO';
+
             return (
               <Link
                 key={item.path}
@@ -382,7 +386,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   {isLocked && (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">PRO</Badge>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">{lockLabel}</Badge>
                   )}
                   {dynamicCounts[item.path] && dynamicCounts[item.path]! > 0 && <CountBadge count={dynamicCounts[item.path]!} variant={active ? 'default' : 'accent'} />}
                 </div>
@@ -401,7 +405,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{userDisplayName}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                {subscriptionTier || 'free'} • {orgType || 'buyer'}
+                {subscriptionTier || 'no plan'} • {orgType || 'buyer'}
               </p>
             </div>
           </div>
@@ -488,7 +492,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
                     <div className="text-right">
                       <p className="text-sm font-semibold">{userDisplayName}</p>
                       <p className="text-[10px] text-muted-foreground uppercase">
-                        {subscriptionTier ? `${subscriptionTier} TIER` : 'FREE'} • {orgType || 'USER'}
+                        {subscriptionTier ? `${subscriptionTier} TIER` : 'NO PLAN'} • {orgType || 'USER'}
                       </p>
                     </div>
                     <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
@@ -502,7 +506,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
                       <p className="text-sm font-medium">{userDisplayName}</p>
                       <p className="text-xs text-muted-foreground">{user?.email}</p>
                       <Badge variant="outline" className="w-fit text-[10px] mt-1">
-                        {(subscriptionTier || 'free').toUpperCase()}
+                        {(subscriptionTier || 'NO PLAN').toUpperCase()}
                       </Badge>
                     </div>
                   </DropdownMenuLabel>
