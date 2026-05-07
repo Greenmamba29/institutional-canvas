@@ -3,8 +3,9 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, CreditCard, Zap, Crown, Mail, ArrowRight, Calendar } from "lucide-react";
+import { Check, CreditCard, Zap, Crown, Mail, ArrowRight, Calendar, Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useCheckout, type BillingCycle } from "@/hooks/useCheckout";
 import { STRIPE_PRODUCTS } from "@/lib/stripe/config";
 
 const PRO_FEATURES = [
@@ -31,16 +32,14 @@ const ENTERPRISE_FEATURES = [
 ];
 
 export default function Billing() {
-  const [annual, setAnnual] = useState(false);
+  const [cycle, setCycle] = useState<BillingCycle>('monthly');
   const { data: subscription } = useSubscription();
+  const { startCheckout, isLoading } = useCheckout();
 
   const currentTier = subscription?.tier ?? null;
 
-  const proMonthly = STRIPE_PRODUCTS.pro.price;
-  const proAnnual = STRIPE_PRODUCTS.pro.annualPrice;
-  const entMonthly = STRIPE_PRODUCTS.enterprise.price;
-  const entAnnual = STRIPE_PRODUCTS.enterprise.annualPrice;
-
+  const proPrice    = cycle === 'annual' ? STRIPE_PRODUCTS.pro.annualPrice      : STRIPE_PRODUCTS.pro.price;
+  const entPrice    = cycle === 'annual' ? STRIPE_PRODUCTS.enterprise.annualPrice : STRIPE_PRODUCTS.enterprise.price;
   const fmt = (n: number) => `$${n.toLocaleString()}`;
 
   return (
@@ -50,7 +49,7 @@ export default function Billing() {
         description="Manage your plan and payment methods"
       />
 
-      {/* Current plan banner */}
+      {/* Current plan */}
       <Card className="mt-6 mb-8">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -65,9 +64,9 @@ export default function Billing() {
                 {currentTier ? `${currentTier} Plan` : 'No Active Subscription'}
               </p>
               <p className="text-muted-foreground">
-                {currentTier
-                  ? `Active ${currentTier} subscription`
-                  : 'Select a plan below to activate your account'}
+                {currentTier === 'pro' && 'Full procurement & grant intelligence'}
+                {currentTier === 'enterprise' && 'Complete platform access including partner matching & TeleBuy'}
+                {!currentTier && 'Select a plan below to activate your account'}
               </p>
             </div>
             {currentTier ? (
@@ -81,22 +80,20 @@ export default function Billing() {
 
       {/* Annual / monthly toggle */}
       <div className="flex items-center justify-center gap-4 mb-8">
-        <span className={!annual ? "font-semibold" : "text-muted-foreground"}>Monthly</span>
+        <span className={cycle === 'monthly' ? "font-semibold" : "text-muted-foreground"}>Monthly</span>
         <button
           role="switch"
-          aria-checked={annual}
-          onClick={() => setAnnual(!annual)}
+          aria-checked={cycle === 'annual'}
+          onClick={() => setCycle(c => c === 'annual' ? 'monthly' : 'annual')}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-            annual ? 'bg-primary' : 'bg-muted'
+            cycle === 'annual' ? 'bg-primary' : 'bg-muted'
           }`}
         >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              annual ? 'translate-x-6' : 'translate-x-1'
-            }`}
-          />
+          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            cycle === 'annual' ? 'translate-x-6' : 'translate-x-1'
+          }`} />
         </button>
-        <span className={annual ? "font-semibold" : "text-muted-foreground"}>
+        <span className={cycle === 'annual' ? "font-semibold" : "text-muted-foreground"}>
           Annual
           <Badge variant="secondary" className="ml-2 text-[10px]">Save 20%</Badge>
         </span>
@@ -104,6 +101,7 @@ export default function Billing() {
 
       {/* Plans */}
       <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
+
         {/* Pro */}
         <Card className={`border-primary/30 shadow-lg shadow-primary/5 ${currentTier === 'pro' ? 'ring-2 ring-primary' : ''}`}>
           <CardHeader>
@@ -116,12 +114,12 @@ export default function Billing() {
             </div>
             <CardDescription>Full procurement &amp; grant intelligence</CardDescription>
             <div className="mt-4">
-              <span className="text-4xl font-bold">{fmt(annual ? proAnnual : proMonthly)}</span>
+              <span className="text-4xl font-bold">{fmt(proPrice)}</span>
               <span className="text-muted-foreground">/month</span>
-              {annual && (
+              {cycle === 'annual' && (
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  Billed as {fmt(proAnnual * 12)}/year
+                  Billed as {fmt(proPrice * 12)}/year
                 </p>
               )}
             </div>
@@ -135,6 +133,7 @@ export default function Billing() {
                 </li>
               ))}
             </ul>
+
             {currentTier === 'pro' ? (
               <Button className="w-full" variant="outline" disabled>
                 Current Plan
@@ -146,10 +145,15 @@ export default function Billing() {
             ) : (
               <Button
                 className="w-full"
-                onClick={() => window.location.href = `mailto:sales@lithiumbuy.com?subject=Pro Plan — ${annual ? 'Annual' : 'Monthly'}`}
+                disabled={isLoading}
+                onClick={() => startCheckout('pro', cycle)}
               >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                )}
                 Get Started — Pro
-                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             )}
           </CardContent>
@@ -167,12 +171,12 @@ export default function Billing() {
             </div>
             <CardDescription>For large procurement teams &amp; consortiums</CardDescription>
             <div className="mt-4">
-              <span className="text-4xl font-bold">{fmt(annual ? entAnnual : entMonthly)}</span>
+              <span className="text-4xl font-bold">{fmt(entPrice)}</span>
               <span className="text-muted-foreground">/month</span>
-              {annual && (
+              {cycle === 'annual' && (
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  Billed as {fmt(entAnnual * 12)}/year
+                  Billed as {fmt(entPrice * 12)}/year
                 </p>
               )}
             </div>
@@ -186,6 +190,7 @@ export default function Billing() {
                 </li>
               ))}
             </ul>
+
             {currentTier === 'enterprise' ? (
               <Button className="w-full" variant="outline" disabled>
                 Current Plan
@@ -194,7 +199,7 @@ export default function Billing() {
               <Button
                 variant="outline"
                 className="w-full border-accent/30 text-accent hover:bg-accent/10"
-                onClick={() => window.location.href = `mailto:sales@lithiumbuy.com?subject=Enterprise Plan — ${annual ? 'Annual' : 'Monthly'}`}
+                onClick={() => window.location.href = `mailto:sales@lithiumbuy.com?subject=Enterprise Plan — ${cycle}`}
               >
                 <Mail className="h-4 w-4 mr-2" />
                 Contact Sales
@@ -211,7 +216,7 @@ export default function Billing() {
             <div>
               <h3 className="font-semibold">Need a custom plan or success-fee arrangement?</h3>
               <p className="text-sm text-muted-foreground">
-                We offer bespoke pricing for high-volume grant programs and multi-org consortiums.
+                Bespoke pricing for high-volume grant programs and multi-org consortiums.
                 Net-30 invoicing and ACH payment available for Enterprise.
               </p>
             </div>
