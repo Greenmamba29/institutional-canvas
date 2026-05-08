@@ -19,6 +19,12 @@ export const AIRTABLE_TABLES = {
   GMV_METRICS: 'GMV_Metrics',
   DECISION_LOG: 'Decision_Log',
   FLASH_ALERTS: 'Flash_Alerts',
+  COLLECTION_SITES: 'Collection_Sites',
+  COLLECTION_WORKERS: 'Collection_Workers',
+  BATTERY_INVENTORY: 'Battery_Inventory',
+  CHAIN_OF_CUSTODY: 'Chain_Of_Custody',
+  PROCESSING_ORDERS: 'Processing_Orders',
+  AUDIT_LOGS: 'Audit_Logs',
 } as const;
 
 export type AirtableTableName = typeof AIRTABLE_TABLES[keyof typeof AIRTABLE_TABLES];
@@ -33,4 +39,10 @@ export const AIRTABLE_TABLE_TIERS = {
   [AIRTABLE_TABLES.ANALYTICS_EVENTS]:   { read: 'admin',      write: 'admin' },
   [AIRTABLE_TABLES.GMV_METRICS]:        { read: 'admin',      write: 'admin' },
   [AIRTABLE_TABLES.DECISION_LOG]:       { read: 'admin',      write: 'admin' },
+  [AIRTABLE_TABLES.COLLECTION_SITES]:   { read: 'pro',        write: 'enterprise' },
+  [AIRTABLE_TABLES.COLLECTION_WORKERS]: { read: 'enterprise', write: 'enterprise' },
+  [AIRTABLE_TABLES.BATTERY_INVENTORY]:  { read: 'pro',        write: 'pro' },
+  [AIRTABLE_TABLES.CHAIN_OF_CUSTODY]:   { read: 'pro',        write: 'enterprise' },
+  [AIRTABLE_TABLES.PROCESSING_ORDERS]:  { read: 'enterprise', write: 'enterprise' },
+  [AIRTABLE_TABLES.AUDIT_LOGS]:         { read: 'pro',        write: 'admin' },
 } as const;

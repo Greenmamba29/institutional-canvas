@@ -32,6 +32,12 @@ const tableMapping: Record<string, string> = {
   'partner_matching': Deno.env.get('AIRTABLE_PARTNER_MATCHING_TABLE') || 'tblPartnerMatching',
   'funding_pipeline': Deno.env.get('AIRTABLE_FUNDING_PIPELINE_TABLE') || 'tblFundingPipeline',
   'flash_alerts': Deno.env.get('AIRTABLE_FLASH_ALERTS_TABLE') || 'tblFlashAlerts',
+  'collection_sites': Deno.env.get('AIRTABLE_COLLECTION_SITES_TABLE') || 'tblCollectionSites',
+  'collection_workers': Deno.env.get('AIRTABLE_COLLECTION_WORKERS_TABLE') || 'tblCollectionWorkers',
+  'battery_inventory': Deno.env.get('AIRTABLE_BATTERY_INVENTORY_TABLE') || 'tblBatteryInventory',
+  'chain_of_custody': Deno.env.get('AIRTABLE_CHAIN_OF_CUSTODY_TABLE') || 'tblChainOfCustody',
+  'processing_orders': Deno.env.get('AIRTABLE_PROCESSING_ORDERS_TABLE') || 'tblProcessingOrders',
+  'compliance_audit_logs': Deno.env.get('AIRTABLE_AUDIT_LOGS_TABLE') || 'tblAuditLogs',
 };
 
 // Field transformers: Convert Supabase column names to Airtable field names
@@ -211,6 +217,35 @@ const fieldTransformers: Record<string, Record<string, string>> = {
     'type': 'Type',
     'source': 'Source',
     'id': 'Supabase_ID',
+  },
+  'collection_sites': {
+    'name': 'Name', 'address': 'Address', 'partner_type': 'Partner_Type',
+    'capacity_kg': 'Capacity_Kg', 'status': 'Status',
+  },
+  'collection_workers': {
+    'name': 'Name', 'partner_id': 'Partner_ID', 'kyc_status': 'KYC_Status',
+    'training_status': 'Training_Status', 'certifications': 'Certifications',
+    'pay_rate_usd': 'Pay_Rate', 'active_contracts': 'Active_Contracts',
+  },
+  'battery_inventory': {
+    'battery_type': 'Battery_Type', 'chemistry': 'Chemistry', 'weight_kg': 'Weight_Kg',
+    'state_of_charge': 'SOC', 'status': 'Status', 'collected_at': 'Timestamp',
+  },
+  'chain_of_custody': {
+    'inventory_id': 'Inventory_ID', 'previous_owner': 'Previous_Owner', 'new_owner': 'New_Owner',
+    'transfer_time': 'Transfer_Time', 'transport_mode': 'Transport_Mode',
+    'condition': 'Condition', 'evidence_url': 'Evidence_Link', 'signature_hash': 'Signature_Hash',
+  },
+  'processing_orders': {
+    'inventory_id': 'Inventory_ID', 'processor_id': 'Processor_ID',
+    'processing_method': 'Processing_Method', 'processed_output': 'Processed_Output',
+    'output_weight_kg': 'Output_Weight_Kg', 'output_value_usd': 'Output_Value_USD',
+    'processing_date': 'Processing_Date',
+  },
+  'compliance_audit_logs': {
+    'entity_id': 'Entity_ID', 'entity_type': 'Entity_Type', 'action': 'Action',
+    'performed_by': 'Performed_By', 'compliance_result': 'Compliance_Result',
+    'regulation_refs': 'Regulation_Refs', 'notes': 'Notes',
   },
 };
 

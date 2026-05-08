@@ -111,6 +111,12 @@ export const FEATURE_FLAGS = {
 
   // ── Future / not yet assigned ───────────────────────────────────────────
   API_ACCESS: 'api_access',                     // External API + webhook access
+
+  // ── Phase 2 — Recycling & Compliance OS ────────────────────────────────
+  BATTERY_COLLECTION: 'battery_collection',     // Battery collection sites and workers
+  CHAIN_OF_CUSTODY: 'chain_of_custody',         // Chain of custody tracking
+  COMPLIANCE_AUDIT: 'compliance_audit',         // Compliance audit logs
+  RECYCLING_REGISTRY: 'recycling_registry',     // Battery inventory registry
 } as const;
 
 export type FeatureFlagKey = typeof FEATURE_FLAGS[keyof typeof FEATURE_FLAGS];

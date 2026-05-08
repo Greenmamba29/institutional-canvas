@@ -42,6 +42,9 @@ const TIER_FEATURES: Record<SubscriptionTier, string[]> = {
     // Data
     'data_hub',
     'priority_support',
+    // Phase 2 — Recycling & Compliance (Pro)
+    'compliance_audit',
+    'recycling_registry',
   ],
   enterprise: [
     // All Pro features
@@ -56,6 +59,8 @@ const TIER_FEATURES: Record<SubscriptionTier, string[]> = {
     'evidence_vault',
     'data_hub',
     'priority_support',
+    'compliance_audit',
+    'recycling_registry',
     // Enterprise-only
     'partner_matching',
     'funding_pipeline',
@@ -67,6 +72,9 @@ const TIER_FEATURES: Record<SubscriptionTier, string[]> = {
     'sso',
     'daily_co_premium',
     'dedicated_account_manager',
+    // Phase 2 — Recycling & Compliance (Enterprise)
+    'battery_collection',
+    'chain_of_custody',
   ],
 };
 

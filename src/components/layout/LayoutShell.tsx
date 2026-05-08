@@ -12,6 +12,7 @@ import { NotificationDropdown } from "./NotificationDropdown";
 import { CountBadge } from "@/components/shared/CountBadge";
 import { OrgSwitcher } from "@/components/org/OrgSwitcher";
 import { VerificationBadge } from "@/components/shared/VerificationBadge";
+import { FlashAlertBanner } from "@/components/shared/FlashAlertBanner";
 import {
   Store,
   Shield,
@@ -532,6 +533,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
         {/* Page content */}
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
+          <FlashAlertBanner />
           {children}
         </main>
       </div>

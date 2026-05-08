@@ -62,3 +62,9 @@ verify_jwt = false
 
 [functions.airtable-grants]
 verify_jwt = false
+
+[functions.airtable-compliance-webhook]
+verify_jwt = false
+
+[functions.airtable-grant-webhook]
+verify_jwt = false

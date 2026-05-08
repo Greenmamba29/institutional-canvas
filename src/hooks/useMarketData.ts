@@ -70,6 +70,7 @@ export interface MarketDataState {
   isError: boolean;
   error: Error | null;
   lastUpdated: Date | null;
+  isLocked: boolean;
 }
 
 // ============================================================================
@@ -255,6 +256,8 @@ export function useArbitrage() {
 // ============================================================================
 
 export function useMarketData(): MarketDataState {
+  const tier = useSubscriptionTier();
+  const isLocked = !tier; // null tier = no subscription
   const kpisQuery = useKPIs();
   const pricesQuery = usePrices();
   const newsQuery = useNews();
@@ -275,6 +278,7 @@ export function useMarketData(): MarketDataState {
     isError,
     error: error as Error | null,
     lastUpdated,
+    isLocked,
   };
 }
 

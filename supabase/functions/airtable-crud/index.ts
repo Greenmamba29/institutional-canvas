@@ -54,6 +54,13 @@ const ALLOWED_TABLES = new Set([
   'Partner_Matching',
   'Funding_Pipeline',
   'Flash_Alerts',
+  // Compliance / recycling
+  'Collection_Sites',
+  'Collection_Workers',
+  'Battery_Inventory',
+  'Chain_Of_Custody',
+  'Processing_Orders',
+  'Audit_Logs',
 ]);
 
 // Airtable table name -> Supabase table name (only for tables that should sync)
@@ -421,7 +428,7 @@ serve(async (req) => {
     assertTierPermission(subscription_tier, action);
 
     // ----- Enterprise-only table guard -----
-    const ENTERPRISE_ONLY_TABLES = new Set(['Partner_Matching', 'Funding_Pipeline']);
+    const ENTERPRISE_ONLY_TABLES = new Set(['Partner_Matching', 'Funding_Pipeline', 'Collection_Workers', 'Processing_Orders', 'Chain_Of_Custody']);
     if (ENTERPRISE_ONLY_TABLES.has(table) && subscription_tier === 'pro') {
       return jsonResponse({ error: `Table "${table}" requires an enterprise subscription.` }, 403);
     }

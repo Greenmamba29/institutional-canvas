@@ -20,6 +20,13 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  if (Deno.env.get('MARKET_DATA_DISABLED') === 'true') {
+    return new Response(JSON.stringify({ disabled: true, message: 'Market data now sourced from Airtable' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    });
+  }
+
   return new Response(
     JSON.stringify({
       deprecated: true,
