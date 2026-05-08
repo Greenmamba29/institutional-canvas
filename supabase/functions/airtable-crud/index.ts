@@ -46,6 +46,14 @@ const ALLOWED_TABLES = new Set([
   'Blockers',
   'Analytics_Events',
   'GMV_Metrics',
+  // Grant intelligence
+  'Grants',
+  'Grant_Applications',
+  'Readiness_Scores',
+  'Evidence_Documents',
+  'Partner_Matching',
+  'Funding_Pipeline',
+  'Flash_Alerts',
 ]);
 
 // Airtable table name -> Supabase table name (only for tables that should sync)
@@ -59,9 +67,9 @@ const SUPABASE_SYNC_TABLES: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 const TIER_PERMISSIONS: Record<SubscriptionTier, Set<Action>> = {
-  free: new Set(['read', 'list']),
   pro: new Set(['create', 'read', 'update', 'delete', 'list']),
   enterprise: new Set(['create', 'read', 'update', 'delete', 'list']),
+  admin: new Set(['create', 'read', 'update', 'delete', 'list']),
 };
 
 function assertTierPermission(tier: SubscriptionTier, action: Action): void {
@@ -389,7 +397,7 @@ serve(async (req) => {
       filter,
       maxRecords,
       sort,
-      subscription_tier = 'free',
+      subscription_tier = 'pro' as SubscriptionTier,
       records,
     } = body;
 
@@ -411,6 +419,12 @@ serve(async (req) => {
 
     // ----- Subscription gating -----
     assertTierPermission(subscription_tier, action);
+
+    // ----- Enterprise-only table guard -----
+    const ENTERPRISE_ONLY_TABLES = new Set(['Partner_Matching', 'Funding_Pipeline']);
+    if (ENTERPRISE_ONLY_TABLES.has(table) && subscription_tier === 'pro') {
+      return jsonResponse({ error: `Table "${table}" requires an enterprise subscription.` }, 403);
+    }
 
     // ----- Action-specific validation & dispatch -----
     let result: Record<string, unknown>;
