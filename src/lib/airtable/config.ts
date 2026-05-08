@@ -1,0 +1,36 @@
+export const AIRTABLE_TABLES = {
+  SUBSCRIPTIONS: 'Subscriptions',
+  SUBSCRIPTION_PLANS: 'Subscription_Plans',
+  PAYMENTS: 'Payments',
+  MARKET_PRICES: 'Market Prices',
+  MARKET_KPIS: 'Dashboard KPIs',
+  MARKET_NEWS: 'Market News',
+  ARBITRAGE: 'Arbitrage Opportunities',
+  MARKET_BRIEFINGS: 'Market Briefings',
+  AUCTIONS: 'Auction_Companies',
+  AUCTION_CONTACTS: 'Auction_Contacts',
+  GRANTS: 'Grants',
+  GRANT_APPLICATIONS: 'Grant_Applications',
+  READINESS_SCORES: 'Readiness_Scores',
+  EVIDENCE_DOCUMENTS: 'Evidence_Documents',
+  PARTNER_MATCHING: 'Partner_Matching',
+  FUNDING_PIPELINE: 'Funding_Pipeline',
+  ANALYTICS_EVENTS: 'Analytics_Events',
+  GMV_METRICS: 'GMV_Metrics',
+  DECISION_LOG: 'Decision_Log',
+  FLASH_ALERTS: 'Flash_Alerts',
+} as const;
+
+export type AirtableTableName = typeof AIRTABLE_TABLES[keyof typeof AIRTABLE_TABLES];
+
+export const AIRTABLE_TABLE_TIERS = {
+  [AIRTABLE_TABLES.GRANTS]:             { read: 'pro',        write: 'admin' },
+  [AIRTABLE_TABLES.GRANT_APPLICATIONS]: { read: 'pro',        write: 'pro' },
+  [AIRTABLE_TABLES.READINESS_SCORES]:   { read: 'pro',        write: 'enterprise' },
+  [AIRTABLE_TABLES.EVIDENCE_DOCUMENTS]: { read: 'pro',        write: 'pro' },
+  [AIRTABLE_TABLES.PARTNER_MATCHING]:   { read: 'enterprise', write: 'enterprise' },
+  [AIRTABLE_TABLES.FUNDING_PIPELINE]:   { read: 'enterprise', write: 'enterprise' },
+  [AIRTABLE_TABLES.ANALYTICS_EVENTS]:   { read: 'admin',      write: 'admin' },
+  [AIRTABLE_TABLES.GMV_METRICS]:        { read: 'admin',      write: 'admin' },
+  [AIRTABLE_TABLES.DECISION_LOG]:       { read: 'admin',      write: 'admin' },
+} as const;

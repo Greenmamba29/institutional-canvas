@@ -16,7 +16,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '
 // ---------------------------------------------------------------------------
 
 type Action = 'create' | 'read' | 'update' | 'delete' | 'list';
-type SubscriptionTier = 'free' | 'pro' | 'enterprise';
+type SubscriptionTier = 'pro' | 'enterprise' | 'admin';
 
 interface CrudRequest {
   action: Action;
