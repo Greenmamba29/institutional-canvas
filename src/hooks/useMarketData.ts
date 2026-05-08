@@ -6,6 +6,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSubscriptionTier } from '@/hooks/useSubscription';
 
 // ============================================================================
 // TYPES
@@ -321,6 +322,16 @@ export function getTrendIcon(trend: 'up' | 'down' | 'stable'): string {
     case 'down': return '↓';
     default: return '→';
   }
+}
+
+// ============================================================================
+// TIER ACCESS
+// ============================================================================
+
+export function useMarketAccess(): { hasPriceAccess: boolean; isTeaser: boolean } {
+  const tier = useSubscriptionTier();
+  const hasPriceAccess = tier === 'pro' || tier === 'enterprise';
+  return { hasPriceAccess, isTeaser: !hasPriceAccess };
 }
 
 export default useMarketData;
