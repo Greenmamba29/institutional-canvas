@@ -59,6 +59,7 @@ verify_jwt = false
 
 [functions.close-auctions]
 verify_jwt = false
+schedule = "*/5 * * * *"
 
 [functions.airtable-grants]
 verify_jwt = false

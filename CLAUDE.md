@@ -82,3 +82,47 @@ npx tsc --noEmit     # type check only
 supabase start        # local Supabase stack
 supabase functions serve airtable-grants  # local edge function
 ```
+
+## Recycling & Compliance Module
+
+LithiumBuy Phase 2 adds a Critical Minerals Recycling & Compliance OS.
+
+### Regulatory Framework
+- **Federal**: Mercury-Containing and Rechargeable Battery Management Act, EPA RCRA universal waste rules
+- **California**: AB 2440 (e-waste fees on battery products), SB 1215
+- **New Jersey**: Electric and Hybrid Vehicle Battery Management Act — producer registration 2025, reporting 2026, disposal ban 2027
+- **Washington**: SB 5144 — EPR stewardship organizations required by 2027
+- **EU**: Battery Regulation 2023/1542 — minimum recycled content (12% cobalt, 4% lithium, 4% nickel by 2030), mandatory labeling 2025–27
+
+### Compliance Tables (Supabase)
+| Table | Purpose | RLS |
+|-------|---------|-----|
+| collection_sites | Battery drop-off/pickup locations | Public read |
+| collection_workers | Field collectors with KYC/training status | Own org |
+| battery_inventory | Individual battery records with chain tracking | Own org |
+| chain_of_custody | Transfer events for each battery | Own org |
+| processing_orders | Processor intake and output records | Own org |
+| compliance_audit_logs | Regulatory compliance audit trail | Own org |
+
+### Airtable Webhook URLs
+```
+Compliance data:  https://<project>.supabase.co/functions/v1/airtable-compliance-webhook
+Grant data:       https://<project>.supabase.co/functions/v1/airtable-grant-webhook
+Market data:      https://<project>.supabase.co/functions/v1/airtable-market-webhook
+```
+
+### Setting Up Airtable Automations
+1. In your Airtable base, go to Automations
+2. Create automation: Trigger = "When a record is updated"
+3. Action = "Send webhook" → POST to the appropriate URL above
+4. Headers: `x-airtable-signature: <your webhook secret>` and `Content-Type: application/json`
+5. Body format: `{ "table": "<TableName>", "action": "update", "record": <fields>, "recordId": "<id>" }`
+
+### Cron Jobs
+The `close-auctions` function runs every 5 minutes. When calling it manually, pass:
+```bash
+curl -X POST <fn-url> -H "x-cron-secret: $CRON_SECRET"
+```
+
+### Flash Alert Flow
+Airtable (Flash_Alerts table) → `airtable-grant-webhook` → Supabase `flash_alerts` insert → Supabase Realtime → `useFlashAlerts` hook → `FlashAlertBanner` component
