@@ -1,13 +1,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const AIRTABLE_WEBHOOK_SECRET = Deno.env.get('AIRTABLE_GRANT_WEBHOOK_SECRET');
+const WEBHOOK_TOKEN = Deno.env.get('AIRTABLE_GRANT_WEBHOOK_SECRET');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-airtable-signature',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-token',
 };
 
 // Map Airtable table names to Supabase tables
@@ -76,32 +76,11 @@ function transformAirtableFields(tableName: string, fields: Record<string, any>)
   return transformed;
 }
 
-async function verifySignature(body: string, signature: string | null): Promise<boolean> {
-  if (!AIRTABLE_WEBHOOK_SECRET || !signature) {
-    console.warn('Webhook signature verification skipped: missing secret or signature');
-    return true; // Allow if not configured (development mode)
-  }
-
-  try {
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(AIRTABLE_WEBHOOK_SECRET),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-
-    const signatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(body));
-    const computedSignature = Array.from(new Uint8Array(signatureBytes))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-
-    return computedSignature === signature;
-  } catch (error) {
-    console.error('Signature verification error:', error);
-    return false;
-  }
+function verifyToken(token: string | null): boolean {
+  // Airtable "Send webhook" action sends a static header value — simple equality check.
+  // Set x-webhook-token header in your Airtable automation to match AIRTABLE_GRANT_WEBHOOK_SECRET.
+  if (!WEBHOOK_TOKEN) return true;
+  return token === WEBHOOK_TOKEN;
 }
 
 interface AirtableWebhookPayload {
@@ -135,16 +114,9 @@ serve(async (req) => {
 
   try {
     const bodyText = await req.text();
-    const signature = req.headers.get('x-airtable-signature');
-
-    // Verify webhook signature
-    const isValid = await verifySignature(bodyText, signature);
-    if (!isValid) {
-      console.error('Invalid webhook signature');
-      return new Response(
-        JSON.stringify({ error: 'Invalid signature' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      );
+    const token = req.headers.get('x-webhook-token');
+    if (!verifyToken(token)) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 });
     }
 
     const payload: AirtableWebhookPayload = JSON.parse(bodyText);
