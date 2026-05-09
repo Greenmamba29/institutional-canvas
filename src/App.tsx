@@ -44,6 +44,13 @@ const Admin = lazy(() => import("./pages/Admin"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Data = lazy(() => import("./pages/Data"));
 
+// Compliance OS pages (pro+)
+const ComplianceDashboard = lazy(() => import("./pages/ComplianceDashboard"));
+const BatteryInventory = lazy(() => import("./pages/BatteryInventory"));
+const CollectionSites = lazy(() => import("./pages/CollectionSites"));
+const CollectionWorkers = lazy(() => import("./pages/CollectionWorkers"));
+const ProcessingOrders = lazy(() => import("./pages/ProcessingOrders"));
+
 // Enterprise-tier pages (deferred — rendered behind RoleProtectedRoute)
 const TeleBuy = lazy(() => import("./pages/TeleBuy"));
 const AIStudio = lazy(() => import("./pages/AIStudio"));
@@ -115,6 +122,14 @@ const AppContent = () => {
                 <Route element={<RoleProtectedRoute requireSubscription="pro" />}>
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/data" element={<Data />} />
+                  <Route path="/compliance" element={<ComplianceDashboard />} />
+                  <Route path="/compliance/inventory" element={<BatteryInventory />} />
+                  <Route path="/compliance/sites" element={<CollectionSites />} />
+                </Route>
+
+                <Route element={<RoleProtectedRoute requireSubscription="enterprise" />}>
+                  <Route path="/compliance/workers" element={<CollectionWorkers />} />
+                  <Route path="/compliance/processing" element={<ProcessingOrders />} />
                 </Route>
 
                 {/* ── Enterprise routes — TeleBuy, Auctions, AI Studio, Messages, Recycling, API ── */}

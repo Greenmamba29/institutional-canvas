@@ -40,6 +40,7 @@ import {
   Target,
   Activity,
   LogOut,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -78,6 +79,7 @@ const adminNavItems: NavItem[] = [
   { label: 'Orders', path: '/orders', icon: Package },
   { label: 'Analytics', path: '/analytics', icon: TrendingUp, requiresTier: 'pro' },
   { label: 'Data', path: '/data', icon: Database, requiresTier: 'pro' },
+  { label: 'Compliance', path: '/compliance', icon: ClipboardList, requiresTier: 'pro' },
   { label: 'Auctions', path: '/auctions', icon: Gavel, requiresTier: 'enterprise' },
   { label: 'Recycling', path: '/recycling', icon: Activity, requiresTier: 'enterprise' },
   { label: 'TeleBuy', path: '/telebuy', icon: Video, requiresTier: 'enterprise' },
@@ -95,6 +97,7 @@ const supplierNavItems: NavItem[] = [
   { label: 'Deals', path: '/deals', icon: Handshake },
   { label: 'Orders', path: '/orders', icon: Package },
   { label: 'Analytics', path: '/analytics', icon: TrendingUp, requiresTier: 'pro' },
+  { label: 'Compliance', path: '/compliance', icon: ClipboardList, requiresTier: 'pro' },
   { label: 'Auctions', path: '/auctions', icon: Gavel, requiresTier: 'enterprise' },
   { label: 'Recycling', path: '/recycling', icon: Activity, requiresTier: 'enterprise' },
   { label: 'TeleBuy', path: '/telebuy', icon: Video, requiresTier: 'enterprise' },
