@@ -290,7 +290,7 @@ export default function Introductions() {
       <PageHeader
         title="Introduction Deals"
         description="Track buyer-seller introductions and earn intro fees when deals close"
-        action={<CreateIntroductionDialog />}
+        actions={<CreateIntroductionDialog />}
       />
 
       <StatsBar />

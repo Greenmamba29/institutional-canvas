@@ -19,6 +19,7 @@ const tableMapping: Record<string, string> = {
   'Market Briefings': 'market_briefings',
   'Collection_Sites': 'collection_sites',
   'Introductions': 'introductions',
+  'Buyer_Organizations': 'organizations',
 };
 
 // Field transformers: Airtable field names -> Supabase column names
@@ -118,6 +119,16 @@ const fieldTransformers: Record<string, Record<string, string>> = {
     'Supabase_ID': 'supabase_id',
     'Created_Date': 'created_at',
     'Last_Modified': 'updated_at',
+  },
+  'organizations': {
+    'Organization_Name': 'name',
+    'Organization Name': 'name',
+    'Status': 'status',
+    'Contact_Email': 'email',
+    'Contact Email': 'email',
+    'Phone': 'phone',
+    'Jurisdiction': 'jurisdiction',
+    'Airtable_ID': 'airtable_id',
   },
 };
 

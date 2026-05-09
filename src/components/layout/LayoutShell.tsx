@@ -74,6 +74,7 @@ const adminNavItems: NavItem[] = [
   { label: 'Bids', path: '/bids', icon: Target },
   { label: 'RFQs', path: '/rfqs', icon: FileText },
   { label: 'Deals', path: '/deals', icon: Handshake },
+  { label: 'Introductions', path: '/introductions', icon: Handshake, requiresOrgType: ['admin', 'buyer'] },
   { label: 'Orders', path: '/orders', icon: Package },
   { label: 'TeleBuy', path: '/telebuy', icon: Video, requiresTier: 'pro' },
   { label: 'AI Studio', path: '/ai-studio', icon: Brain, requiresTier: 'pro' },
