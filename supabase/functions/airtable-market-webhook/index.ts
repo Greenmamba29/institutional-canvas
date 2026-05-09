@@ -17,6 +17,7 @@ const tableMapping: Record<string, string> = {
   'Market News': 'market_news',
   'Arbitrage Opportunities': 'arbitrage_opportunities',
   'Market Briefings': 'market_briefings',
+  'Collection_Sites': 'collection_sites',
 };
 
 // Field transformers: Airtable field names -> Supabase column names
@@ -70,6 +71,27 @@ const fieldTransformers: Record<string, Record<string, string>> = {
     'Risk Factors': 'risk_factors',
     'Opportunities': 'opportunities',
     'Generated At': 'generated_at',
+  },
+  'collection_sites': {
+    'Site_ID': 'site_id',
+    'Site_Name': 'site_name',
+    'Location': 'location',
+    'Country': 'country',
+    'Region': 'region',
+    'Site_Type': 'site_type',
+    'Capacity_MT': 'capacity_mt',
+    'Status': 'status',
+    'Manager_Name': 'manager_name',
+    'Contact_Email': 'contact_email',
+    'Contact_Phone': 'contact_phone',
+    'Certifications': 'certifications',
+    'Last_Inspection': 'last_inspection',
+    'Next_Inspection': 'next_inspection',
+    'Compliance_Status': 'compliance_status',
+    'Notes': 'notes',
+    'Supabase_ID': 'supabase_id',
+    'Created_Date': 'created_at',
+    'Last_Modified': 'updated_at',
   },
 };
 
