@@ -48,6 +48,7 @@ const Recycling = lazy(() => import("./pages/Recycling"));
 const KYCCompliance = lazy(() => import("./pages/KYCCompliance"));
 const CompanyVerification = lazy(() => import("./pages/CompanyVerification"));
 const APIIntegration = lazy(() => import("./pages/APIIntegration"));
+const Introductions = lazy(() => import("./pages/Introductions"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,6 +97,7 @@ const AppContent = () => {
               <Route path="/auctions/:id" element={<AuctionDetail />} />
               <Route path="/deals" element={<Deals />} />
               <Route path="/deals/:id" element={<Deals />} />
+              <Route path="/introductions" element={<Introductions />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/purchases" element={<Purchases />} />
               <Route path="/chain-of-custody" element={<ChainOfCustody />} />
