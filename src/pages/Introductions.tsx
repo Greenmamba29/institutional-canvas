@@ -21,6 +21,7 @@ import {
   useIntroductions, useIntroductionStats, useCreateIntroduction, useUpdateIntroductionStatus,
 } from '@/hooks/useIntroductions';
 import type { Introduction, IntroductionStatus } from '@/services/introductions.service';
+import { MatchmakingTeaser } from '@/components/matchmaking/MatchmakingTeaser';
 
 const STATUS_STYLES: Record<IntroductionStatus, string> = {
   'Pending':        'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -294,6 +295,8 @@ export default function Introductions() {
       />
 
       <StatsBar />
+
+      <MatchmakingTeaser />
 
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
