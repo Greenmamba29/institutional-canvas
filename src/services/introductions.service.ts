@@ -20,9 +20,11 @@ export interface Introduction {
   introducer_email: string | null;
   introducer_org: string | null;
   buyer_org: string | null;
+  buyer_org_id: string | null;
   buyer_contact: string | null;
   buyer_email: string | null;
   seller_org: string | null;
+  seller_org_id: string | null;
   seller_contact: string | null;
   seller_email: string | null;
   commodity: string | null;
@@ -46,9 +48,11 @@ export interface CreateIntroductionInput {
   introducer_email?: string;
   introducer_org?: string;
   buyer_org: string;
+  buyer_org_id?: string;
   buyer_contact?: string;
   buyer_email?: string;
   seller_org: string;
+  seller_org_id?: string;
   seller_contact?: string;
   seller_email?: string;
   commodity?: string;
@@ -60,11 +64,23 @@ export interface CreateIntroductionInput {
   org_id: string;
 }
 
-export async function listIntroductions(orgId: string) {
+// Returns all introductions visible to the caller's org —
+// either as the creating org, the named buyer org, or the named seller org.
+// RLS enforces the visibility; no explicit filter needed.
+export async function listIntroductions() {
   return supabase
     .from('introductions')
     .select('*')
-    .eq('org_id', orgId)
+    .order('created_at', { ascending: false });
+}
+
+// Returns only active introductions where the caller's org is the named buyer or seller.
+// Used to show "your matches" to non-admin users.
+export async function listMyMatches() {
+  return supabase
+    .from('introductions')
+    .select('*')
+    .in('status', ['Pending', 'Introduced', 'In Negotiation'])
     .order('created_at', { ascending: false });
 }
 
@@ -102,11 +118,10 @@ export async function updatePayoutStatus(id: string, payout_status: PayoutStatus
     .single();
 }
 
-export async function getIntroductionStats(orgId: string) {
+export async function getIntroductionStats() {
   const { data, error } = await supabase
     .from('introductions')
-    .select('status, payout_status, deal_value_usd, intro_fee_amount')
-    .eq('org_id', orgId);
+    .select('status, payout_status, deal_value_usd, intro_fee_amount');
 
   if (error || !data) return { error, data: null };
 
