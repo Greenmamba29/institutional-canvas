@@ -1,10 +1,10 @@
-import { LayoutShell } from "@/components/layout/LayoutShell";
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Handshake, Clock, DollarSign, Users, AlertCircle } from "lucide-react";
+import { Handshake, Clock, FileText, Users, AlertCircle } from "lucide-react";
 import { useDeals } from "@/hooks/useDeals";
 import type { Deal, DealStatus } from "@/services/deals.service";
 
@@ -22,11 +22,17 @@ export default function Deals() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <AlertCircle className="h-12 w-12 text-destructive" />
-        <h2 className="text-xl font-semibold">Failed to load Deals</h2>
-        <p className="text-muted-foreground">{error.message}</p>
-      </div>
+      <>
+        <PageHeader
+          title="Lithium & Recycling Deals"
+          description="Active supply negotiations and closed recycling agreements"
+        />
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+          <AlertCircle className="h-12 w-12 text-destructive" />
+          <h2 className="text-xl font-semibold">Failed to load Deals</h2>
+          <p className="text-muted-foreground">{error.message}</p>
+        </div>
+      </>
     );
   }
 
@@ -47,7 +53,7 @@ export default function Deals() {
   }
 
   return (
-    <LayoutShell>
+    <>
       <PageHeader
         title="Lithium & Recycling Deals"
         description="Active supply negotiations and closed recycling agreements"
@@ -66,7 +72,7 @@ export default function Deals() {
           ))}
         </div>
       )}
-    </LayoutShell>
+    </>
   );
 }
 
@@ -87,15 +93,17 @@ function DealCard({ deal }: { deal: Deal }) {
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <DollarSign className="h-4 w-4" />
-            <span>Status</span>
+        {deal.rfq_id && (
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <FileText className="h-4 w-4" />
+              <span>RFQ</span>
+            </div>
+            <span className="font-mono text-xs text-muted-foreground">
+              {deal.rfq_id.slice(0, 8)}…
+            </span>
           </div>
-          <span className="font-mono font-semibold capitalize">
-            {deal.status}
-          </span>
-        </div>
+        )}
         {deal.offer_decision && (
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -112,9 +120,11 @@ function DealCard({ deal }: { deal: Deal }) {
           </div>
           <span>{new Date(deal.created_at).toLocaleDateString()}</span>
         </div>
-        <Button variant="outline" className="w-full mt-2">
-          <Handshake className="h-4 w-4 mr-2" />
-          View Deal
+        <Button variant="outline" className="w-full mt-2" asChild>
+          <Link to={`/deals/${deal.id}`}>
+            <Handshake className="h-4 w-4 mr-2" />
+            View Deal
+          </Link>
         </Button>
       </CardContent>
     </Card>
