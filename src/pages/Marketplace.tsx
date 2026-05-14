@@ -180,7 +180,7 @@ export default function Marketplace() {
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Purity</span>
-                    <span className="font-mono">{product.purity_level}%</span>
+                    <span className="font-mono">{isNaN(Number(product.purity_level)) ? product.purity_level : `${product.purity_level}%`}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Min Order</span>
@@ -250,7 +250,7 @@ export default function Marketplace() {
                       <p className="font-medium capitalize">{product.product_type}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="font-mono">{product.purity_level}%</p>
+                      <p className="font-mono">{isNaN(Number(product.purity_level)) ? product.purity_level : `${product.purity_level}%`}</p>
                     </td>
                     <td className="py-4 px-4 text-right font-mono font-bold">
                       {product.min_order_quantity} {product.unit}

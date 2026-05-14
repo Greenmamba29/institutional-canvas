@@ -1,9 +1,14 @@
 
+import { useState } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, CreditCard, Zap, Building2, Clock, Mail } from "lucide-react";
+import { Check, CreditCard, Zap, Building2, Mail, Loader2 } from "lucide-react";
+import { useCurrentOrg } from "@/hooks/useCurrentOrg";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { STRIPE_PRODUCTS } from "@/lib/stripe/config";
 
 const plans = [
   {
@@ -11,6 +16,7 @@ const plans = [
     price: "$0",
     period: "forever",
     description: "Basic directory access",
+    priceId: null,
     features: [
       "Supplier directory search",
       "Limited RFQs (5/month)",
@@ -24,6 +30,7 @@ const plans = [
     price: "$199",
     period: "/month",
     description: "Full marketplace access",
+    priceId: STRIPE_PRODUCTS.pro.priceId,
     features: [
       "Everything in Free",
       "Unlimited RFQs",
@@ -33,13 +40,13 @@ const plans = [
       "Priority support",
     ],
     highlighted: true,
-    comingSoon: true,
   },
   {
     name: "Enterprise",
     price: "$1,999",
     period: "/month",
     description: "For large organizations",
+    priceId: STRIPE_PRODUCTS.enterprise.priceId,
     features: [
       "Everything in Pro",
       "API access",
@@ -48,11 +55,48 @@ const plans = [
       "Bulk operations",
       "Dedicated account manager",
     ],
-    comingSoon: true,
   },
 ];
 
 export default function Billing() {
+  const [upgrading, setUpgrading] = useState<string | null>(null);
+  const { currentOrgId } = useCurrentOrg();
+  const { toast } = useToast();
+
+  async function handleUpgrade(priceId: string, planName: string) {
+    if (!currentOrgId) {
+      toast({
+        title: "Organization required",
+        description: "Please complete onboarding before upgrading.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUpgrading(planName);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+        body: {
+          priceId,
+          organizationId: currentOrgId,
+          returnUrl: window.location.href,
+        },
+      });
+
+      if (error) throw new Error(error.message);
+      if (!data?.checkoutUrl) throw new Error("No checkout URL returned");
+
+      window.location.href = data.checkoutUrl;
+    } catch (err) {
+      toast({
+        title: "Upgrade failed",
+        description: err instanceof Error ? err.message : "Please try again or contact support.",
+        variant: "destructive",
+      });
+      setUpgrading(null);
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -82,8 +126,8 @@ export default function Billing() {
       {/* Plans Grid */}
       <div className="grid gap-6 md:grid-cols-3">
         {plans.map((plan) => (
-          <Card 
-            key={plan.name} 
+          <Card
+            key={plan.name}
             className={plan.highlighted ? "border-accent shadow-lg shadow-accent/10" : ""}
           >
             <CardHeader>
@@ -93,16 +137,8 @@ export default function Billing() {
                   {plan.name === "Enterprise" && <Building2 className="h-5 w-5" />}
                   {plan.name}
                 </CardTitle>
-                {plan.current && (
-                  <Badge variant="outline">Current</Badge>
-                )}
-                {plan.comingSoon && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Coming Soon
-                  </Badge>
-                )}
-                {plan.highlighted && !plan.comingSoon && (
+                {plan.current && <Badge variant="outline">Current</Badge>}
+                {plan.highlighted && !plan.current && (
                   <Badge className="bg-accent text-accent-foreground">Popular</Badge>
                 )}
               </div>
@@ -122,27 +158,23 @@ export default function Billing() {
                 ))}
               </ul>
               {plan.current ? (
-                <Button 
-                  className="w-full"
-                  variant="outline"
-                  disabled
-                >
+                <Button className="w-full" variant="outline" disabled>
                   Current Plan
                 </Button>
-              ) : plan.comingSoon ? (
-                <Button 
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => window.location.href = 'mailto:sales@lithiumbuy.com?subject=Interest in ' + plan.name + ' Plan'}
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Contact Sales
-                </Button>
               ) : (
-                <Button 
+                <Button
                   className={`w-full ${plan.highlighted ? "bg-accent hover:bg-accent/90 text-accent-foreground" : ""}`}
+                  disabled={upgrading === plan.name}
+                  onClick={() => plan.priceId && handleUpgrade(plan.priceId, plan.name)}
                 >
-                  Upgrade to {plan.name}
+                  {upgrading === plan.name ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Redirecting…
+                    </>
+                  ) : (
+                    `Upgrade to ${plan.name}`
+                  )}
                 </Button>
               )}
             </CardContent>

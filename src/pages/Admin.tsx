@@ -6,12 +6,14 @@ import { UsersPanel } from '@/components/admin/UsersPanel';
 import { SuppliersPanel } from '@/components/admin/SuppliersPanel';
 import { AuditLogPanel } from '@/components/admin/AuditLogPanel';
 import { AdminSettingsPanel } from '@/components/admin/AdminSettingsPanel';
+import { StrategicPartnersPanel } from '@/components/admin/StrategicPartnersPanel';
 import { Shield, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 const tabs = [
   { id: 'users', label: 'Users' },
   { id: 'suppliers', label: 'Suppliers' },
+  { id: 'crm', label: 'Strategic CRM' },
   { id: 'audit', label: 'Audit Log' },
   { id: 'settings', label: 'Settings' },
 ];
@@ -56,6 +58,7 @@ export default function Admin() {
       <div className="mt-4">
         {activeTab === 'users' && <UsersPanel />}
         {activeTab === 'suppliers' && <SuppliersPanel />}
+        {activeTab === 'crm' && <StrategicPartnersPanel />}
         {activeTab === 'audit' && <AuditLogPanel />}
         {activeTab === 'settings' && <AdminSettingsPanel />}
       </div>

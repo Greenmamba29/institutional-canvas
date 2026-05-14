@@ -24,6 +24,8 @@ const tableMapping: Record<string, string> = {
   // KYC mappings
   'kyb_verification_queue': Deno.env.get('AIRTABLE_KYC_SUBMISSIONS_TABLE') || 'tblKYCSubmissions',
   'kyc_documents': Deno.env.get('AIRTABLE_KYC_DOCUMENTS_TABLE') || 'tblKYCDocuments',
+  // Introduction deal tracking
+  'introductions': 'tbltAgLbLILYiCGWB',
 };
 
 // Field transformers: Convert Supabase column names to Airtable field names
@@ -121,6 +123,28 @@ const fieldTransformers: Record<string, Record<string, string>> = {
     'notes': 'Notes',
     'risk_score': 'Risk_Score',
     'created_at': 'Created_At',
+  },
+  'introductions': {
+    'introduction_id':  'Introduction_ID',
+    'introducer_name':  'Introducer_Name',
+    'introducer_email': 'Introducer_Email',
+    'introducer_org':   'Introducer_Org',
+    'buyer_org':        'Buyer_Org',
+    'buyer_contact':    'Buyer_Contact',
+    'buyer_email':      'Buyer_Email',
+    'seller_org':       'Seller_Org',
+    'seller_contact':   'Seller_Contact',
+    'seller_email':     'Seller_Email',
+    'commodity':        'Commodity',
+    'intro_date':       'Intro_Date',
+    'deal_value_usd':   'Deal_Value_USD',
+    'intro_fee_percent':'Intro_Fee_Percent',
+    'status':           'Status',
+    'payout_status':    'Payout_Status',
+    'payout_date':      'Payout_Date',
+    'notes':            'Notes',
+    'created_at':       'Created_Date',
+    'updated_at':       'Last_Modified',
   },
   'kyc_documents': {
     'kyb_queue_id': 'Submission_ID',

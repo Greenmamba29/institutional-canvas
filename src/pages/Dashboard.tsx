@@ -62,7 +62,7 @@ export default function Dashboard() {
 
   // Build chart data from GMV sparkline
   const chartData = gmvSparkline.map((value, i) => ({
-    date: new Date(2024, i, 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: new Date(new Date().getFullYear(), i, 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     value,
   }));
 
