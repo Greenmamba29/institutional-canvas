@@ -65,11 +65,17 @@ export const currencySchema = z
 export const createRfqSchema = z.object({
   p_title: titleSchema,
   p_description: descriptionSchema.default(''),
-  p_product_id: uuidSchema.nullish(), // Optional - database allows null
+  p_product_id: uuidSchema.nullish(),
   p_target_quantity: positiveNumberSchema,
   p_target_unit: z.string().trim().min(1, 'Unit is required').max(50, 'Unit too long'),
   p_incoterms: z.string().trim().max(50, 'Incoterms too long').optional().default(''),
   p_delivery_location: z.string().trim().max(500, 'Delivery location too long').optional().default(''),
+  // Enterprise B2B fields
+  p_product_type: z.string().trim().max(100).optional().nullable(),
+  p_purity_grade: z.string().trim().max(100).optional().nullable(),
+  p_submission_deadline: z.string().optional().nullable(),
+  p_payment_terms: z.string().trim().max(100).optional().nullable(),
+  p_required_certifications: z.array(z.string()).optional().nullable(),
 });
 
 export type CreateRfqInput = z.infer<typeof createRfqSchema>;
