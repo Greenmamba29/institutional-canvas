@@ -43,6 +43,7 @@ const Billing = lazy(() => import("./pages/Billing"));
 const Purchases = lazy(() => import("./pages/Purchases"));
 const Team = lazy(() => import("./pages/Team"));
 const ChainOfCustody = lazy(() => import("./pages/ChainOfCustody"));
+const HermesDashboard = lazy(() => import("./pages/HermesDashboard"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Recycling = lazy(() => import("./pages/Recycling"));
 const KYCCompliance = lazy(() => import("./pages/KYCCompliance"));
@@ -118,6 +119,7 @@ const AppContent = () => {
                 <Route path="/telebuy" element={<TeleBuy />} />
                 <Route path="/telebuy/session/:id" element={<TeleBuy />} />
                 <Route path="/ai-studio" element={<AIStudio />} />
+                <Route path="/hermes" element={<HermesDashboard />} />
               </Route>
             </Route>
           </Route>
