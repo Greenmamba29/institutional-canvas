@@ -152,7 +152,8 @@ export async function getConversations(myOrgId: string): Promise<DMConversation[
   if (error) throw new Error(error.message);
 
   // Map to add other_org for easier display
-  return (data || []).map((conv: any) => {
+  type ConversationRow = DMConversation & { org_a?: DMConversation['other_org']; org_b?: DMConversation['other_org'] };
+  return (data || []).map((conv: ConversationRow) => {
     const otherOrg = conv.org_a_id === myOrgId ? conv.org_b : conv.org_a;
     return {
       ...conv,

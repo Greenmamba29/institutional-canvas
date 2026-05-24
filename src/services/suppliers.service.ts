@@ -24,6 +24,8 @@ export interface SupplierWithDetails extends Supplier {
   locations?: Location[];
 }
 
+export type SupplierMatchCandidate = SupplierWithDetails;
+
 // ============================================
 // READ-ONLY QUERIES (Direct reads are allowed)
 // ============================================
@@ -152,4 +154,50 @@ export async function searchSuppliers(query: string) {
     .ilike('display_name', `%${sanitized}%`);
   
   return { data, error };
+}
+
+/**
+ * Get supplier candidates with products, certifications, reviews, and locations
+ * for deterministic RFQ matching. Split queries avoid deeply recursive Supabase
+ * relation types and keep each read RLS-protected.
+ */
+export async function getSupplierMatchCandidates(options?: { limit?: number }) {
+  const { data: suppliers, error: supplierError } = await getSuppliers({ limit: options?.limit ?? 50 });
+  if (supplierError || !suppliers?.length) {
+    return { data: suppliers ? [] : null, error: supplierError };
+  }
+
+  const supplierIds = suppliers.map((supplier) => supplier.org_id);
+  const [productsResult, certificationsResult, reviewsResult, locationsResult] = await Promise.all([
+    supabase.from('products').select('*').in('supplier_id', supplierIds),
+    supabase.from('certifications').select('*').in('supplier_id', supplierIds),
+    supabase.from('reviews').select('*').in('supplier_id', supplierIds),
+    supabase.from('locations').select('*').in('supplier_id', supplierIds),
+  ]);
+
+  const error = productsResult.error || certificationsResult.error || reviewsResult.error || locationsResult.error;
+  if (error) return { data: null, error };
+
+  const bySupplier = <T extends { supplier_id: string }>(rows: T[] | null) => {
+    const grouped = new Map<string, T[]>();
+    (rows ?? []).forEach((row) => {
+      grouped.set(row.supplier_id, [...(grouped.get(row.supplier_id) ?? []), row]);
+    });
+    return grouped;
+  };
+
+  const productsBySupplier = bySupplier(productsResult.data);
+  const certificationsBySupplier = bySupplier(certificationsResult.data);
+  const reviewsBySupplier = bySupplier(reviewsResult.data);
+  const locationsBySupplier = bySupplier(locationsResult.data);
+
+  const candidates: SupplierMatchCandidate[] = suppliers.map((supplier) => ({
+    ...supplier,
+    products: productsBySupplier.get(supplier.org_id) ?? [],
+    certifications: certificationsBySupplier.get(supplier.org_id) ?? [],
+    reviews: reviewsBySupplier.get(supplier.org_id) ?? [],
+    locations: locationsBySupplier.get(supplier.org_id) ?? [],
+  }));
+
+  return { data: candidates, error: null };
 }

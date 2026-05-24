@@ -8,19 +8,21 @@ import { Progress } from '@/components/ui/progress';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 import { Search, Star, MapPin, Package, TrendingUp, Phone, FileText } from 'lucide-react';
 import { useSupplierMatcher } from '@/hooks/useSupplierMatcher';
+import { useRFQs } from '@/hooks/useRFQs';
 import type { SupplierMatch } from '@/services/ai/supplier-matcher.service';
 
 export function SupplierMatcher() {
   const [selectedRfqId, setSelectedRfqId] = useState<string>('');
+  const { data: rfqs = [], isLoading: rfqsLoading } = useRFQs();
   
   const { data: matches, isLoading, refetch } = useSupplierMatcher(selectedRfqId);
 
-  // Mock RFQs for selector (in production, fetch from Supabase)
-  const mockRfqs = [
-    { id: 'rfq-1', title: 'RFQ-2026-001: 5000t Lithium Carbonate', commodity: 'Lithium Carbonate' },
-    { id: 'rfq-2', title: 'RFQ-2026-002: 3000t Lithium Hydroxide', commodity: 'Lithium Hydroxide' },
-    { id: 'rfq-3', title: 'RFQ-2026-003: 10000t Battery Grade', commodity: 'Lithium Carbonate' },
+  const demoRfqs = [
+    { id: 'mock-rfq-1', title: 'RFQ-2026-001: 5000t Lithium Carbonate' },
+    { id: 'mock-rfq-2', title: 'RFQ-2026-002: 3000t Lithium Hydroxide' },
+    { id: 'mock-rfq-3', title: 'RFQ-2026-003: 10000t Battery Grade Black Mass' },
   ];
+  const rfqOptions = rfqs.length > 0 ? rfqs : demoRfqs;
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600';
@@ -59,7 +61,7 @@ export function SupplierMatcher() {
                 <SelectValue placeholder="Select an RFQ..." />
               </SelectTrigger>
               <SelectContent>
-                {mockRfqs.map((rfq) => (
+                {rfqOptions.map((rfq) => (
                   <SelectItem key={rfq.id} value={rfq.id}>
                     {rfq.title}
                   </SelectItem>
@@ -70,7 +72,7 @@ export function SupplierMatcher() {
 
           <Button
             onClick={() => refetch()}
-            disabled={!selectedRfqId || isLoading}
+            disabled={!selectedRfqId || isLoading || rfqsLoading}
             className="gap-2"
           >
             <Search className="h-4 w-4" />

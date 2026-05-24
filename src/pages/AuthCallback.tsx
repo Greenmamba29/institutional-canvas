@@ -9,6 +9,9 @@ import { Progress } from '@/components/ui/progress';
 
 const STEPS = ['Verifying credentials...', 'Setting up session...', 'Redirecting...'];
 
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Authentication failed';
+
 export default function AuthCallback() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -40,7 +43,7 @@ export default function AuthCallback() {
 
             // Check if first-time user (no org membership)
             const { data: orgMembers } = await supabase
-              .from('org_members' as any)
+              .from('org_members')
               .select('id')
               .eq('user_id', data.session.user.id)
               .limit(1);
@@ -88,9 +91,9 @@ export default function AuthCallback() {
         });
 
         setTimeout(() => { subscription.unsubscribe(); navigate('/auth', { replace: true }); }, 5000);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Auth callback error:', err);
-        const msg = err.message || 'Authentication failed';
+        const msg = getErrorMessage(err);
         // Provider-specific messages
         const friendlyMsg = msg.toLowerCase().includes('google') ? 'Google authentication failed. Please try again.'
           : msg.toLowerCase().includes('apple') ? 'Apple sign-in was cancelled or failed.'

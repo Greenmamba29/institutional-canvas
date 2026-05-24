@@ -15,6 +15,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Failed to sign out. Please try again.';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -44,11 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.auth.signOut();
       // Force full page reload to clear all React Query cache and in-memory state
       window.location.href = '/auth';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sign out error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to sign out. Please try again.',
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     }
