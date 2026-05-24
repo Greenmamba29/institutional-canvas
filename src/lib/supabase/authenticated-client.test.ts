@@ -5,6 +5,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createAuthenticatedClient, callAuthenticatedRpc } from './authenticated-client';
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/integrations/supabase/types';
+
+type RpcName = keyof Database['public']['Functions'];
 
 // Mock createClient from supabase-js
 vi.mock('@supabase/supabase-js', async () => {
@@ -47,7 +50,7 @@ describe('Authenticated Client', () => {
       
       const result = await callAuthenticatedRpc(
         mockClient,
-        'list_rfqs' as any,
+        'list_rfqs' as RpcName,
         {}
       );
       
@@ -64,7 +67,7 @@ describe('Authenticated Client', () => {
       
       const result = await callAuthenticatedRpc(
         mockClient,
-        'list_rfqs' as any,
+        'list_rfqs' as RpcName,
         {}
       );
       
@@ -83,7 +86,7 @@ describe('Authenticated Client', () => {
         p_description: 'Test description',
       };
       
-      await callAuthenticatedRpc(mockClient, 'create_rfq' as any, args);
+      await callAuthenticatedRpc(mockClient, 'create_rfq' as RpcName, args);
       
       expect(mockClient.rpc).toHaveBeenCalledWith('create_rfq', args);
     });

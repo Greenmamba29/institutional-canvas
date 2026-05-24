@@ -7,6 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Sparkles, Shield, Loader2, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Failed to update password. Please try again.';
+
 export default function PasswordReset() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -70,11 +73,11 @@ export default function PasswordReset() {
 
       // Redirect to auth page after 2 seconds
       setTimeout(() => navigate('/auth'), 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Password reset error:', error);
       toast({
         title: 'Reset failed',
-        description: error.message || 'Failed to update password. Please try again.',
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     } finally {

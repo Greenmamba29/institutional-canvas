@@ -16,6 +16,9 @@ import {
 import { checkFeatureFlag } from '@/policy/featureFlags';
 import { logSkillInvocation, hashInput } from '../audit';
 
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'An unexpected error occurred';
+
 // Generate demo meeting URL
 function generateDemoMeetingUrl(): string {
   const id = crypto.randomUUID().slice(0, 8);
@@ -146,14 +149,14 @@ export const telebuyStartSkill: Skill<StartSessionInput, StartSessionOutput> = {
         success: true,
         data: result,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       const durationMs = Math.round(performance.now() - startTime);
       
       const errorResult = {
         success: false as const,
         error: {
           code: 'UNEXPECTED_ERROR',
-          message: error.message || 'An unexpected error occurred',
+          message: getErrorMessage(error),
           retryable: true,
         },
       };
@@ -219,12 +222,12 @@ export const telebuyListSkill: Skill<ListSessionsInput, unknown> = {
         success: true,
         data: data || [],
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: {
           code: 'UNEXPECTED_ERROR',
-          message: error.message || 'An unexpected error occurred',
+          message: getErrorMessage(error),
           retryable: true,
         },
       };

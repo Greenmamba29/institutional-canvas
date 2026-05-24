@@ -18,6 +18,19 @@ interface RealtimeSubscriptionOptions {
   enabled?: boolean;
 }
 
+type PostgresChangesChannel = RealtimeChannel & {
+  on(
+    type: 'postgres_changes',
+    filter: {
+      event: RealtimeSubscriptionOptions['event'];
+      schema: string;
+      table: string;
+      filter?: string;
+    },
+    callback: () => void
+  ): PostgresChangesChannel;
+};
+
 /**
  * Subscribe to realtime changes for a specific table
  * and automatically invalidate related React Query cache
@@ -50,8 +63,8 @@ export function useRealtimeSubscription({
 
       channel = supabase.channel(channelName);
 
-      // Use type assertion to handle the postgres_changes subscription
-      (channel as any).on(
+      const postgresChannel = channel as PostgresChangesChannel;
+      postgresChannel.on(
         'postgres_changes',
         {
           event: event,
