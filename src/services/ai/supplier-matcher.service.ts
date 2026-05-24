@@ -1,15 +1,9 @@
 /**
- * Supplier Matcher Service - AI-powered supplier recommendations for RFQs
- * Uses mock data for demo - in production would use ML ranking algorithms
- * 
- * Scoring Algorithm:
- * - Product Match: 40 points (commodity type, grade, specifications)
- * - Capacity Match: 20 points (volume, delivery timeline)
- * - Geographic Score: 15 points (proximity to delivery location)
- * - Performance Score: 15 points (ratings, past deals, reliability)
- * - Price Score: 10 points (competitive pricing)
- * 
- * Total: 100 points
+ * Supplier Matcher Service - AI-assisted supplier recommendations for RFQs.
+ *
+ * The scorer is deterministic and tenant-data driven. It can be used with real
+ * Supabase rows in production and with mock rows for demos/tests. AI layers may
+ * explain or summarize the outcome, but the ranking inputs remain auditable.
  */
 
 export interface SupplierMatch {
@@ -42,18 +36,199 @@ export interface MatchCriteria {
   max_price?: number;
 }
 
+export interface SupplierProductInput {
+  name?: string | null;
+  product_type?: string | null;
+  min_order_quantity?: number | null;
+  price_per_unit?: number | null;
+}
+
+export interface SupplierCertificationInput {
+  certification_type?: string | null;
+  expiry_date?: string | null;
+}
+
+export interface SupplierReviewInput {
+  rating?: number | null;
+}
+
+export interface SupplierLocationInput {
+  country?: string | null;
+  coordinates?: unknown;
+}
+
+export interface SupplierMatchInput {
+  supplier_id: string;
+  supplier_name: string;
+  supplier_logo?: string;
+  verification_tier?: string | null;
+  products?: SupplierProductInput[];
+  certifications?: SupplierCertificationInput[];
+  reviews?: SupplierReviewInput[];
+  locations?: SupplierLocationInput[];
+  past_deals_count?: number;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function normalized(value: string | null | undefined): string {
+  return (value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function hasCommodityMatch(product: SupplierProductInput, commodity: string): boolean {
+  const haystack = `${normalized(product.name)} ${normalized(product.product_type)}`;
+  const needle = normalized(commodity);
+  if (!needle) return false;
+  return haystack.includes(needle) || needle.split(' ').every((term) => haystack.includes(term));
+}
+
+function extractCoordinates(coordinates: unknown): { lat: number; lon: number } | null {
+  if (!coordinates || typeof coordinates !== 'object') return null;
+  const record = coordinates as Record<string, unknown>;
+  const lat = Number(record.lat ?? record.latitude);
+  const lon = Number(record.lon ?? record.lng ?? record.longitude);
+  return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
+}
+
+function distanceKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
+  const toRad = (degrees: number) => (degrees * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lon - a.lon);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return Math.round(earthRadiusKm * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)));
+}
+
+function averageRating(reviews: SupplierReviewInput[] = []): number {
+  const ratings = reviews.map((review) => Number(review.rating)).filter(Number.isFinite);
+  if (!ratings.length) return 0;
+  return Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * 10) / 10;
+}
+
+function bestDistance(criteria: MatchCriteria, locations: SupplierLocationInput[] = []): number {
+  if (!criteria.delivery_location) return 0;
+  const distances = locations
+    .map((location) => extractCoordinates(location.coordinates))
+    .filter((coords): coords is { lat: number; lon: number } => Boolean(coords))
+    .map((coords) => distanceKm(criteria.delivery_location!, coords));
+  return distances.length ? Math.min(...distances) : 9999;
+}
+
+function actionForScore(score: number): SupplierMatch['recommended_action'] {
+  if (score >= 70) return 'Request Quote';
+  if (score >= 55) return 'Schedule Call';
+  if (score >= 40) return 'Review Profile';
+  return 'Pass';
+}
+
+export function scoreSupplierMatches(
+  criteria: MatchCriteria,
+  candidates: SupplierMatchInput[],
+  limit = 10
+): SupplierMatch[] {
+  return candidates
+    .map((candidate) => {
+      const products = candidate.products ?? [];
+      const matchingProducts = products.filter((product) => hasCommodityMatch(product, criteria.commodity));
+      const bestProduct = matchingProducts[0];
+      const reasoning: string[] = [];
+
+      const product_match_score = bestProduct ? 40 : 0;
+      reasoning.push(bestProduct ? `Offers ${criteria.commodity}` : 'No matching lithium product found');
+
+      const capacity = bestProduct?.min_order_quantity ?? 0;
+      const capacityRatio = criteria.quantity > 0 ? capacity / criteria.quantity : 0;
+      const capacity_match_score = bestProduct
+        ? capacityRatio >= 1
+          ? 20
+          : clamp(Math.round(capacityRatio * 20), 6, 18)
+        : 0;
+      if (bestProduct) {
+        reasoning.push(capacityRatio >= 1 ? 'Capacity covers target quantity' : 'Capacity may require split award');
+      }
+
+      const dist = bestDistance(criteria, candidate.locations);
+      const geographic_score = !criteria.delivery_location
+        ? 10
+        : dist <= 500
+        ? 15
+        : dist <= 1500
+        ? 12
+        : dist <= 4000
+        ? 8
+        : dist < 9999
+        ? 5
+        : 2;
+      if (criteria.delivery_location) reasoning.push(dist < 9999 ? `${dist.toLocaleString()}km delivery distance` : 'Delivery coordinates missing');
+
+      const certifications = candidate.certifications ?? [];
+      const rating = averageRating(candidate.reviews);
+      const tierBonus = candidate.verification_tier === 'gold' ? 4 : candidate.verification_tier === 'silver' ? 3 : candidate.verification_tier ? 2 : 0;
+      const certificationBonus = clamp(certifications.length * 2, 0, 5);
+      const ratingBonus = rating > 0 ? clamp(Math.round((rating / 5) * 4), 1, 4) : 0;
+      const dealBonus = clamp(Math.round((candidate.past_deals_count ?? 0) / 3), 0, 2);
+      const performance_score = clamp(tierBonus + certificationBonus + ratingBonus + dealBonus, 0, 15);
+      if (certifications.length) reasoning.push(`${certifications.length} compliance certifications on file`);
+      if (candidate.verification_tier) reasoning.push(`${candidate.verification_tier} verification tier`);
+      if (rating) reasoning.push(`${rating.toFixed(1)} average rating`);
+
+      const price = bestProduct?.price_per_unit ?? null;
+      const price_score = price && criteria.max_price
+        ? price <= criteria.max_price
+          ? 10
+          : clamp(10 - Math.ceil(((price - criteria.max_price) / criteria.max_price) * 20), 0, 8)
+        : price
+        ? 5
+        : 3;
+      if (price && criteria.max_price) reasoning.push(price <= criteria.max_price ? 'Within target price ceiling' : 'Above target price ceiling');
+
+      const total_score = clamp(
+        product_match_score + capacity_match_score + geographic_score + performance_score + price_score,
+        0,
+        100
+      );
+
+      return {
+        supplier_id: candidate.supplier_id,
+        supplier_name: candidate.supplier_name,
+        supplier_logo: candidate.supplier_logo,
+        total_score,
+        product_match_score,
+        capacity_match_score,
+        geographic_score,
+        performance_score,
+        price_score,
+        ranking: 0,
+        reasoning,
+        distance_km: dist,
+        avg_rating: rating,
+        past_deals_count: candidate.past_deals_count ?? 0,
+        recommended_action: actionForScore(total_score),
+      };
+    })
+    .sort((a, b) => b.total_score - a.total_score)
+    .slice(0, limit)
+    .map((match, index) => ({ ...match, ranking: index + 1 }));
+}
+
 /**
- * Find matching suppliers for an RFQ
- * Uses mock data for demo
+ * Find matching suppliers for an RFQ. If no live candidates are supplied, demo
+ * matches are returned so the AI Studio remains useful in empty workspaces.
  */
 export async function findSupplierMatches(
   criteria: MatchCriteria,
-  limit: number = 10
+  limit: number = 10,
+  candidates?: SupplierMatchInput[]
 ): Promise<{ matches: SupplierMatch[]; error?: Error }> {
   try {
-    // For demo, return mock matches
-    const matches = getMockSupplierMatches(criteria.rfq_id);
-    return { matches: matches.slice(0, limit) };
+    const matches = candidates?.length
+      ? scoreSupplierMatches(criteria, candidates, limit)
+      : getMockSupplierMatches(criteria.rfq_id).slice(0, limit);
+    return { matches };
   } catch (error) {
     console.error('Error finding supplier matches:', error);
     return {
@@ -64,110 +239,57 @@ export async function findSupplierMatches(
 }
 
 /**
- * Get mock supplier matches for testing
+ * Get mock supplier matches for demos and empty-state fallbacks.
  */
 export function getMockSupplierMatches(rfqId: string): SupplierMatch[] {
-  return [
+  return scoreSupplierMatches(
     {
-      supplier_id: 'mock-1',
-      supplier_name: 'GlobalLithium Solutions',
-      total_score: 87,
-      product_match_score: 38,
-      capacity_match_score: 18,
-      geographic_score: 12,
-      performance_score: 13,
-      price_score: 6,
-      ranking: 1,
-      reasoning: [
-        'Offers Lithium Carbonate',
-        '3 industry certifications',
-        'Verified supplier',
-        'Capacity: 50,000t/year (excellent)',
-        'Lead time: 25 days',
-        '850km away (regional)',
-        '4.6⭐ average rating',
-        '24 completed deals (experienced)',
-        'Transparent pricing history',
-      ],
-      distance_km: 850,
-      avg_rating: 4.6,
-      past_deals_count: 24,
-      recommended_action: 'Request Quote',
+      rfq_id: rfqId,
+      commodity: 'Lithium Carbonate',
+      quantity: 5000,
+      delivery_location: { lat: 40, lon: -74 },
+      max_price: 15000,
     },
-    {
-      supplier_id: 'mock-2',
-      supplier_name: 'AsiaMineral Corp',
-      total_score: 76,
-      product_match_score: 35,
-      capacity_match_score: 15,
-      geographic_score: 8,
-      performance_score: 12,
-      price_score: 6,
-      ranking: 2,
-      reasoning: [
-        'Offers Lithium Carbonate',
-        '2 industry certifications',
-        'Verified supplier',
-        'Capacity: 30,000t/year (good)',
-        'Lead time: 35 days (moderate)',
-        '3,200km away (continental)',
-        '4.4⭐ average rating',
-        '18 completed deals',
-        'Target price: $15,000/t',
-      ],
-      distance_km: 3200,
-      avg_rating: 4.4,
-      past_deals_count: 18,
-      recommended_action: 'Request Quote',
-    },
-    {
-      supplier_id: 'mock-3',
-      supplier_name: 'EuroLithium Group',
-      total_score: 68,
-      product_match_score: 30,
-      capacity_match_score: 12,
-      geographic_score: 15,
-      performance_score: 8,
-      price_score: 3,
-      ranking: 3,
-      reasoning: [
-        'Offers Lithium Carbonate',
-        '1 industry certifications',
-        'Trusted supplier',
-        'Capacity: 20,000t/year (adequate)',
-        '450km away (local)',
-        '4.1⭐ average rating',
-        '12 completed deals',
-        'No price benchmark available',
-      ],
-      distance_km: 450,
-      avg_rating: 4.1,
-      past_deals_count: 12,
-      recommended_action: 'Schedule Call',
-    },
-    {
-      supplier_id: 'mock-4',
-      supplier_name: 'SouthAm Lithium SA',
-      total_score: 54,
-      product_match_score: 25,
-      capacity_match_score: 10,
-      geographic_score: 6,
-      performance_score: 8,
-      price_score: 5,
-      ranking: 4,
-      reasoning: [
-        'Offers Lithium Carbonate',
-        'Basic verification only',
-        'Capacity: 15,000t/year (adequate)',
-        '8,500km away (international)',
-        '3.9⭐ average rating',
-        '6 completed deals',
-        'Competitive pricing',
-      ],
-      distance_km: 8500,
-      avg_rating: 3.9,
-      past_deals_count: 6,
-      recommended_action: 'Review Profile',
-    },
-  ];
+    [
+      {
+        supplier_id: 'mock-1',
+        supplier_name: 'GlobalLithium Solutions',
+        verification_tier: 'gold',
+        products: [{ name: 'Lithium Carbonate', product_type: 'Lithium Carbonate', min_order_quantity: 50000, price_per_unit: 14200 }],
+        certifications: [{ certification_type: 'ISO 9001' }, { certification_type: 'ISO 14001' }, { certification_type: 'R2' }],
+        reviews: [{ rating: 5 }, { rating: 4.2 }],
+        locations: [{ country: 'US', coordinates: { lat: 42, lon: -73 } }],
+        past_deals_count: 24,
+      },
+      {
+        supplier_id: 'mock-2',
+        supplier_name: 'AsiaMineral Corp',
+        verification_tier: 'silver',
+        products: [{ name: 'Lithium Carbonate', product_type: 'Lithium Carbonate', min_order_quantity: 30000, price_per_unit: 15000 }],
+        certifications: [{ certification_type: 'ISO 9001' }, { certification_type: 'UN38.3' }],
+        reviews: [{ rating: 4.4 }],
+        locations: [{ country: 'KR', coordinates: { lat: 37.5, lon: 127 } }],
+        past_deals_count: 18,
+      },
+      {
+        supplier_id: 'mock-3',
+        supplier_name: 'EuroLithium Group',
+        verification_tier: 'bronze',
+        products: [{ name: 'Lithium Carbonate', product_type: 'Lithium Carbonate', min_order_quantity: 20000, price_per_unit: 16900 }],
+        certifications: [{ certification_type: 'ISO 14001' }],
+        reviews: [{ rating: 4.1 }],
+        locations: [{ country: 'DE', coordinates: { lat: 52.5, lon: 13.4 } }],
+        past_deals_count: 12,
+      },
+      {
+        supplier_id: 'mock-4',
+        supplier_name: 'SouthAm Lithium SA',
+        products: [{ name: 'Lithium Carbonate', product_type: 'Lithium Carbonate', min_order_quantity: 15000, price_per_unit: 14800 }],
+        certifications: [],
+        reviews: [{ rating: 3.9 }],
+        locations: [{ country: 'CL', coordinates: { lat: -23.6, lon: -68.2 } }],
+        past_deals_count: 6,
+      },
+    ]
+  );
 }

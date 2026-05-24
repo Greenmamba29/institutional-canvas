@@ -6,32 +6,46 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, Shield, Search, FileWarning, Lightbulb, CheckCircle } from 'lucide-react';
 import { useRiskAssessment } from '@/hooks/useRiskAssessment';
+import { useDeals } from '@/hooks/useDeals';
+import { useRFQs } from '@/hooks/useRFQs';
+import { useSuppliers } from '@/hooks/useSuppliers';
 import type { EntityType, RiskLevel, RiskFactor } from '@/services/ai/risk-assessment.service';
 
 export function RiskAnalysis() {
   const [entityType, setEntityType] = useState<EntityType | ''>('');
   const [entityId, setEntityId] = useState('');
+  const { data: deals = [] } = useDeals();
+  const { data: suppliers = [] } = useSuppliers({ limit: 50 });
+  const { data: rfqs = [] } = useRFQs();
   
   const { data: assessment, isLoading, refetch } = useRiskAssessment(entityType, entityId);
 
-  // Mock entities for selector (in production, fetch from Supabase)
-  const mockEntities = {
+  const demoEntities = {
     Deal: [
-      { id: 'deal-1', name: 'Deal #D-2026-001: 5000t Lithium Carbonate' },
-      { id: 'deal-2', name: 'Deal #D-2026-002: 3000t Lithium Hydroxide' },
+      { id: 'mock-deal-1', name: 'Deal #D-2026-001: 5000t Lithium Carbonate' },
+      { id: 'mock-deal-2', name: 'Deal #D-2026-002: 3000t Lithium Hydroxide' },
     ],
     Supplier: [
-      { id: 'supplier-1', name: 'GlobalLithium Solutions' },
-      { id: 'supplier-2', name: 'AsiaMineral Corp' },
+      { id: 'mock-supplier-1', name: 'GlobalLithium Solutions' },
+      { id: 'mock-supplier-2', name: 'AsiaMineral Corp' },
     ],
     RFQ: [
-      { id: 'deal-1', name: 'RFQ-2026-001: 5000t Lithium Carbonate' },
-      { id: 'deal-2', name: 'RFQ-2026-002: 3000t Lithium Hydroxide' },
+      { id: 'mock-rfq-1', name: 'RFQ-2026-001: 5000t Lithium Carbonate' },
+      { id: 'mock-rfq-2', name: 'RFQ-2026-002: Black Mass Recycling Lot' },
     ],
     Market: [
-      { id: 'lithium_carbonate', name: 'Lithium Carbonate Market' },
-      { id: 'lithium_hydroxide', name: 'Lithium Hydroxide Market' },
+      { id: 'market-lithium-carbonate', name: 'Lithium Carbonate Market' },
+      { id: 'market-black-mass', name: 'Black Mass Market' },
     ],
+  };
+
+  const entityOptions = {
+    Deal: deals.length > 0 ? deals.map((deal) => ({ id: deal.id, name: deal.title })) : demoEntities.Deal,
+    Supplier: suppliers.length > 0
+      ? suppliers.map((supplier) => ({ id: supplier.org_id, name: supplier.display_name ?? supplier.invited_email ?? 'Unnamed supplier' }))
+      : demoEntities.Supplier,
+    RFQ: rfqs.length > 0 ? rfqs.map((rfq) => ({ id: rfq.id, name: rfq.title })) : demoEntities.RFQ,
+    Market: demoEntities.Market,
   };
 
   const getRiskColor = (risk: RiskLevel) => {
@@ -79,7 +93,7 @@ export function RiskAnalysis() {
                 <SelectValue placeholder="Select entity..." />
               </SelectTrigger>
               <SelectContent>
-                {entityType && mockEntities[entityType as EntityType].map((entity) => (
+                {entityType && entityOptions[entityType].map((entity) => (
                   <SelectItem key={entity.id} value={entity.id}>
                     {entity.name}
                   </SelectItem>
