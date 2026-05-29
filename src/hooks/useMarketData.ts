@@ -6,6 +6,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSubscriptionTier } from '@/hooks/useSubscription';
 
 // ============================================================================
 // TYPES
@@ -69,6 +70,7 @@ export interface MarketDataState {
   isError: boolean;
   error: Error | null;
   lastUpdated: Date | null;
+  isLocked: boolean;
 }
 
 // ============================================================================
@@ -254,6 +256,8 @@ export function useArbitrage() {
 // ============================================================================
 
 export function useMarketData(): MarketDataState {
+  const tier = useSubscriptionTier();
+  const isLocked = !tier; // null tier = no subscription
   const kpisQuery = useKPIs();
   const pricesQuery = usePrices();
   const newsQuery = useNews();
@@ -274,6 +278,7 @@ export function useMarketData(): MarketDataState {
     isError,
     error: error as Error | null,
     lastUpdated,
+    isLocked,
   };
 }
 
@@ -321,6 +326,16 @@ export function getTrendIcon(trend: 'up' | 'down' | 'stable'): string {
     case 'down': return '↓';
     default: return '→';
   }
+}
+
+// ============================================================================
+// TIER ACCESS
+// ============================================================================
+
+export function useMarketAccess(): { hasPriceAccess: boolean; isTeaser: boolean } {
+  const tier = useSubscriptionTier();
+  const hasPriceAccess = tier === 'pro' || tier === 'enterprise';
+  return { hasPriceAccess, isTeaser: !hasPriceAccess };
 }
 
 export default useMarketData;

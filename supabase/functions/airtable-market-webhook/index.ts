@@ -17,6 +17,9 @@
    'Market News': 'market_news',
    'Arbitrage Opportunities': 'arbitrage_opportunities',
    'Market Briefings': 'market_briefings',
+   'Grants': 'grants',
+   'Grant_Applications': 'grant_applications',
+   'Flash_Alerts': 'flash_alerts',
  };
  
  // Field transformers: Airtable field names -> Supabase column names
@@ -70,6 +73,36 @@
      'Risk Factors': 'risk_factors',
      'Opportunities': 'opportunities',
      'Generated At': 'generated_at',
+   },
+   'grants': {
+     'Title': 'title',
+     'Funding_Source': 'funding_source',
+     'Category': 'category',
+     'Amount_Min': 'amount_min',
+     'Amount_Max': 'amount_max',
+     'Deadline': 'deadline',
+     'Status': 'status',
+     'Eligibility_Criteria': 'eligibility_criteria',
+     'External_URL': 'external_url',
+     'Notes': 'notes',
+     'Supabase_ID': 'id',
+   },
+   'grant_applications': {
+     'Grant_ID': 'grant_id',
+     'Org_ID': 'org_id',
+     'Status': 'status',
+     'Submitted_At': 'submitted_at',
+     'Awarded_At': 'awarded_at',
+     'Award_Amount': 'award_amount',
+     'Notes': 'notes',
+     'Supabase_ID': 'id',
+   },
+   'flash_alerts': {
+     'Org_ID': 'org_id',
+     'Title': 'title',
+     'Message': 'message',
+     'Type': 'type',
+     'Source': 'source',
    },
  };
  

@@ -1,8 +1,8 @@
 /**
- * Paywall Component
- * 
- * Reusable paywall screen for gating Pro/Enterprise features.
- * Shows feature benefits and upgrade CTA with Stripe integration.
+ * Paywall — inline gate for Pro/Enterprise features.
+ *
+ * Pro  $599/month  — grant intelligence, readiness, evidence vault
+ * Enterprise $4,999/month — partner matching, funding pipeline, TeleBuy, auctions
  */
 
 import { Button } from '@/components/ui/button';
@@ -23,23 +23,26 @@ interface PaywallProps {
 const TIER_CONFIG = {
   pro: {
     name: 'Pro',
-    price: '$199',
+    price: '$599',
     period: '/month',
     icon: Zap,
     color: 'text-primary',
     bgColor: 'bg-primary/10',
     borderColor: 'border-primary/20',
     defaultBenefits: [
-      'SPOT.ai Market Intelligence',
-      'AI-powered supplier matching',
-      'TeleBuy video negotiations with transcripts',
-      'Unlimited RFQs',
+      'Unlimited RFQs & purchase orders',
+      'Grant tracker — DOE, DOD, ARPA-E',
+      'Eligibility scoring engine',
+      'Grant readiness dashboard',
+      'Evidence vault (document management)',
+      'Supplier verification & risk scores',
+      'Market & grant intelligence hub',
       'Priority support',
     ],
   },
   enterprise: {
     name: 'Enterprise',
-    price: '$1,999',
+    price: '$4,999',
     period: '/month',
     icon: Crown,
     color: 'text-accent',
@@ -47,30 +50,22 @@ const TIER_CONFIG = {
     borderColor: 'border-accent/20',
     defaultBenefits: [
       'Everything in Pro',
-      'API access',
-      'White-label options',
-      'SSO authentication',
+      'Partner matching & consortium builder',
+      'Funding pipeline automation',
+      'TeleBuy video negotiations',
+      'Auction system access',
+      'API access & webhooks',
+      'SSO & white-label options',
       'Dedicated account manager',
-      'Custom integrations',
     ],
   },
 };
 
-export function Paywall({
-  feature,
-  description,
-  requiredTier,
-  benefits,
-  className,
-}: PaywallProps) {
+export function Paywall({ feature, description, requiredTier, benefits, className }: PaywallProps) {
   const navigate = useNavigate();
   const config = TIER_CONFIG[requiredTier];
   const Icon = config.icon;
   const featureBenefits = benefits || config.defaultBenefits;
-
-  const handleUpgrade = () => {
-    navigate('/settings/billing', { state: { tier: requiredTier } });
-  };
 
   return (
     <div className={cn("flex items-center justify-center min-h-[60vh] p-6", className)}>
@@ -85,23 +80,20 @@ export function Paywall({
           </Badge>
           <CardTitle className="text-2xl">{feature}</CardTitle>
           {description && (
-            <CardDescription className="text-base mt-2">
-              {description}
-            </CardDescription>
+            <CardDescription className="text-base mt-2">{description}</CardDescription>
           )}
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Price Display */}
           <div className="text-center py-4 border-y border-border/50">
             <span className="text-4xl font-bold">{config.price}</span>
             <span className="text-muted-foreground">{config.period}</span>
+            <p className="text-xs text-muted-foreground mt-1">Annual billing available — save 20%</p>
           </div>
 
-          {/* Benefits List */}
           <ul className="space-y-3">
             {featureBenefits.map((benefit, idx) => (
               <li key={idx} className="flex items-start gap-3">
-                <div className={cn("p-1 rounded-full mt-0.5", config.bgColor)}>
+                <div className={cn("p-1 rounded-full mt-0.5 shrink-0", config.bgColor)}>
                   <Check className={cn("h-3 w-3", config.color)} />
                 </div>
                 <span className="text-sm text-muted-foreground">{benefit}</span>
@@ -109,19 +101,24 @@ export function Paywall({
             ))}
           </ul>
 
-          {/* CTA Buttons */}
           <div className="space-y-3 pt-2">
-            <Button 
-              onClick={handleUpgrade} 
+            <Button
+              onClick={() => navigate('/settings/billing', { state: { tier: requiredTier } })}
               className="w-full"
               size="lg"
             >
               <Sparkles className="h-4 w-4 mr-2" />
               Upgrade to {config.name}
             </Button>
-            <p className="text-xs text-center text-muted-foreground">
-              Cancel anytime. No questions asked.
-            </p>
+            {requiredTier === 'enterprise' && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => window.location.href = 'mailto:sales@lithiumbuy.com?subject=Enterprise Plan Inquiry'}
+              >
+                Contact Sales Instead
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -129,9 +126,6 @@ export function Paywall({
   );
 }
 
-/**
- * Inline upgrade prompt for use within feature cards
- */
 interface UpgradePromptProps {
   feature: string;
   tier: 'pro' | 'enterprise';
@@ -155,12 +149,12 @@ export function UpgradePrompt({ feature, tier, className }: UpgradePromptProps) 
         <div>
           <p className="text-sm font-medium">{feature}</p>
           <p className="text-xs text-muted-foreground">
-            Requires {config.name} subscription
+            Requires {config.name} — {config.price}{config.period}
           </p>
         </div>
       </div>
-      <Button 
-        size="sm" 
+      <Button
+        size="sm"
         variant="outline"
         onClick={() => navigate('/settings/billing', { state: { tier } })}
       >

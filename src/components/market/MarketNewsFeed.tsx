@@ -1,10 +1,18 @@
-import { useNews, getSentimentColor } from '@/hooks/useMarketData';
+import { useNews, getSentimentColor, useMarketAccess } from '@/hooks/useMarketData';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ExternalLink, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { ExternalLink, TrendingUp, TrendingDown, Minus, Lock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
+
+const TEASER_HEADLINES = [
+  'Lithium carbonate prices stabilize amid shifting demand signals from EV sector',
+  'DOE announces $2.4B in critical mineral supply chain grants for 2026',
+  'Chilean lithium output hits record high — impact on global spot markets',
+];
 
 export function MarketNewsFeed() {
   const { data: news, isLoading } = useNews();
+  const { hasPriceAccess, isTeaser } = useMarketAccess();
 
   if (isLoading) {
     return (
@@ -29,6 +37,32 @@ export function MarketNewsFeed() {
       default: return <Minus className="h-3 w-3" />;
     }
   };
+
+  if (isTeaser) {
+    return (
+      <div className="glass-panel rounded-xl p-4 relative overflow-hidden">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold">Market Intelligence</h3>
+          <span className="text-[10px] text-muted-foreground">AI-Curated</span>
+        </div>
+        <div className="space-y-3 select-none">
+          {TEASER_HEADLINES.map((headline, i) => (
+            <div key={i} className={i > 0 ? 'blur-sm' : ''}>
+              <p className="text-xs font-medium line-clamp-2">{headline}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Market Wire • just now</p>
+            </div>
+          ))}
+        </div>
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent flex flex-col items-center justify-end pb-4">
+          <Lock className="h-4 w-4 text-muted-foreground mb-1" />
+          <p className="text-xs font-semibold mb-2">Pro unlocks full market intelligence</p>
+          <Button size="sm" className="h-7 text-xs" onClick={() => window.location.href = '/settings/billing?plan=pro'}>
+            Upgrade to Pro
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="glass-panel rounded-xl p-4">
