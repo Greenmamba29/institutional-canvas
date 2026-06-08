@@ -232,6 +232,13 @@ export const telebuyListSkill: Skill<ListSessionsInput, unknown> = {
   },
 };
 
+// LB TeleBuy skills (lane: skills-telebuy-custody) — thin orchestration over
+// telebuy.service (session provisioning + transcript/summary attach).
+export {
+  lbTelebuySessionSkill,
+  lbTelebuySummarizeSkill,
+} from './lb-telebuy';
+
 // Export all TeleBuy skills
 export const telebuySkills = {
   start: telebuyStartSkill,

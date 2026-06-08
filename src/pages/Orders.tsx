@@ -6,6 +6,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { StatsGridSkeleton, QuoteListSkeleton } from "@/components/ui/skeleton-loaders";
 import { Package, Truck, CheckCircle, Clock, DollarSign, AlertCircle } from "lucide-react";
 import { useOrders } from "@/hooks/useOrders";
+import { SkillRecommendations } from "@/components/skills/SkillRecommendations";
 import { format } from "date-fns";
 
 const statusConfig: Record<string, { icon: typeof Package; color: string; label: string }> = {
@@ -164,6 +165,11 @@ export default function Orders() {
           )}
         </CardContent>
       </Card>
+
+      {/* Suggested skill actions */}
+      <div className="mt-6">
+        <SkillRecommendations />
+      </div>
     </>
   );
 }

@@ -58,9 +58,7 @@ function useSubscriptionAccess(): { data: AccessState; isLoading: boolean } {
           supabase.rpc('get_subscription_tier'),
           supabase.rpc('is_in_grace_period'),
           supabase.rpc('grace_period_days_remaining'),
-          // New RPC not yet in generated DB types; cast until types regenerate.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          supabase.rpc('org_trial_status' as any),
+          supabase.rpc('org_trial_status'),
         ]);
 
       const trial = (Array.isArray(trialRows) ? trialRows[0] : trialRows) as

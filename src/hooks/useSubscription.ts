@@ -147,10 +147,7 @@ export function useSubscription() {
       }
 
       // No active paid subscription — fall back to the org's free-trial window.
-      // `org_trial_status` is a new RPC not yet in the generated DB types; the
-      // cast keeps the typed client happy until types are regenerated.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: trialRows, error: trialError } = await supabase.rpc('org_trial_status' as any);
+      const { data: trialRows, error: trialError } = await supabase.rpc('org_trial_status');
       if (trialError) {
         console.error('Error fetching trial status:', trialError);
         return null;

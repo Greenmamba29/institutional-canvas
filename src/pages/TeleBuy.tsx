@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { CreateTelebuySessionDialog } from "@/components/telebuy/CreateTelebuySessionDialog";
 import { VideoCallRoom } from "@/components/telebuy/VideoCallRoom";
+import { SkillRecommendations } from "@/components/skills/SkillRecommendations";
 import {
   useTelebuySessions,
   useUpcomingSessions,
@@ -424,6 +425,9 @@ export default function TeleBuy() {
               Join Meeting
             </Button>
           </div>
+
+          {/* Suggested skill actions */}
+          <SkillRecommendations />
 
           {/* Error State */}
           {error && (

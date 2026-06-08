@@ -15,6 +15,7 @@ import { Search, Plus, Truck, Flag, AlertCircle } from "lucide-react";
 import { useRFQs } from "@/hooks/useRFQs";
 import type { RFQ } from "@/services/rfqs.service";
 import { CreateRFQDialog } from "@/components/rfq/CreateRFQDialog";
+import { SkillRecommendations } from "@/components/skills/SkillRecommendations";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -179,9 +180,11 @@ export default function RFQs() {
             </div>
           </div>
 
-          {/* Supplier Profile Sidebar */}
+          {/* Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            <SkillRecommendations />
           {viewMode === 'supplier' && (
-            <div className="lg:col-span-1">
+            <div>
               <SupplierProfileSidebar
                 name="Diego Santos"
                 title="Chief Operating Officer"
@@ -203,6 +206,7 @@ export default function RFQs() {
               />
             </div>
           )}
+          </div>
         </div>
       </div>
     </>
