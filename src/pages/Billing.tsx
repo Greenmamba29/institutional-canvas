@@ -37,6 +37,11 @@ export default function Billing() {
   const { startCheckout, isLoading } = useCheckout();
 
   const currentTier = subscription?.tier ?? null;
+  const isTrial = subscription?.isTrialActive ?? false;
+  const trialDaysLeft = subscription?.trialDaysLeft ?? 0;
+  // A trial grants pro-equivalent access but is not a paid plan — the plan cards
+  // below should still let trial users pick (and pay for) a plan.
+  const paidTier = currentTier && currentTier !== 'trial' ? currentTier : null;
 
   const proPrice    = cycle === 'annual' ? STRIPE_PRODUCTS.pro.annualPrice      : STRIPE_PRODUCTS.pro.price;
   const entPrice    = cycle === 'annual' ? STRIPE_PRODUCTS.enterprise.annualPrice : STRIPE_PRODUCTS.enterprise.price;
@@ -61,15 +66,22 @@ export default function Billing() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold capitalize">
-                {currentTier ? `${currentTier} Plan` : 'No Active Subscription'}
+                {isTrial
+                  ? 'Free Trial'
+                  : paidTier
+                    ? `${paidTier} Plan`
+                    : 'No Active Subscription'}
               </p>
               <p className="text-muted-foreground">
-                {currentTier === 'pro' && 'Full procurement & grant intelligence'}
-                {currentTier === 'enterprise' && 'Complete platform access including partner matching & TeleBuy'}
-                {!currentTier && 'Select a plan below to activate your account'}
+                {isTrial && `Full access — ${trialDaysLeft} day${trialDaysLeft !== 1 ? 's' : ''} left. Choose a plan below to continue after your trial.`}
+                {!isTrial && paidTier === 'pro' && 'Full procurement & grant intelligence'}
+                {!isTrial && paidTier === 'enterprise' && 'Complete platform access including partner matching & TeleBuy'}
+                {!isTrial && !paidTier && 'Your trial has ended — select a plan below to restore full access'}
               </p>
             </div>
-            {currentTier ? (
+            {isTrial ? (
+              <Badge className="bg-primary/10 text-primary border-primary/20">Trial</Badge>
+            ) : paidTier ? (
               <Badge className="bg-success/10 text-success border-success/20">Active</Badge>
             ) : (
               <Badge variant="destructive">Inactive</Badge>
@@ -103,7 +115,7 @@ export default function Billing() {
       <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
 
         {/* Pro */}
-        <Card className={`border-primary/30 shadow-lg shadow-primary/5 ${currentTier === 'pro' ? 'ring-2 ring-primary' : ''}`}>
+        <Card className={`border-primary/30 shadow-lg shadow-primary/5 ${paidTier === 'pro' ? 'ring-2 ring-primary' : ''}`}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -134,11 +146,11 @@ export default function Billing() {
               ))}
             </ul>
 
-            {currentTier === 'pro' ? (
+            {paidTier === 'pro' ? (
               <Button className="w-full" variant="outline" disabled>
                 Current Plan
               </Button>
-            ) : currentTier === 'enterprise' ? (
+            ) : paidTier === 'enterprise' ? (
               <Button className="w-full" variant="outline" disabled>
                 Included in Enterprise
               </Button>
@@ -160,7 +172,7 @@ export default function Billing() {
         </Card>
 
         {/* Enterprise */}
-        <Card className={`border-accent/30 shadow-lg shadow-accent/5 ${currentTier === 'enterprise' ? 'ring-2 ring-accent' : ''}`}>
+        <Card className={`border-accent/30 shadow-lg shadow-accent/5 ${paidTier === 'enterprise' ? 'ring-2 ring-accent' : ''}`}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -191,7 +203,7 @@ export default function Billing() {
               ))}
             </ul>
 
-            {currentTier === 'enterprise' ? (
+            {paidTier === 'enterprise' ? (
               <Button className="w-full" variant="outline" disabled>
                 Current Plan
               </Button>

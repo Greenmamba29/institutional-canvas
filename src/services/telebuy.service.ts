@@ -7,14 +7,14 @@
 
 import { callRpc, supabase } from '@/lib/supabase/rpc';
 import type { Tables } from '@/integrations/supabase/types';
-
-// Daily.co domain for URL construction (public config, not a secret)
-const DAILY_DOMAIN = 'lithiumbuy.daily.co';
+import { getVideoProvider, type VideoProviderName, type VideoSession } from '@/lib/video';
 
 export type TelebuySession = Tables<'telebuy_sessions'>;
 export type TelebuyDocument = Tables<'telebuy_documents'>;
 
-export type VideoProvider = 'daily' | 'google_meet';
+// Provider names handled by the create-session UI today. The adapter layer
+// supports more (zoom/livekit) but those are stubs, so the UI only offers these.
+export type VideoProvider = Extract<VideoProviderName, 'daily' | 'google_meet'>;
 
 export interface CreateTelebuySessionParams {
   supplierId: string;
@@ -26,17 +26,107 @@ export interface CreateTelebuySessionParams {
 }
 
 /**
- * Create a new TeleBuy session via RPC
+ * Create a new TeleBuy session.
+ *
+ * Workflow seam (Phase 0):
+ *   1. Persist the session record via the create_telebuy_session RPC.
+ *   2. Provision a video room through the provider adapter (never a hardcoded
+ *      provider) and store its room_url as the session's meeting_url.
+ *   3. Mirror the session summary/status to Airtable (sync-to-airtable).
+ *
+ * Payment authorization (Stripe PaymentIntent) is intentionally out of Phase 0
+ * scope; the call site is left as a clearly-marked TODO below.
  */
 export async function createTelebuySession(params: CreateTelebuySessionParams) {
-  return callRpc<TelebuySession>('create_telebuy_session', {
+  const providerName: VideoProvider = params.videoProvider || 'daily';
+
+  // 1. Provision the room first for Daily so we can persist the generated URL.
+  //    For google_meet the edge function needs the session row id, so we
+  //    provision after the RPC insert (see below).
+  let videoSession: VideoSession | null = null;
+  let meetingUrl = params.meetingUrl;
+
+  if (providerName === 'daily') {
+    videoSession = await getVideoProvider('daily').createSession({
+      privacy: 'private',
+      enableRecording: true,
+    });
+    meetingUrl = videoSession.roomUrl;
+  }
+
+  // 2. Persist the session record (source of truth).
+  const { data: session, error } = await callRpc<TelebuySession>('create_telebuy_session', {
     p_supplier_id: params.supplierId,
     p_scheduled_at: params.scheduledAt,
-    p_meeting_url: params.meetingUrl,
+    p_meeting_url: meetingUrl,
     p_notes: params.notes || null,
-    p_video_provider: params.videoProvider || 'daily',
+    p_video_provider: providerName,
     p_google_meet_link: params.googleMeetLink || null,
   });
+
+  if (error || !session) {
+    return { data: session, error };
+  }
+
+  // 3. For google_meet, provision the room now that we have the session id, then
+  //    store the resulting URL back on the record.
+  if (providerName === 'google_meet') {
+    try {
+      videoSession = await getVideoProvider('google_meet').createSession({
+        name: 'TeleBuy Session',
+        startTime: params.scheduledAt,
+        metadata: { sessionId: session.id },
+      });
+      meetingUrl = videoSession.roomUrl;
+    } catch (provisionError) {
+      // Non-fatal: the session exists; surface the error to the caller.
+      console.error('Failed to provision Google Meet room:', provisionError);
+    }
+  }
+  // For Daily, the room URL was generated before the insert and already stored
+  // as the session's meeting_url (p_meeting_url above) — no extra write needed.
+
+  // 4. Mirror to Airtable (operational dashboard). Best-effort, never blocks.
+  await syncTelebuySessionToAirtable(session, { meetingUrl, status: session.status ?? 'scheduled' });
+
+  // TODO(payments, Phase 1+): authorize a Stripe PaymentIntent for the TeleBuy
+  // booking fee here, before confirming the session to the user. Out of Phase 0
+  // scope — leave the call site so the seam is obvious:
+  //   await createTelebuyPaymentIntent({ sessionId: session.id, supplierId: params.supplierId });
+
+  return { data: session, error: null };
+}
+
+/**
+ * Mirror a TeleBuy session's summary/status to Airtable via the
+ * sync-to-airtable edge function. Best-effort: failures are logged, not thrown.
+ *
+ * Payload matches the function's SyncRequest contract:
+ *   { table, record, action }
+ */
+export async function syncTelebuySessionToAirtable(
+  session: TelebuySession,
+  overrides?: { meetingUrl?: string; status?: string }
+): Promise<void> {
+  try {
+    await supabase.functions.invoke('sync-to-airtable', {
+      body: {
+        table: 'telebuy_sessions',
+        action: 'create',
+        record: {
+          id: session.id,
+          supplier_id: session.supplier_id,
+          scheduled_at: session.scheduled_at,
+          status: overrides?.status ?? session.status,
+          video_provider: session.video_provider,
+          meeting_url: overrides?.meetingUrl ?? session.meeting_url,
+          notes: session.notes,
+        },
+      },
+    });
+  } catch (e) {
+    console.error('Failed to sync TeleBuy session to Airtable:', e);
+  }
 }
 
 /**
@@ -161,8 +251,11 @@ export interface DailyRoomConfig {
 }
 
 /**
- * Create a Daily.co room for TeleBuy session (via Edge Function)
- * API key is kept server-side for security
+ * Create a Daily.co room for a TeleBuy session.
+ *
+ * Now delegates to the video provider adapter rather than calling the edge
+ * function directly, so the provider stays swappable. Kept as a thin
+ * compatibility wrapper for existing callers expecting `{ url, name }`.
  */
 export async function createDailyRoom(config?: DailyRoomConfig): Promise<{
   url: string;
@@ -170,26 +263,13 @@ export async function createDailyRoom(config?: DailyRoomConfig): Promise<{
   error?: Error;
 }> {
   try {
-    const { data, error } = await supabase.functions.invoke('daily-rooms', {
-      body: {
-        action: 'create',
-        config,
-      },
+    const session = await getVideoProvider('daily').createSession({
+      name: config?.name,
+      privacy: config?.privacy ?? 'private',
+      enableRecording: config?.properties?.enable_recording != null,
+      maxParticipants: config?.properties?.max_participants,
     });
-
-    if (error) {
-      console.error('Failed to create Daily.co room:', error);
-      return {
-        url: '',
-        name: '',
-        error: new Error(error.message || 'Failed to create room'),
-      };
-    }
-
-    return {
-      url: data.url,
-      name: data.name,
-    };
+    return { url: session.roomUrl, name: session.id };
   } catch (error) {
     console.error('Error creating Daily.co room:', error);
     return {

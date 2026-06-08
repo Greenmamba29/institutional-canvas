@@ -18,6 +18,15 @@ import { rfqCreateSkill, rfqListSkill, rfqRespondSkill } from './rfq';
 // Auction Skills
 import { auctionBidSkill, auctionListSkill, auctionSettleSkill } from './auction';
 
+// New automation skills (sourcing / telebuy / custody / market / grant)
+import { rfqOrchestrateSkill } from './rfq/orchestrate';
+import { bidToDealSkill } from './rfq/bid-to-deal';
+import { auctionMonitorSkill } from './auction/monitor';
+import { lbTelebuySessionSkill, lbTelebuySummarizeSkill } from './telebuy';
+import { lbProcureCustodySkill } from './custody';
+import { marketPulseSkill } from './market';
+import { grantMatchSkill } from './grant';
+
 // All skills to register
 const skills: Skill<unknown, unknown>[] = [
   // TeleBuy
@@ -31,6 +40,15 @@ const skills: Skill<unknown, unknown>[] = [
   auctionBidSkill as Skill<unknown, unknown>,
   auctionListSkill as Skill<unknown, unknown>,
   auctionSettleSkill as Skill<unknown, unknown>,
+  // Automation skills
+  rfqOrchestrateSkill as Skill<unknown, unknown>,
+  bidToDealSkill as Skill<unknown, unknown>,
+  auctionMonitorSkill as Skill<unknown, unknown>,
+  lbTelebuySessionSkill as Skill<unknown, unknown>,
+  lbTelebuySummarizeSkill as Skill<unknown, unknown>,
+  lbProcureCustodySkill as Skill<unknown, unknown>,
+  marketPulseSkill as Skill<unknown, unknown>,
+  grantMatchSkill as Skill<unknown, unknown>,
 ];
 
 let initialized = false;

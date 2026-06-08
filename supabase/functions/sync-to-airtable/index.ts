@@ -38,6 +38,14 @@ const tableMapping: Record<string, string> = {
   'chain_of_custody': Deno.env.get('AIRTABLE_CHAIN_OF_CUSTODY_TABLE') || 'tblChainOfCustody',
   'processing_orders': Deno.env.get('AIRTABLE_PROCESSING_ORDERS_TABLE') || 'tblProcessingOrders',
   'compliance_audit_logs': Deno.env.get('AIRTABLE_AUDIT_LOGS_TABLE') || 'tblAuditLogs',
+  // TeleBuy mappings
+  'telebuy_sessions': Deno.env.get('AIRTABLE_TELEBUY_SESSIONS_TABLE') || 'tblSeir3aG2ihTaup',
+  // Trading / marketplace mappings
+  'rfqs': Deno.env.get('AIRTABLE_RFQS_TABLE') || 'tblJn7qPgFXMVK6pb',
+  'bids': Deno.env.get('AIRTABLE_BIDS_TABLE') || 'tbltL0vu4zomBnU3Z',
+  'deals': Deno.env.get('AIRTABLE_DEALS_TABLE') || 'tblpdNWPvXJ7BmOSA',
+  'purchases': Deno.env.get('AIRTABLE_PURCHASES_TABLE') || 'tbl2QJT5YW4026jGj',
+  'custody_events': Deno.env.get('AIRTABLE_CUSTODY_EVENTS_TABLE') || 'tblHPVV9zNweddZ8o',
 };
 
 // Field transformers: Convert Supabase column names to Airtable field names
@@ -247,6 +255,106 @@ const fieldTransformers: Record<string, Record<string, string>> = {
     'performed_by': 'Performed_By', 'compliance_result': 'Compliance_Result',
     'regulation_refs': 'Regulation_Refs', 'notes': 'Notes',
   },
+  'telebuy_sessions': {
+    'id': 'Supabase_ID',
+    'supplier_id': 'Supplier_ID',
+    'user_id': 'User_ID',
+    'org_id': 'Org_ID',
+    'status': 'Status',
+    'meeting_url': 'Meeting_URL',
+    'meeting_id': 'Meeting_ID',
+    'google_meet_link': 'Google_Meet_Link',
+    'video_provider': 'Video_Provider',
+    'scheduled_at': 'Scheduled_At',
+    'started_at': 'Started_At',
+    'ended_at': 'Ended_At',
+    'recording_url': 'Recording_URL',
+    'transcript': 'Transcript',
+    'notes': 'Notes',
+    'created_at': 'Created_At',
+  },
+  // RFQs -> Airtable "RFQs" table (existing). Relations are linked-record
+  // fields in Airtable, so only scalar columns are synced as text/number.
+  'rfqs': {
+    'id': 'RFQ ID',
+    'product': 'Product',
+    'product_type': 'Product',
+    'quantity_mt': 'Quantity (MT)',
+    'quantity': 'Quantity (MT)',
+    'deadline': 'Deadline',
+    'status': 'Status',
+    'notes': 'Notes',
+  },
+  // bids -> Airtable "Auction Bids" table (existing).
+  'bids': {
+    'id': 'Bid_ID',
+    'bidder_id': 'Bidder_ID',
+    'amount': 'Bid_Amount',
+    'bid_amount': 'Bid_Amount',
+    'status': 'Status',
+    'notes': 'Notes',
+    'created_at': 'Created_At',
+  },
+  // deals -> Airtable "Deals" table (existing).
+  'deals': {
+    'id': 'Deal ID',
+    'product': 'Product',
+    'quantity_mt': 'Quantity (MT)',
+    'quantity': 'Quantity (MT)',
+    'price_usd': 'Price (USD/MT)',
+    'price_usd_per_mt': 'Price (USD/MT)',
+    'total_value': 'Total Value',
+    'total_value_usd': 'Total Value',
+    'status': 'Status',
+    'currency': 'Currency',
+    'incoterm': 'Incoterm',
+    'payment_method': 'Payment Method',
+    'notes': 'Notes',
+    'deal_date': 'Deal Date',
+  },
+  // purchases -> Airtable "Purchases" table (created).
+  'purchases': {
+    'id': 'Supabase_ID',
+    'po': 'PO_Number',
+    'po_number': 'PO_Number',
+    'org_id': 'Org_ID',
+    'buyer_id': 'Buyer_ID',
+    'supplier_id': 'Supplier_ID',
+    'deal_id': 'Deal_ID',
+    'product': 'Product',
+    'product_type': 'Product',
+    'quantity_mt': 'Quantity_MT',
+    'quantity': 'Quantity_MT',
+    'price_usd': 'Price_USD',
+    'total_value_usd': 'Total_Value_USD',
+    'total_value': 'Total_Value_USD',
+    'currency': 'Currency',
+    'status': 'Status',
+    'incoterm': 'Incoterm',
+    'payment_method': 'Payment_Method',
+    'expected_delivery_date': 'Expected_Delivery_Date',
+    'notes': 'Notes',
+    'created_at': 'Created_At',
+  },
+  // custody_events -> Airtable "Custody Events" table (created).
+  'custody_events': {
+    'id': 'Supabase_ID',
+    'org_id': 'Org_ID',
+    'order_id': 'Order_ID',
+    'deal_id': 'Deal_ID',
+    'event_type': 'Event_Type',
+    'title': 'Title',
+    'description': 'Description',
+    'location': 'Location',
+    'occurred_at': 'Occurred_At',
+    'verified_by': 'Verified_By',
+    'verified_at': 'Verified_At',
+    'documents': 'Documents',
+    'coordinates': 'Coordinates',
+    'metadata': 'Metadata',
+    'created_by': 'Created_By',
+    'created_at': 'Created_At',
+  },
 };
 
 // Transform record fields for Airtable
@@ -262,6 +370,9 @@ function transformFields(table: string, record: Record<string, any>): Record<str
         transformed['Auction_ID'] = value;
       } else if (table === 'auction_bids') {
         transformed['Bid_ID'] = value;
+      } else if (transformer[key]) {
+        // Other tables map 'id' through the transformer (e.g. Supabase_ID)
+        transformed[transformer[key]] = value;
       }
       continue;
     }

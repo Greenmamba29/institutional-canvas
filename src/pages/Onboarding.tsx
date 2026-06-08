@@ -86,7 +86,7 @@ export default function Onboarding() {
   // Handle organization creation
   const handleCreateOrg = useCallback(async (data: CreateOrgData) => {
     try {
-      await createOrg.mutateAsync({
+      const createdOrg = await createOrg.mutateAsync({
         name: data.name,
         orgType: data.orgType,
         email: user?.email,
@@ -95,7 +95,18 @@ export default function Onboarding() {
         soeCategory: data.soeCategory,
         parentMinistry: data.parentMinistry,
       });
-      
+
+      // Kick off the 3-day free trial so the new org gets full access without a
+      // credit card. Non-fatal: if it fails the user can still upgrade in Billing.
+      if (createdOrg?.id) {
+        const { error: trialError } = await supabase.rpc('start_org_trial', {
+          p_org_id: createdOrg.id,
+        });
+        if (trialError) {
+          console.error('Failed to start free trial:', trialError);
+        }
+      }
+
       setCreatedOrgName(data.name);
       setShowSuccess(true);
       toast.success('Organization created successfully!');

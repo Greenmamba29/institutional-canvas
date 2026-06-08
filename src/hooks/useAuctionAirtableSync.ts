@@ -149,7 +149,7 @@ export function useAuctionAirtableSync(
     syncBid,
     syncAllAuctions,
     pullChanges,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     syncLog: logVersion >= 0 ? getSyncLog() : [],
     stats: getSyncStats(),
     isListening,

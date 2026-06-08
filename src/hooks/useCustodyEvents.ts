@@ -1,16 +1,20 @@
 /**
  * Chain of Custody React Query Hooks
+ *
+ * Backed by the real order-scoped RPCs in custody.service.ts. The service
+ * requires an authenticated Supabase client (org/RLS context), built here from
+ * the current session token (same pattern as usePurchases / useRfqs).
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  getCustodyChains, 
-  getCustodyChainById, 
+import { useAuth } from '@/context/AuthContext';
+import { createAuthenticatedClient } from '@/lib/supabase/authenticated-client';
+import {
+  getCustodyChainById,
   getCustodyChainByOrderId,
-  getCustodyChainByDealId,
+  getCustodyEventsByOrder,
   addCustodyEvent,
-  type CustodyChain,
-  type CustodyEvent 
+  type CreateCustodyEventParams,
 } from '@/services/custody.service';
 
 export const custodyKeys = {
@@ -18,85 +22,103 @@ export const custodyKeys = {
   chains: () => [...custodyKeys.all, 'chains'] as const,
   chain: (id: string) => [...custodyKeys.all, 'chain', id] as const,
   byOrder: (orderId: string) => [...custodyKeys.all, 'order', orderId] as const,
-  byDeal: (dealId: string) => [...custodyKeys.all, 'deal', dealId] as const,
+  events: (orderId: string) => [...custodyKeys.all, 'events', orderId] as const,
 };
 
 /**
- * Get all custody chains for the current organization
+ * Get all custody chains for the current organization.
+ *
+ * There is no org-wide "list chains" RPC — chains are resolved per order via
+ * get_chain_of_custody. This hook therefore returns an empty list (the page
+ * renders its empty state); use useCustodyChain / useCustodyByOrder with a
+ * known order id to load a specific chain.
  */
 export function useCustodyChains() {
   return useQuery({
     queryKey: custodyKeys.chains(),
-    queryFn: async () => {
-      const { data, error } = await getCustodyChains();
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: async () => [],
   });
 }
 
 /**
- * Get a specific custody chain by ID
+ * Get a specific custody chain by id (resolved as the order's chain).
  */
 export function useCustodyChain(chainId: string | undefined) {
+  const { getAccessToken, isAuthenticated } = useAuth();
+
   return useQuery({
     queryKey: custodyKeys.chain(chainId ?? ''),
     queryFn: async () => {
       if (!chainId) return null;
-      const { data, error } = await getCustodyChainById(chainId);
+      const token = await getAccessToken();
+      const client = createAuthenticatedClient(token);
+      const { data, error } = await getCustodyChainById(client, chainId);
       if (error) throw error;
       return data;
     },
-    enabled: !!chainId,
+    enabled: isAuthenticated && !!chainId,
   });
 }
 
 /**
- * Get custody chain by order ID
+ * Get custody chain by order ID.
  */
 export function useCustodyByOrder(orderId: string | undefined) {
+  const { getAccessToken, isAuthenticated } = useAuth();
+
   return useQuery({
     queryKey: custodyKeys.byOrder(orderId ?? ''),
     queryFn: async () => {
       if (!orderId) return null;
-      const { data, error } = await getCustodyChainByOrderId(orderId);
+      const token = await getAccessToken();
+      const client = createAuthenticatedClient(token);
+      const { data, error } = await getCustodyChainByOrderId(client, orderId);
       if (error) throw error;
       return data;
     },
-    enabled: !!orderId,
+    enabled: isAuthenticated && !!orderId,
   });
 }
 
 /**
- * Get custody chain by deal ID
+ * Get the raw ordered custody events for an order.
  */
-export function useCustodyByDeal(dealId: string | undefined) {
+export function useCustodyEvents(orderId: string | undefined) {
+  const { getAccessToken, isAuthenticated } = useAuth();
+
   return useQuery({
-    queryKey: custodyKeys.byDeal(dealId ?? ''),
+    queryKey: custodyKeys.events(orderId ?? ''),
     queryFn: async () => {
-      if (!dealId) return null;
-      const { data, error } = await getCustodyChainByDealId(dealId);
+      if (!orderId) return [];
+      const token = await getAccessToken();
+      const client = createAuthenticatedClient(token);
+      const { data, error } = await getCustodyEventsByOrder(client, orderId);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
-    enabled: !!dealId,
+    enabled: isAuthenticated && !!orderId,
   });
 }
 
 /**
- * Add a new custody event to a chain
+ * Add a new custody event to an order's chain.
  */
 export function useAddCustodyEvent() {
+  const { getAccessToken } = useAuth();
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ chainId, event }: { chainId: string; event: Omit<CustodyEvent, 'id'> }) => {
-      const { data, error } = await addCustodyEvent(chainId, event);
+    mutationFn: async (params: CreateCustodyEventParams) => {
+      const token = await getAccessToken();
+      const client = createAuthenticatedClient(token);
+      const { data, error } = await addCustodyEvent(client, params);
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, { chainId }) => {
-      queryClient.invalidateQueries({ queryKey: custodyKeys.chain(chainId) });
+    onSuccess: (_, params) => {
+      queryClient.invalidateQueries({ queryKey: custodyKeys.chain(params.orderId) });
+      queryClient.invalidateQueries({ queryKey: custodyKeys.byOrder(params.orderId) });
+      queryClient.invalidateQueries({ queryKey: custodyKeys.events(params.orderId) });
       queryClient.invalidateQueries({ queryKey: custodyKeys.chains() });
     },
   });

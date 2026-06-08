@@ -24,7 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2, Video, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
+import { useCreateTelebuySession } from "@/hooks/useTelebuy";
 import {
   Select,
   SelectContent,
@@ -81,8 +81,8 @@ export function ScheduleTeleBuyModal({
   supplierId,
   supplierName,
 }: ScheduleTeleBuyModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
+  const createSession = useCreateTelebuySession();
+  const isSubmitting = createSession.isPending;
 
   const form = useForm<TeleBuyFormData>({
     resolver: zodResolver(telebuySchema),
@@ -93,42 +93,27 @@ export function ScheduleTeleBuyModal({
   });
 
   const onSubmit = async (data: TeleBuyFormData) => {
-    setIsSubmitting(true);
+    // Combine date and time
+    const [hours, minutes] = data.scheduled_time.split(":").map(Number);
+    const scheduledAt = new Date(data.scheduled_date);
+    scheduledAt.setHours(hours, minutes, 0, 0);
+
     try {
-      // Combine date and time
-      const [hours, minutes] = data.scheduled_time.split(":").map(Number);
-      const scheduledAt = new Date(data.scheduled_date);
-      scheduledAt.setHours(hours, minutes, 0, 0);
-
-      // TODO: Implement RPC call to create TeleBuy session
-      // await supabase.rpc('create_telebuy_session', {
-      //   p_supplier_id: supplierId,
-      //   p_scheduled_at: scheduledAt.toISOString(),
-      //   p_notes: data.notes,
-      // });
-
-      console.log("TeleBuy session:", {
-        supplier_id: supplierId,
-        scheduled_at: scheduledAt.toISOString(),
-        timezone: data.timezone,
+      // Talks ONLY to the telebuy hook -> service -> RPC + video adapter.
+      // The service provisions the video room (default provider: Daily) and
+      // mirrors the session to Airtable; the modal stays provider-agnostic.
+      await createSession.mutateAsync({
+        supplierId,
+        scheduledAt: scheduledAt.toISOString(),
+        meetingUrl: "",
         notes: data.notes,
-      });
-
-      toast({
-        title: "Session Scheduled",
-        description: `Your TeleBuy session with ${supplierName} has been scheduled.`,
+        videoProvider: "daily",
       });
 
       form.reset();
       onOpenChange(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to schedule session. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // Error toast is surfaced by the mutation's onError handler.
     }
   };
 
