@@ -20,15 +20,17 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ShieldOff, Zap, Crown, Mail, ArrowRight, AlertTriangle, CreditCard } from 'lucide-react';
+import { ShieldOff, Zap, Crown, Mail, ArrowRight, AlertTriangle, CreditCard, Sparkles } from 'lucide-react';
 
 // ── Subscription access check ─────────────────────────────────────────────────
 
 interface AccessState {
   allowed: boolean;
-  tier: 'pro' | 'enterprise' | null;
+  tier: 'trial' | 'pro' | 'enterprise' | null;
   inGracePeriod: boolean;
   graceDaysRemaining: number;
+  isTrial: boolean;
+  trialDaysRemaining: number;
 }
 
 function useSubscriptionAccess(): { data: AccessState; isLoading: boolean } {
@@ -42,32 +44,41 @@ function useSubscriptionAccess(): { data: AccessState; isLoading: boolean } {
 
       // Admin org type bypasses payment requirement
       if (currentOrg?.org_type === 'admin') {
-        return { allowed: true, tier: 'enterprise', inGracePeriod: false, graceDaysRemaining: 0 };
+        return {
+          allowed: true, tier: 'enterprise', inGracePeriod: false, graceDaysRemaining: 0,
+          isTrial: false, trialDaysRemaining: 0,
+        };
       }
 
-      // Resolve tier via the server-side RPC (respects grace period, override_tier, etc.)
-      const [{ data: tier }, { data: inGrace }, { data: daysLeft }] = await Promise.all([
-        supabase.rpc('get_subscription_tier'),
-        supabase.rpc('is_in_grace_period'),
-        supabase.rpc('grace_period_days_remaining'),
-      ]);
+      // Resolve tier via the server-side RPC. get_subscription_tier() returns
+      // 'trial' while the org's free-trial window is active, so trial users are
+      // granted full access here (no paywall during trial).
+      const [{ data: tier }, { data: inGrace }, { data: daysLeft }, { data: trialRows }] =
+        await Promise.all([
+          supabase.rpc('get_subscription_tier'),
+          supabase.rpc('is_in_grace_period'),
+          supabase.rpc('grace_period_days_remaining'),
+          // New RPC not yet in generated DB types; cast until types regenerate.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          supabase.rpc('org_trial_status' as any),
+        ]);
 
+      const trial = (Array.isArray(trialRows) ? trialRows[0] : trialRows) as
+        | { is_trial_active: boolean; trial_days_left: number }
+        | undefined;
+
+      // No tier at all → trial expired AND no paid plan → hard wall.
       if (!tier) {
-        // Check if we're in a grace period (tier returns null when grace expired,
-        // but we still want to show the right message)
-        if (inGrace) {
-          // RPC returned null but is_in_grace_period returned true — shouldn't happen
-          // but guard gracefully
-          return noAccess();
-        }
         return noAccess();
       }
 
       return {
         allowed: true,
-        tier: tier as 'pro' | 'enterprise',
+        tier: tier as 'trial' | 'pro' | 'enterprise',
         inGracePeriod: !!inGrace,
         graceDaysRemaining: (daysLeft as number) ?? 0,
+        isTrial: tier === 'trial',
+        trialDaysRemaining: trial?.trial_days_left ?? 0,
       };
     },
     enabled: !!user,
@@ -76,7 +87,10 @@ function useSubscriptionAccess(): { data: AccessState; isLoading: boolean } {
 }
 
 function noAccess(): AccessState {
-  return { allowed: false, tier: null, inGracePeriod: false, graceDaysRemaining: 0 };
+  return {
+    allowed: false, tier: null, inGracePeriod: false, graceDaysRemaining: 0,
+    isTrial: false, trialDaysRemaining: 0,
+  };
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -105,11 +119,43 @@ export function SubscriptionGate() {
 
   return (
     <>
+      {access.isTrial && (
+        <TrialBanner daysRemaining={access.trialDaysRemaining} />
+      )}
       {access.inGracePeriod && (
         <GracePeriodBanner daysRemaining={access.graceDaysRemaining} />
       )}
       <Outlet />
     </>
+  );
+}
+
+// ── Free-trial banner ─────────────────────────────────────────────────────────
+// Shown while the org is inside its 3-day free trial. Full access — this only
+// nudges the user to upgrade before the trial expires.
+
+function TrialBanner({ daysRemaining }: { daysRemaining: number }) {
+  return (
+    <div className="sticky top-16 z-40 bg-primary/10 border-b border-primary/20 px-4 py-3">
+      <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Sparkles className="h-5 w-5 text-primary shrink-0" />
+          <p className="text-sm font-medium">
+            Free trial —{' '}
+            <span className="font-bold">
+              {daysRemaining} day{daysRemaining !== 1 ? 's' : ''}
+            </span>{' '}
+            left. Upgrade any time to keep full access.
+          </p>
+        </div>
+        <Button size="sm" asChild>
+          <a href="/settings/billing">
+            <ArrowRight className="h-4 w-4 mr-2" />
+            Upgrade
+          </a>
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -150,11 +196,11 @@ function SubscriptionRequired() {
           <div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
             <ShieldOff className="h-8 w-8 text-destructive" />
           </div>
-          <h1 className="text-3xl font-bold">Subscription Required</h1>
+          <h1 className="text-3xl font-bold">Your trial has ended</h1>
           <p className="text-muted-foreground max-w-md mx-auto">
-            LithiumBuy Procurement &amp; Grant Intelligence is a paid platform.
-            Select a plan below to access the full suite of procurement, supplier
-            verification, and grant readiness tools.
+            Your free trial is over. Choose a plan below to keep your full access to
+            procurement, supplier verification, and grant readiness tools — all your
+            data is preserved and resumes the moment you upgrade.
           </p>
         </div>
 

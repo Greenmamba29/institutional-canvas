@@ -1,19 +1,30 @@
 /**
  * Chain of Custody Service
- * 
+ *
  * Tracks material provenance from origin (mine/recycler) to final delivery.
  * Essential for B2B lithium trading compliance and transparency.
+ *
+ * Backed by the org-scoped Supabase RPCs:
+ *   - get_chain_of_custody(p_order_id)  -> ordered custody_events for an order
+ *   - create_custody_event(...)         -> appends a custody event, returns the row
+ *
+ * All operations require an authenticated Supabase client (RLS / org context),
+ * following the same pattern as rfqs.service.ts / purchases.service.ts.
+ * After a successful write we best-effort mirror the row to Airtable.
  */
 
-import { supabase } from '@/lib/supabase/rpc';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { callAuthenticatedRpc } from '@/lib/supabase/authenticated-client';
+import { syncRecordToAirtable } from '@/services/airtable-sync';
+import type { Database } from '@/integrations/supabase/types';
 
-export type CustodyEventType = 
-  | 'origin' 
-  | 'extraction' 
-  | 'processing' 
-  | 'transport' 
-  | 'storage' 
-  | 'inspection' 
+export type CustodyEventType =
+  | 'origin'
+  | 'extraction'
+  | 'processing'
+  | 'transport'
+  | 'storage'
+  | 'inspection'
   | 'delivery';
 
 export interface CustodyEvent {
@@ -54,219 +65,228 @@ export interface CustodyChain {
   updatedAt: string;
 }
 
-// Mock data for MVP - will be replaced with actual DB queries
-const mockCustodyChains: CustodyChain[] = [
-  {
-    id: 'coc-1',
-    orderId: 'order-123',
-    dealId: 'deal-456',
-    productType: 'Lithium Carbonate',
-    quantity: 50,
-    unit: 'MT',
-    originCountry: 'Chile',
-    currentStatus: 'transport',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-02-01T14:30:00Z',
-    events: [
-      {
-        id: 'evt-1',
-        orderId: 'order-123',
-        eventType: 'origin',
-        title: 'Material Sourced',
-        description: 'Lithium carbonate extracted from Atacama salt flat brine pools',
-        location: 'Atacama, Chile',
-        timestamp: '2024-01-15T10:00:00Z',
-        verifiedBy: 'SQM Certification Authority',
-        verifiedAt: '2024-01-15T12:00:00Z',
-        documents: [
-          { id: 'doc-1', name: 'Origin Certificate', type: 'certificate', url: '#', uploadedAt: '2024-01-15T12:00:00Z' }
-        ],
-        coordinates: { lat: -23.8634, lng: -68.0733 },
-      },
-      {
-        id: 'evt-2',
-        orderId: 'order-123',
-        eventType: 'processing',
-        title: 'Purification Complete',
-        description: 'Material processed to 99.5% battery-grade purity',
-        location: 'Antofagasta Processing Plant, Chile',
-        timestamp: '2024-01-20T16:00:00Z',
-        verifiedBy: 'SGS Chile',
-        verifiedAt: '2024-01-21T09:00:00Z',
-        documents: [
-          { id: 'doc-2', name: 'Purity Analysis Report', type: 'inspection_report', url: '#', uploadedAt: '2024-01-21T09:00:00Z' },
-          { id: 'doc-3', name: 'Processing Certificate', type: 'certificate', url: '#', uploadedAt: '2024-01-21T09:30:00Z' }
-        ],
-        coordinates: { lat: -23.6509, lng: -70.3975 },
-      },
-      {
-        id: 'evt-3',
-        orderId: 'order-123',
-        eventType: 'inspection',
-        title: 'Quality Inspection Passed',
-        description: 'Third-party quality inspection completed successfully',
-        location: 'Port of Antofagasta, Chile',
-        timestamp: '2024-01-25T11:00:00Z',
-        verifiedBy: 'Bureau Veritas',
-        verifiedAt: '2024-01-25T14:00:00Z',
-        documents: [
-          { id: 'doc-4', name: 'Inspection Certificate', type: 'inspection_report', url: '#', uploadedAt: '2024-01-25T14:00:00Z' }
-        ],
-        coordinates: { lat: -23.6345, lng: -70.4012 },
-      },
-      {
-        id: 'evt-4',
-        orderId: 'order-123',
-        eventType: 'transport',
-        title: 'In Transit to Destination',
-        description: 'Shipped via container vessel to Shanghai Port',
-        location: 'Pacific Ocean (In Transit)',
-        timestamp: '2024-01-28T08:00:00Z',
-        documents: [
-          { id: 'doc-5', name: 'Bill of Lading', type: 'bill_of_lading', url: '#', uploadedAt: '2024-01-28T08:00:00Z' },
-          { id: 'doc-6', name: 'Export Customs Declaration', type: 'customs', url: '#', uploadedAt: '2024-01-27T16:00:00Z' }
-        ],
-        coordinates: { lat: -10.0000, lng: -120.0000 },
-      },
-    ],
-  },
-  {
-    id: 'coc-2',
-    orderId: 'order-789',
-    productType: 'Black Mass',
-    quantity: 25,
-    unit: 'MT',
-    originCountry: 'Germany',
-    currentStatus: 'delivery',
-    createdAt: '2024-02-01T09:00:00Z',
-    updatedAt: '2024-02-10T16:00:00Z',
-    events: [
-      {
-        id: 'evt-5',
-        orderId: 'order-789',
-        eventType: 'origin',
-        title: 'Battery Collection',
-        description: 'End-of-life EV batteries collected from German recycling network',
-        location: 'Munich, Germany',
-        timestamp: '2024-02-01T09:00:00Z',
-        verifiedBy: 'TÜV Rheinland',
-        verifiedAt: '2024-02-01T11:00:00Z',
-        documents: [
-          { id: 'doc-7', name: 'Collection Certificate', type: 'certificate', url: '#', uploadedAt: '2024-02-01T11:00:00Z' }
-        ],
-        coordinates: { lat: 48.1351, lng: 11.5820 },
-      },
-      {
-        id: 'evt-6',
-        orderId: 'order-789',
-        eventType: 'processing',
-        title: 'Battery Shredding Complete',
-        description: 'Batteries processed into black mass concentrate',
-        location: 'Duesenfeld Recycling, Germany',
-        timestamp: '2024-02-05T14:00:00Z',
-        verifiedBy: 'TÜV Rheinland',
-        verifiedAt: '2024-02-05T17:00:00Z',
-        documents: [
-          { id: 'doc-8', name: 'Processing Report', type: 'inspection_report', url: '#', uploadedAt: '2024-02-05T17:00:00Z' }
-        ],
-        coordinates: { lat: 52.2689, lng: 10.5268 },
-      },
-      {
-        id: 'evt-7',
-        orderId: 'order-789',
-        eventType: 'delivery',
-        title: 'Delivered to Buyer',
-        description: 'Material received and confirmed at destination facility',
-        location: 'Rotterdam, Netherlands',
-        timestamp: '2024-02-10T16:00:00Z',
-        verifiedBy: 'Buyer QC Team',
-        verifiedAt: '2024-02-10T18:00:00Z',
-        documents: [
-          { id: 'doc-9', name: 'Delivery Receipt', type: 'other', url: '#', uploadedAt: '2024-02-10T18:00:00Z' },
-          { id: 'doc-10', name: 'Final Inspection', type: 'inspection_report', url: '#', uploadedAt: '2024-02-10T18:30:00Z' }
-        ],
-        coordinates: { lat: 51.9244, lng: 4.4777 },
-      },
-    ],
-  },
+/**
+ * Shape of a `custody_events` row as returned by the RPCs.
+ * The generated Database types do not yet include this table, so we model the
+ * row locally (columns verified live: id, org_id, order_id, deal_id, event_type,
+ * title, description, location, occurred_at, verified_by, verified_at, documents,
+ * coordinates, metadata, created_by, created_at, updated_at).
+ */
+interface CustodyEventRow {
+  id: string;
+  org_id: string;
+  order_id: string;
+  deal_id: string | null;
+  event_type: CustodyEventType;
+  title: string;
+  description: string | null;
+  location: string | null;
+  occurred_at: string;
+  verified_by: string | null;
+  verified_at: string | null;
+  documents: unknown;
+  coordinates: unknown;
+  metadata: unknown;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Input for appending a custody event. Mirrors create_custody_event params.
+ */
+export interface CreateCustodyEventParams {
+  orderId: string;
+  eventType: CustodyEventType;
+  title: string;
+  description?: string;
+  location?: string;
+  dealId?: string;
+  occurredAt?: string;
+  verifiedBy?: string;
+  documents?: CustodyDocument[];
+  coordinates?: { lat: number; lng: number };
+  metadata?: Record<string, unknown>;
+}
+
+/** Logical order of events for deriving the current status of a chain. */
+const eventOrder: CustodyEventType[] = [
+  'origin',
+  'extraction',
+  'processing',
+  'inspection',
+  'transport',
+  'storage',
+  'delivery',
 ];
 
-/**
- * Get all custody chains for the current organization
- */
-export async function getCustodyChains(): Promise<{ data: CustodyChain[] | null; error: Error | null }> {
-  // TODO: Replace with actual Supabase query when table is available
-  // const { data, error } = await supabase
-  //   .from('custody_chains')
-  //   .select('*, custody_events(*)')
-  //   .order('created_at', { ascending: false });
-  
-  // For MVP, return mock data
-  return { data: mockCustodyChains, error: null };
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function parseCoordinates(value: unknown): { lat: number; lng: number } | undefined {
+  const obj = asRecord(value);
+  const lat = obj.lat;
+  const lng = obj.lng;
+  if (typeof lat === 'number' && typeof lng === 'number') {
+    return { lat, lng };
+  }
+  return undefined;
+}
+
+function parseDocuments(value: unknown): CustodyDocument[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((d): d is CustodyDocument => !!d && typeof d === 'object');
+}
+
+/** Map a raw custody_events row to the CustodyEvent TS type. */
+function mapRowToEvent(row: CustodyEventRow): CustodyEvent {
+  return {
+    id: row.id,
+    orderId: row.order_id,
+    dealId: row.deal_id ?? undefined,
+    eventType: row.event_type,
+    title: row.title,
+    description: row.description ?? '',
+    location: row.location ?? '',
+    timestamp: row.occurred_at,
+    verifiedBy: row.verified_by ?? undefined,
+    verifiedAt: row.verified_at ?? undefined,
+    documents: parseDocuments(row.documents),
+    coordinates: parseCoordinates(row.coordinates),
+    metadata: asRecord(row.metadata),
+  };
 }
 
 /**
- * Get a specific custody chain by ID
+ * Build a CustodyChain aggregate from a set of custody events for an order.
+ * custody_events has no chain-level columns (productType/quantity/unit/origin),
+ * so those are best-effort sourced from the originating event's metadata.
  */
-export async function getCustodyChainById(chainId: string): Promise<{ data: CustodyChain | null; error: Error | null }> {
-  const chain = mockCustodyChains.find(c => c.id === chainId);
-  return { data: chain || null, error: chain ? null : new Error('Chain not found') };
+function buildChainFromEvents(orderId: string, events: CustodyEvent[]): CustodyChain {
+  const sorted = [...events].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
+
+  const originMeta = asRecord(sorted.find((e) => e.eventType === 'origin')?.metadata);
+  const latest = sorted[sorted.length - 1];
+
+  // Current status = the furthest-along event type present in the chain.
+  let currentStatus: CustodyEventType = latest?.eventType ?? 'origin';
+  let maxIdx = -1;
+  for (const e of sorted) {
+    const idx = eventOrder.indexOf(e.eventType);
+    if (idx > maxIdx) {
+      maxIdx = idx;
+      currentStatus = e.eventType;
+    }
+  }
+
+  const dealId = sorted.find((e) => e.dealId)?.dealId;
+
+  return {
+    id: orderId,
+    orderId,
+    dealId,
+    productType: typeof originMeta.productType === 'string' ? originMeta.productType : '',
+    quantity: typeof originMeta.quantity === 'number' ? originMeta.quantity : 0,
+    unit: typeof originMeta.unit === 'string' ? originMeta.unit : '',
+    originCountry:
+      typeof originMeta.originCountry === 'string' ? originMeta.originCountry : '',
+    currentStatus,
+    events: sorted,
+    createdAt: sorted[0]?.timestamp ?? new Date().toISOString(),
+    updatedAt: latest?.timestamp ?? new Date().toISOString(),
+  };
 }
 
 /**
- * Get custody chain by order ID
+ * Get the ordered chain-of-custody events for an order (authenticated).
  */
-export async function getCustodyChainByOrderId(orderId: string): Promise<{ data: CustodyChain | null; error: Error | null }> {
-  const chain = mockCustodyChains.find(c => c.orderId === orderId);
-  return { data: chain || null, error: null };
+export async function getCustodyEventsByOrder(
+  client: SupabaseClient<Database>,
+  orderId: string
+): Promise<{ data: CustodyEvent[] | null; error: Error | null }> {
+  const { data, error } = await callAuthenticatedRpc<CustodyEventRow[]>(
+    client,
+    'get_chain_of_custody' as keyof Database['public']['Functions'],
+    { p_order_id: orderId }
+  );
+
+  if (error) return { data: null, error };
+  return { data: (data ?? []).map(mapRowToEvent), error: null };
 }
 
 /**
- * Get custody chain by deal ID
+ * Get a custody chain (aggregate) by order ID (authenticated).
  */
-export async function getCustodyChainByDealId(dealId: string): Promise<{ data: CustodyChain | null; error: Error | null }> {
-  const chain = mockCustodyChains.find(c => c.dealId === dealId);
-  return { data: chain || null, error: null };
+export async function getCustodyChainByOrderId(
+  client: SupabaseClient<Database>,
+  orderId: string
+): Promise<{ data: CustodyChain | null; error: Error | null }> {
+  const { data, error } = await getCustodyEventsByOrder(client, orderId);
+  if (error) return { data: null, error };
+  if (!data || data.length === 0) return { data: null, error: null };
+  return { data: buildChainFromEvents(orderId, data), error: null };
 }
 
 /**
- * Add a new custody event to a chain
- * @note Uses RPC for mutation when implemented
+ * Get a custody chain by its id. Chains are keyed by order id (see
+ * buildChainFromEvents), so this resolves through the order chain RPC.
+ */
+export async function getCustodyChainById(
+  client: SupabaseClient<Database>,
+  chainId: string
+): Promise<{ data: CustodyChain | null; error: Error | null }> {
+  return getCustodyChainByOrderId(client, chainId);
+}
+
+/**
+ * Add a new custody event to an order's chain (authenticated).
+ * On success, best-effort mirrors the row to Airtable (table 'custody_events').
  */
 export async function addCustodyEvent(
-  chainId: string,
-  event: Omit<CustodyEvent, 'id'>
+  client: SupabaseClient<Database>,
+  params: CreateCustodyEventParams
 ): Promise<{ data: CustodyEvent | null; error: Error | null }> {
-  // TODO: Implement via RPC
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // const { data, error } = await (supabase.rpc as any)('add_custody_event', {
-  //   p_chain_id: chainId,
-  //   p_event_type: event.eventType,
-  //   p_title: event.title,
-  //   p_description: event.description,
-  //   p_location: event.location,
-  // });
-  
-  const newEvent: CustodyEvent = {
-    ...event,
-    id: `evt-${Date.now()}`,
-  };
-  
-  return { data: newEvent, error: null };
-}
+  const { data, error } = await callAuthenticatedRpc<CustodyEventRow>(
+    client,
+    'create_custody_event' as keyof Database['public']['Functions'],
+    {
+      p_order_id: params.orderId,
+      p_event_type: params.eventType,
+      p_title: params.title,
+      p_description: params.description ?? null,
+      p_location: params.location ?? null,
+      p_deal_id: params.dealId ?? null,
+      p_occurred_at: params.occurredAt ?? null,
+      p_verified_by: params.verifiedBy ?? null,
+      p_documents: params.documents ?? [],
+      p_coordinates: params.coordinates ?? null,
+      p_metadata: params.metadata ?? null,
+    }
+  );
 
-/**
- * Verify a custody event (marks it as verified by current user)
- */
-export async function verifyCustodyEvent(
-  eventId: string
-): Promise<{ data: CustodyEvent | null; error: Error | null }> {
-  // TODO: Implement via RPC
-  return { data: null, error: new Error('Not implemented') };
+  if (error) return { data: null, error };
+  if (!data) return { data: null, error: null };
+
+  // Mirror to Airtable (best-effort; never blocks/breaks the primary mutation).
+  await syncRecordToAirtable(
+    'custody_events',
+    data as unknown as Record<string, unknown>,
+    'create'
+  );
+
+  return { data: mapRowToEvent(data), error: null };
 }
 
 // Event type labels and colors for UI
-export const custodyEventConfig: Record<CustodyEventType, { label: string; color: string; bgColor: string }> = {
+export const custodyEventConfig: Record<
+  CustodyEventType,
+  { label: string; color: string; bgColor: string }
+> = {
   origin: { label: 'Origin', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
   extraction: { label: 'Extraction', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
   processing: { label: 'Processing', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },

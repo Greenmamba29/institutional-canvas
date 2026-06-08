@@ -5,7 +5,9 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
+import { callRpc } from '@/lib/supabase/rpc';
 import { useSubscriptionTier } from '@/hooks/useSubscription';
 
 // ============================================================================
@@ -32,6 +34,21 @@ export interface PriceData {
   market_trend: 'up' | 'down' | 'stable';
   confidence_score: number;
   updated_at: string;
+}
+
+/**
+ * A single price indicator observation as returned by the
+ * `get_price_indicators` RPC (rows from the price_indicators table).
+ */
+export interface PriceIndicator {
+  symbol: string;
+  region: string;
+  price: number;
+  currency: string;
+  unit: string;
+  observed_at: string;
+  source: string | null;
+  metadata: Record<string, unknown>;
 }
 
 export interface NewsItem {
@@ -127,9 +144,100 @@ async function fetchArbitrage(): Promise<ArbitrageOpportunity[]> {
   return (data || []) as ArbitrageOpportunity[];
 }
 
+// ----------------------------------------------------------------------------
+// Price indicators (get_price_indicators RPC + realtime)
+// ----------------------------------------------------------------------------
+
+const priceIndicatorSchema = z.object({
+  symbol: z.string(),
+  region: z.string(),
+  price: z.coerce.number(),
+  currency: z.string(),
+  unit: z.string(),
+  observed_at: z.string(),
+  source: z.string().nullable().default(null),
+  metadata: z.record(z.unknown()).default({}),
+});
+
+const priceIndicatorsSchema = z.array(priceIndicatorSchema);
+
+export interface PriceIndicatorParams {
+  symbol: string;
+  /**
+   * Region filter. Pass `null` (or omit) to fetch indicators across ALL
+   * regions. Note: an empty string is NOT treated as "all regions" by the
+   * `get_price_indicators` RPC and would match no rows, so callers wanting
+   * every region must pass `null`.
+   */
+  region?: string | null;
+  limit?: number;
+}
+
+export async function fetchPriceIndicators(
+  params: PriceIndicatorParams
+): Promise<PriceIndicator[]> {
+  const { data, error } = await callRpc<unknown>('get_price_indicators', {
+    p_symbol: params.symbol,
+    p_region: params.region ?? null,
+    p_limit: params.limit ?? 50,
+  });
+
+  if (error) throw error;
+
+  // The RPC returns jsonb_agg which is null when there are no rows.
+  const parsed = priceIndicatorsSchema.safeParse(data ?? []);
+  if (!parsed.success) {
+    throw new Error(`Invalid price indicator payload: ${parsed.error.message}`);
+  }
+  return parsed.data;
+}
+
 // ============================================================================
 // INDIVIDUAL HOOKS WITH REALTIME
 // ============================================================================
+
+/**
+ * Live price indicators for a given symbol/region, backed by the
+ * `get_price_indicators` RPC and kept fresh via a Supabase Realtime
+ * subscription on the `price_indicators` table.
+ */
+export function usePriceIndicators(params: PriceIndicatorParams) {
+  const queryClient = useQueryClient();
+  const queryKey = [
+    'market',
+    'price-indicators',
+    params.symbol,
+    params.region,
+    params.limit ?? 50,
+  ];
+
+  const query = useQuery({
+    queryKey,
+    queryFn: () => fetchPriceIndicators(params),
+    staleTime: 30000,
+    refetchOnWindowFocus: true,
+  });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`price-indicators-realtime-${params.symbol}-${params.region}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'price_indicators' },
+        () => {
+          queryClient.invalidateQueries({ queryKey });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryClient, params.symbol, params.region, params.limit]);
+
+  return query;
+}
 
 export function useKPIs() {
   const queryClient = useQueryClient();

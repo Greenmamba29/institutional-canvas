@@ -9,12 +9,13 @@ import { z } from 'zod';
 import { Database } from '@/integrations/supabase/types';
 import { callAuthenticatedRpc } from '@/lib/supabase/authenticated-client';
 import { 
-  uuidSchema, 
-  currencySchema, 
-  notesSchema, 
+  uuidSchema,
+  currencySchema,
+  notesSchema,
   nonNegativeNumberSchema,
-  validateInput 
+  validateInput
 } from '@/lib/validation/schemas';
+import { syncRecordToAirtable } from '@/services/airtable-sync';
 
 type Purchase = Database['public']['Tables']['purchases']['Row'];
 
@@ -49,7 +50,7 @@ export async function createPurchase(
   // Validate input before sending to RPC
   const validated = validateInput(createPurchaseParamsSchema, params);
   
-  return callAuthenticatedRpc<Purchase>(client, 'create_purchase', {
+  const result = await callAuthenticatedRpc<Purchase>(client, 'create_purchase', {
     p_buyer_org_id: validated.buyerOrgId,
     p_supplier_org_id: validated.supplierOrgId,
     p_deal_id: validated.dealId,
@@ -58,6 +59,13 @@ export async function createPurchase(
     p_notes: validated.notes,
     p_payload: validated.payload,
   });
+
+  // Mirror to Airtable (best-effort; never blocks/breaks the primary mutation)
+  if (!result.error && result.data) {
+    await syncRecordToAirtable('purchases', result.data as unknown as Record<string, unknown>, 'create');
+  }
+
+  return result;
 }
 
 /**
@@ -94,8 +102,15 @@ export async function updatePurchaseStatus(
   // Validate input before sending to RPC
   const validated = validateInput(updatePurchaseStatusSchema, params);
   
-  return callAuthenticatedRpc<Purchase>(client, 'update_purchase_status', {
+  const result = await callAuthenticatedRpc<Purchase>(client, 'update_purchase_status', {
     p_purchase_po: validated.purchaseId,
     p_status: validated.status,
   });
+
+  // Mirror status change to Airtable (best-effort; never blocks/breaks the primary mutation)
+  if (!result.error && result.data) {
+    await syncRecordToAirtable('purchases', result.data as unknown as Record<string, unknown>, 'update');
+  }
+
+  return result;
 }

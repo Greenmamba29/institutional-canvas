@@ -9,6 +9,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { callAuthenticatedRpc } from '@/lib/supabase/authenticated-client';
 import { createRfqSchema, validateInput, type CreateRfqInput } from '@/lib/validation/schemas';
+import { syncRecordToAirtable } from '@/services/airtable-sync';
 import type { Tables, Database } from '@/integrations/supabase/types';
 
 export type RFQ = Tables<'rfqs'>;
@@ -31,7 +32,14 @@ export async function createRfq(
 ): Promise<{ data: RFQ | null; error: Error | null }> {
   // Validate input before sending to RPC
   const validated = validateInput(createRfqSchema, params);
-  return callAuthenticatedRpc<RFQ>(client, 'create_rfq', validated);
+  const result = await callAuthenticatedRpc<RFQ>(client, 'create_rfq', validated);
+
+  // Mirror to Airtable (best-effort; never blocks/breaks the primary mutation)
+  if (!result.error && result.data) {
+    await syncRecordToAirtable('rfqs', result.data as unknown as Record<string, unknown>, 'create');
+  }
+
+  return result;
 }
 
 /**

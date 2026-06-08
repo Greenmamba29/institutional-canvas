@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { KpiCard } from "@/components/shared/KpiCard";
-import { useMarketData } from "@/hooks/useMarketData";
+import {
+  usePriceIndicators,
+  type PriceIndicator,
+} from "@/hooks/useMarketData";
 import {
   TrendingUp,
   TrendingDown,
@@ -11,6 +14,8 @@ import {
   Zap,
   Globe2,
   ShieldCheck,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,82 +32,186 @@ import {
 } from "recharts";
 
 const TIME_PERIODS = ['1D', '1W', '1M', '3M', '1Y'] as const;
+type TimePeriod = (typeof TIME_PERIODS)[number];
 
-// Static historical price data for chart visualization
-const priceHistory = {
-  '1D': [
-    { time: '09:00', LiCO3: 12800, LiOH: 14200 },
-    { time: '10:00', LiCO3: 12950, LiOH: 14100 },
-    { time: '11:00', LiCO3: 13100, LiOH: 14350 },
-    { time: '12:00', LiCO3: 13050, LiOH: 14400 },
-    { time: '13:00', LiCO3: 12900, LiOH: 14250 },
-    { time: '14:00', LiCO3: 13200, LiOH: 14500 },
-    { time: '15:00', LiCO3: 13350, LiOH: 14600 },
-    { time: '16:00', LiCO3: 13400, LiOH: 14550 },
-  ],
-  '1W': [
-    { time: 'Mon', LiCO3: 12600, LiOH: 13900 },
-    { time: 'Tue', LiCO3: 12800, LiOH: 14100 },
-    { time: 'Wed', LiCO3: 12750, LiOH: 14050 },
-    { time: 'Thu', LiCO3: 13000, LiOH: 14300 },
-    { time: 'Fri', LiCO3: 13200, LiOH: 14450 },
-    { time: 'Sat', LiCO3: 13100, LiOH: 14400 },
-    { time: 'Sun', LiCO3: 13400, LiOH: 14600 },
-  ],
-  '1M': [
-    { time: 'Jan 20', LiCO3: 11800, LiOH: 13200 },
-    { time: 'Jan 27', LiCO3: 12100, LiOH: 13500 },
-    { time: 'Feb 3', LiCO3: 12400, LiOH: 13800 },
-    { time: 'Feb 10', LiCO3: 12800, LiOH: 14100 },
-    { time: 'Feb 17', LiCO3: 13400, LiOH: 14600 },
-  ],
-  '3M': [
-    { time: 'Nov', LiCO3: 10500, LiOH: 12000 },
-    { time: 'Dec', LiCO3: 11200, LiOH: 12800 },
-    { time: 'Jan', LiCO3: 12400, LiOH: 13800 },
-    { time: 'Feb', LiCO3: 13400, LiOH: 14600 },
-  ],
-  '1Y': [
-    { time: 'Feb 25', LiCO3: 18000, LiOH: 20000 },
-    { time: 'May 25', LiCO3: 16500, LiOH: 18500 },
-    { time: 'Aug 25', LiCO3: 14800, LiOH: 16800 },
-    { time: 'Nov 25', LiCO3: 12000, LiOH: 13500 },
-    { time: 'Feb 26', LiCO3: 13400, LiOH: 14600 },
-  ],
+const PERIOD_LIMITS: Record<TimePeriod, number> = {
+  '1D': 24,
+  '1W': 7,
+  '1M': 30,
+  '3M': 90,
+  '1Y': 365,
 };
 
-const regionalData = [
-  { region: 'China', price: 11200, supply: 'High', trend: -2.1, flag: '🇨🇳' },
-  { region: 'South America', price: 13800, supply: 'Medium', trend: +3.4, flag: '🌎' },
-  { region: 'Australia', price: 14200, supply: 'Medium', trend: +1.8, flag: '🇦🇺' },
-  { region: 'Europe', price: 15100, supply: 'Low', trend: +5.2, flag: '🇪🇺' },
-  { region: 'North America', price: 14800, supply: 'Low', trend: +4.1, flag: '🇺🇸' },
+// Symbols tracked on this page (must match price_indicators.symbol values).
+const SYMBOL_LICO3 = 'LITHIUM_CARBONATE_BATTERY_GRADE';
+const SYMBOL_LIOH = 'LITHIUM_HYDROXIDE';
+
+// Regions surfaced in the regional comparison panel.
+const REGIONS: { code: string; label: string; flag: string }[] = [
+  { code: 'CN', label: 'China', flag: '🇨🇳' },
+  { code: 'US', label: 'United States', flag: '🇺🇸' },
+  { code: 'EU', label: 'Europe', flag: '🇪🇺' },
+  { code: 'AU', label: 'Australia', flag: '🇦🇺' },
 ];
 
-export default function Analytics() {
-  const [activePeriod, setActivePeriod] = useState<keyof typeof priceHistory>('1M');
-  const { isLoading } = useMarketData();
+function latest(rows: PriceIndicator[]): PriceIndicator | undefined {
+  // Rows arrive ordered by observed_at desc from the RPC.
+  return rows[0];
+}
 
-  const spotPrices = [
-    {
-      commodity: 'Lithium Carbonate (Li₂CO₃)',
-      spotPrice: 13400,
-      changePercent: 2.8,
-      volume24h: 1240,
-      high52w: 22000,
-      low52w: 10200,
-      unit: 'MT',
-    },
-    {
-      commodity: 'Lithium Hydroxide (LiOH)',
-      spotPrice: 14600,
-      changePercent: -1.2,
-      volume24h: 890,
-      high52w: 24500,
-      low52w: 11800,
-      unit: 'MT',
-    },
-  ];
+/** Percent change between the most recent and the oldest observation in range. */
+function changePercent(rows: PriceIndicator[]): number {
+  if (rows.length < 2) return 0;
+  const newest = rows[0].price;
+  const oldest = rows[rows.length - 1].price;
+  if (!oldest) return 0;
+  return ((newest - oldest) / oldest) * 100;
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+export default function Analytics() {
+  const [activePeriod, setActivePeriod] = useState<TimePeriod>('1M');
+  const limit = PERIOD_LIMITS[activePeriod];
+
+  // Real price history from the get_price_indicators RPC (with realtime).
+  const lico3CnQuery = usePriceIndicators({ symbol: SYMBOL_LICO3, region: 'CN', limit });
+  const liohCnQuery = usePriceIndicators({ symbol: SYMBOL_LIOH, region: 'CN', limit });
+  // All regions for the comparison panel (latest carbonate price per region).
+  // Pass region: null to fetch every region — an empty string would match no rows.
+  const regionalQuery = usePriceIndicators({ symbol: SYMBOL_LICO3, region: null, limit: 200 });
+
+  const isLoading =
+    lico3CnQuery.isLoading || liohCnQuery.isLoading || regionalQuery.isLoading;
+  const isError =
+    lico3CnQuery.isError || liohCnQuery.isError || regionalQuery.isError;
+
+  const lico3Rows = useMemo(() => lico3CnQuery.data ?? [], [lico3CnQuery.data]);
+  const liohRows = useMemo(() => liohCnQuery.data ?? [], [liohCnQuery.data]);
+
+  // Build chart series by aligning carbonate and hydroxide rows oldest -> newest.
+  const chartData = useMemo(() => {
+    const lico3 = [...lico3Rows].reverse();
+    const lioh = [...liohRows].reverse();
+    const length = Math.max(lico3.length, lioh.length);
+    return Array.from({ length }, (_, i) => ({
+      time: formatTime((lico3[i] ?? lioh[i])?.observed_at ?? new Date().toISOString()),
+      LiCO3: lico3[i]?.price,
+      LiOH: lioh[i]?.price,
+    }));
+  }, [lico3Rows, liohRows]);
+
+  const regionalData = useMemo(() => {
+    const rows = regionalQuery.data ?? [];
+    return REGIONS.map((r) => {
+      const forRegion = rows.filter((row) => row.region === r.code);
+      const top = latest(forRegion);
+      return {
+        region: r.label,
+        flag: r.flag,
+        price: top?.price ?? null,
+        trend: changePercent(forRegion),
+      };
+    }).filter((r) => r.price !== null) as {
+      region: string;
+      flag: string;
+      price: number;
+      trend: number;
+    }[];
+  }, [regionalQuery.data]);
+
+  const spotPrices = useMemo(() => {
+    const buildSpot = (
+      commodity: string,
+      unitLabel: string,
+      rows: PriceIndicator[]
+    ) => {
+      const top = latest(rows);
+      const prices = rows.map((r) => r.price);
+      return {
+        commodity,
+        spotPrice: top?.price ?? 0,
+        changePercent: changePercent(rows),
+        unit: unitLabel,
+        observedAt: top?.observed_at ?? null,
+        high: prices.length ? Math.max(...prices) : 0,
+        low: prices.length ? Math.min(...prices) : 0,
+      };
+    };
+    return [
+      buildSpot('Lithium Carbonate (Li₂CO₃)', 'MT', lico3Rows),
+      buildSpot('Lithium Hydroxide (LiOH)', 'MT', liohRows),
+    ];
+  }, [lico3Rows, liohRows]);
+
+  const hasData = chartData.length > 0 || spotPrices.some((s) => s.spotPrice > 0);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <PageHeader
+          title="Lithium & Recycling Analytics"
+          description="Global market intelligence and price indicators for primary and secondary lithium"
+          icon={TrendingUp}
+        />
+        <div className="flex items-center justify-center py-24 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          Loading market data...
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <PageHeader
+          title="Lithium & Recycling Analytics"
+          description="Global market intelligence and price indicators for primary and secondary lithium"
+          icon={TrendingUp}
+        />
+        <div className="card-premium p-8 flex flex-col items-center justify-center text-center gap-3">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+          <p className="font-semibold">Unable to load market data</p>
+          <p className="text-sm text-muted-foreground">
+            There was a problem fetching price indicators. Please try again.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              lico3CnQuery.refetch();
+              liohCnQuery.refetch();
+              regionalQuery.refetch();
+            }}
+          >
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasData) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <PageHeader
+          title="Lithium & Recycling Analytics"
+          description="Global market intelligence and price indicators for primary and secondary lithium"
+          icon={TrendingUp}
+        />
+        <div className="card-premium p-8 flex flex-col items-center justify-center text-center gap-3">
+          <Activity className="h-8 w-8 text-muted-foreground" />
+          <p className="font-semibold">No price data available yet</p>
+          <p className="text-sm text-muted-foreground">
+            Price indicators will appear here as soon as market data is published.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -126,7 +235,10 @@ export default function Analytics() {
                   <div>
                     <h3 className="font-semibold">{indicator.commodity}</h3>
                     <p className="text-xs text-muted-foreground">
-                      Updated: {new Date().toLocaleTimeString()}
+                      Updated:{' '}
+                      {indicator.observedAt
+                        ? new Date(indicator.observedAt).toLocaleString()
+                        : '—'}
                     </p>
                   </div>
                   <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${
@@ -150,18 +262,14 @@ export default function Analytics() {
                   </p>
                   <p className="text-sm text-muted-foreground">per {indicator.unit}</p>
                 </div>
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border/50">
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/50">
                   <div>
-                    <p className="text-xs text-muted-foreground">24h Volume</p>
-                    <p className="font-mono font-medium">{indicator.volume24h.toLocaleString()} {indicator.unit}</p>
+                    <p className="text-xs text-muted-foreground">Period High</p>
+                    <p className="font-mono font-medium text-success">${indicator.high.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">52w High</p>
-                    <p className="font-mono font-medium text-success">${indicator.high52w.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">52w Low</p>
-                    <p className="font-mono font-medium text-destructive">${indicator.low52w.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Period Low</p>
+                    <p className="font-mono font-medium text-destructive">${indicator.low.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -221,7 +329,7 @@ export default function Analytics() {
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={priceHistory[activePeriod]} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gradLiCO3" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -283,15 +391,15 @@ export default function Analytics() {
                   <span className="text-xl">{r.flag}</span>
                   <div>
                     <p className="text-sm font-semibold">{r.region}</p>
-                    <Badge variant={r.supply === 'High' ? 'default' : r.supply === 'Medium' ? 'secondary' : 'destructive'} className="text-[10px]">
-                      {r.supply} Supply
+                    <Badge variant="secondary" className="text-[10px]">
+                      Li₂CO₃ Spot
                     </Badge>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="font-mono font-bold">${r.price.toLocaleString()}</p>
                   <p className={`text-xs font-mono ${r.trend >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    {r.trend >= 0 ? '+' : ''}{r.trend}%
+                    {r.trend >= 0 ? '+' : ''}{r.trend.toFixed(1)}%
                   </p>
                 </div>
               </div>

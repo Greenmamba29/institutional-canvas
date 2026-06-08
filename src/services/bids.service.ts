@@ -9,6 +9,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { callAuthenticatedRpc } from '@/lib/supabase/authenticated-client';
 import { submitBidSchema, uuidSchema, validateInput, type SubmitBidInput } from '@/lib/validation/schemas';
+import { syncRecordToAirtable, syncToAirtable } from '@/services/airtable-sync';
 import type { Tables, Database } from '@/integrations/supabase/types';
 
 export type Bid = Tables<'bids'>;
@@ -47,7 +48,14 @@ export async function submitBid(
 ): Promise<{ data: Bid | null; error: Error | null }> {
   // Validate input before sending to RPC
   const validated = validateInput(submitBidSchema, params);
-  return callAuthenticatedRpc<Bid>(client, 'submit_bid', validated);
+  const result = await callAuthenticatedRpc<Bid>(client, 'submit_bid', validated);
+
+  // Mirror to Airtable (best-effort; never blocks/breaks the primary mutation)
+  if (!result.error && result.data) {
+    await syncRecordToAirtable('bids', result.data as unknown as Record<string, unknown>, 'create');
+  }
+
+  return result;
 }
 
 /**
@@ -59,5 +67,12 @@ export async function withdrawBid(
 ): Promise<{ data: boolean | null; error: Error | null }> {
   // Validate UUID format
   validateInput(uuidSchema, bidId);
-  return callAuthenticatedRpc<boolean>(client, 'withdraw_bid', { p_bid_id: bidId });
+  const result = await callAuthenticatedRpc<boolean>(client, 'withdraw_bid', { p_bid_id: bidId });
+
+  // Mirror status change to Airtable (best-effort; never blocks/breaks the primary mutation)
+  if (!result.error && result.data) {
+    await syncToAirtable('bids', { id: bidId, status: 'withdrawn' }, 'update');
+  }
+
+  return result;
 }

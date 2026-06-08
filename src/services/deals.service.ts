@@ -16,6 +16,7 @@ import {
   type CreateDealInput,
   type RespondToOfferInput
 } from '@/lib/validation/schemas';
+import { syncRecordToAirtable } from '@/services/airtable-sync';
 import type { Tables, Enums, Database } from '@/integrations/supabase/types';
 
 export type Deal = Tables<'deals'>;
@@ -56,7 +57,14 @@ export async function createDeal(
 ): Promise<{ data: Deal | null; error: Error | null }> {
   // Validate input before sending to RPC
   const validated = validateInput(createDealSchema, params);
-  return callAuthenticatedRpc<Deal>(client, 'create_deal', validated);
+  const result = await callAuthenticatedRpc<Deal>(client, 'create_deal', validated);
+
+  // Mirror to Airtable (best-effort; never blocks/breaks the primary mutation)
+  if (!result.error && result.data) {
+    await syncRecordToAirtable('deals', result.data as unknown as Record<string, unknown>, 'create');
+  }
+
+  return result;
 }
 
 /**
@@ -71,7 +79,14 @@ export async function updateDealStatus(
 ): Promise<{ data: Deal | null; error: Error | null }> {
   // Validate UUID
   validateInput(uuidSchema, params.p_deal_id);
-  return callAuthenticatedRpc<Deal>(client, 'update_deal_status', params);
+  const result = await callAuthenticatedRpc<Deal>(client, 'update_deal_status', params);
+
+  // Mirror status change to Airtable (best-effort; never blocks/breaks the primary mutation)
+  if (!result.error && result.data) {
+    await syncRecordToAirtable('deals', result.data as unknown as Record<string, unknown>, 'update');
+  }
+
+  return result;
 }
 
 /**
@@ -83,5 +98,12 @@ export async function respondToOffer(
 ): Promise<{ data: Deal | null; error: Error | null }> {
   // Validate input before sending to RPC
   const validated = validateInput(respondToOfferSchema, params);
-  return callAuthenticatedRpc<Deal>(client, 'respond_to_offer', validated);
+  const result = await callAuthenticatedRpc<Deal>(client, 'respond_to_offer', validated);
+
+  // Mirror to Airtable (best-effort; never blocks/breaks the primary mutation)
+  if (!result.error && result.data) {
+    await syncRecordToAirtable('deals', result.data as unknown as Record<string, unknown>, 'update');
+  }
+
+  return result;
 }

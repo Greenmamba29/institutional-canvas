@@ -6,7 +6,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock the service before importing
 vi.mock('@/lib/supabase/rpc', () => ({
-  callRpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+  callRpc: vi.fn().mockResolvedValue({
+    data: { id: 'session-1', status: 'scheduled' },
+    error: null,
+  }),
   supabase: {
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnThis(),
@@ -17,6 +20,12 @@ vi.mock('@/lib/supabase/rpc', () => ({
       maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
     }),
+    functions: {
+      invoke: vi.fn().mockResolvedValue({
+        data: { url: 'https://lithiumbuy.daily.co/room-1', name: 'room-1' },
+        error: null,
+      }),
+    },
   },
 }));
 
