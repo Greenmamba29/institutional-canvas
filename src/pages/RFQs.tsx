@@ -11,8 +11,9 @@ import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Plus, Truck, Flag, AlertCircle } from "lucide-react";
+import { Search, Plus, Truck, AlertCircle } from "lucide-react";
 import { useRFQs } from "@/hooks/useRFQs";
+import { usePurchases } from "@/hooks/usePurchases";
 import type { RFQ } from "@/services/rfqs.service";
 import { CreateRFQDialog } from "@/components/rfq/CreateRFQDialog";
 import { SkillRecommendations } from "@/components/skills/SkillRecommendations";
@@ -37,6 +38,9 @@ export default function RFQs() {
   const [activeTab, setActiveTab] = useState('live');
   
   const { data: rfqs = [], isLoading, error } = useRFQs();
+  // Real-data status cards: purchases currently confirmed/shipped = pending dispatch / in transit.
+  const { data: purchases = [] } = usePurchases();
+  const pendingDispatch = purchases.filter((p) => p.status === 'confirmed' || p.status === 'shipped');
 
   const filteredRfqs = rfqs.filter(rfq => {
     const matchesSearch = rfq.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -157,27 +161,22 @@ export default function RFQs() {
               <DataTable columns={columns} data={filteredRfqs} />
             )}
 
-            {/* Bottom Status Cards */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="glass-panel rounded-lg p-4 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-warning/10">
-                  <Truck className="h-5 w-5 text-warning" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Logistics Fulfillment</p>
-                  <p className="text-xs text-muted-foreground">Pending dispatch for Order #77421 (Santiago Port)</p>
-                </div>
-              </div>
-              <div className="glass-panel rounded-lg p-4 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-destructive/10">
-                  <Flag className="h-5 w-5 text-destructive" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Pending Settlements</p>
-                  <p className="text-xs text-muted-foreground">3 Escrow releases awaiting final verification</p>
+            {/* Bottom Status Cards — real data only (rendered only when there is something to show) */}
+            {pendingDispatch.length > 0 && (
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="glass-panel rounded-lg p-4 flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-warning/10">
+                    <Truck className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Logistics Fulfillment</p>
+                    <p className="text-xs text-muted-foreground">
+                      {pendingDispatch.length} order{pendingDispatch.length === 1 ? '' : 's'} pending dispatch / in transit
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Sidebar */}

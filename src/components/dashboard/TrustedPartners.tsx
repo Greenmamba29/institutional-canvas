@@ -9,6 +9,7 @@ export interface TrustedPartner {
   verified: boolean;
   verificationTier: 'gold' | 'standard';
   ytdRevenue: number;
+  completedDeals: number;
   product: string;
   pricePerMT: number;
   responseTime: string;
@@ -48,6 +49,9 @@ export function TrustedPartners({ partners }: TrustedPartnersProps) {
                 </div>
                 <p className="text-lg font-bold text-accent font-mono mt-1">
                   {format(partner.ytdRevenue)} <span className="text-xs font-normal">YTD REVENUE</span>
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {partner.completedDeals} COMPLETED {partner.completedDeals === 1 ? 'DEAL' : 'DEALS'}
                 </p>
               </div>
             </div>

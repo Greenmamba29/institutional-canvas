@@ -14,6 +14,7 @@ export interface TrustedPartner {
   verified: boolean;
   verificationTier: 'gold' | 'standard';
   ytdRevenue: number;
+  completedDeals: number;
   product: string;
   pricePerMT: number;
   responseTime: string;
@@ -73,6 +74,21 @@ export function usePartners(limit: number = 5) {
         );
       }
 
+      // Count real completed deals per supplier.
+      const { data: deals } = await supabase
+        .from('deals')
+        .select('supplier_id')
+        .eq('status', 'completed')
+        .in('supplier_id', supplierIds);
+
+      const dealsBySupplier = new Map<string, number>();
+      for (const d of deals ?? []) {
+        dealsBySupplier.set(
+          d.supplier_id,
+          (dealsBySupplier.get(d.supplier_id) ?? 0) + 1
+        );
+      }
+
       // Map suppliers to TrustedPartner format
       return (suppliers ?? []).map((supplier): TrustedPartner => {
         const product = products?.find(p => p.supplier_id === supplier.org_id);
@@ -84,6 +100,7 @@ export function usePartners(limit: number = 5) {
           verified: !!supplier.verification_tier,
           verificationTier: supplier.verification_tier === 'gold' ? 'gold' : 'standard',
           ytdRevenue: revenueBySupplier.get(supplier.org_id) ?? 0,
+          completedDeals: dealsBySupplier.get(supplier.org_id) ?? 0,
           product: product?.name || 'Lithium Products',
           pricePerMT: product?.price_per_unit ?? 0,
           responseTime: profile?.response_time_hours 
