@@ -98,6 +98,50 @@ function toNum(s: string | undefined | null): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+// ---- FX rates (keyless) --------------------------------------------------
+
+// Verified keyless source (2026-06): open.er-api.com returns
+// { result:'success', base_code:'USD', rates:{ USD:1, CNY:..., EUR:..., ... } }.
+// rates[CCY] = units of CCY per 1 USD, so USD = amount / rates[CCY].
+const FX_URL = "https://open.er-api.com/v6/latest/USD";
+
+interface FxMap {
+  rates: Record<string, number>; // CCY per USD (base USD)
+  error?: string;
+}
+
+async function fetchFxRates(): Promise<FxMap> {
+  try {
+    const res = await fetch(FX_URL);
+    if (!res.ok) return { rates: {}, error: `fx ${res.status}` };
+    const body = await res.json();
+    const rates = body?.rates;
+    if (body?.result !== "success" || !rates || typeof rates !== "object") {
+      return { rates: {}, error: "fx bad shape" };
+    }
+    return { rates: rates as Record<string, number> };
+  } catch (e) {
+    return { rates: {}, error: String((e as Error).message) };
+  }
+}
+
+// Convert a native amount in `currency` to USD using the FX map. Returns the
+// USD amount plus the fx_rate used (CCY-per-USD). If conversion isn't possible
+// (USD already, missing rate, FX failed), returns the native value with no rate.
+function toUsd(
+  amount: number,
+  currency: string,
+  fx: FxMap,
+): { usd: number; fxRate: number | null } {
+  const c = (currency ?? "USD").toUpperCase();
+  if (c === "USD") return { usd: amount, fxRate: 1 };
+  const rate = fx.rates[c];
+  if (typeof rate === "number" && rate > 0) {
+    return { usd: amount / rate, fxRate: rate };
+  }
+  return { usd: amount, fxRate: null }; // defensive: keep native if no rate
+}
+
 // ---- Price ingestion -----------------------------------------------------
 
 // Canonical symbols the Analytics frontend queries via get_price_indicators.
@@ -219,10 +263,15 @@ function parsePricesNear(md: string, keyword: RegExp, requireKeyword = true): Pa
 //    real region names so the regional-comparison panel (region null) shows them.
 //  - "businessanalytiq-hydroxide": hydroxide index page (price lives in a JS
 //    chart, not the markdown, so usually yields no parseable price).
+//  - "intratec-hydroxide": intratec Lithium Hydroxide price outlook page. The
+//    prose contains explicit "N,NNN USD per metric ton" strings (battery grade
+//    Global preferred), updated monthly. Parsed -> one LITHIUM_HYDROXIDE CN row
+//    (region CN so the Analytics LiOH CN card fills).
 type PriceSourceKind =
   | "tradingeconomics"
   | "businessanalytiq-carbonate"
-  | "businessanalytiq-hydroxide";
+  | "businessanalytiq-hydroxide"
+  | "intratec-hydroxide";
 
 interface PriceSource {
   url: string;
@@ -241,12 +290,43 @@ const PRICE_SOURCES: PriceSource[] = [
   },
   {
     url:
-      "https://businessanalytiq.com/procurementanalytics/index/lithium-hydroxide-price-index/",
-    kind: "businessanalytiq-hydroxide",
+      "https://www.intratec.us/solutions/primary-commodity-prices/commodity/lithium-hydroxide-prices",
+    kind: "intratec-hydroxide",
   },
 ];
 
-async function ingestPriceSource(src: PriceSource, now: string): Promise<PriceRow[]> {
+// Parse the intratec hydroxide page. The Price Outlook prose carries explicit
+// "N,NNN USD per metric ton" strings; we prefer the battery grade figure but
+// fall back to the first plausible one. Already USD/tonne.
+function parseIntratecHydroxide(md: string): ParsedPrice[] {
+  const out: ParsedPrice[] = [];
+  const re = /([\d.,]+)\s*USD\s+per\s+metric\s+ton/gi;
+  let m: RegExpExecArray | null;
+  let battery: ParsedPrice | null = null;
+  let first: ParsedPrice | null = null;
+  while ((m = re.exec(md)) !== null) {
+    const raw = toNum(m[1]);
+    if (raw == null || raw < 1000 || raw > 1_000_000) continue;
+    const ctx = md.slice(Math.max(0, m.index - 80), m.index).toLowerCase();
+    const p: ParsedPrice = {
+      price: raw,
+      currency: "USD",
+      unit: "USD/tonne",
+      snippet: md.slice(Math.max(0, m.index - 60), m.index + 40).replace(/\s+/g, " ").trim(),
+    };
+    if (!first) first = p;
+    if (/battery/.test(ctx) && !battery) battery = p;
+  }
+  const chosen = battery ?? first;
+  if (chosen) out.push(chosen);
+  return out;
+}
+
+async function ingestPriceSource(
+  src: PriceSource,
+  now: string,
+  fx: FxMap,
+): Promise<PriceRow[]> {
   const { url, kind } = src;
   const host = hostOf(url);
   const md = await fcScrape(url);
@@ -255,19 +335,30 @@ async function ingestPriceSource(src: PriceSource, now: string): Promise<PriceRo
   const rows: PriceRow[] = [];
   const seen = new Set<string>();
 
+  // Canonicalize every price to USD/tonne. Native value+currency preserved in
+  // metadata so the original (e.g. CNY 163,000) is never lost. This fixes the
+  // "CNY shown as $" bug — stored price is always USD.
   const push = (symbol: string, region: string, p: ParsedPrice) => {
-    const key = `${symbol}|${region}|${p.currency}|${p.price}`;
+    const { usd, fxRate } = toUsd(p.price, p.currency, fx);
+    const usdPrice = Math.round(usd * 100) / 100;
+    const key = `${symbol}|${region}|${usdPrice}`;
     if (seen.has(key)) return;
     seen.add(key);
     rows.push({
       symbol,
       region,
-      price: p.price,
-      currency: p.currency,
-      unit: p.unit,
+      price: usdPrice,
+      currency: "USD",
+      unit: "USD/tonne",
       observed_at: now,
       source: `firecrawl:${host}`,
-      metadata: { url, snippet: p.snippet },
+      metadata: {
+        url,
+        snippet: p.snippet,
+        native_price: p.price,
+        native_currency: p.currency,
+        fx_rate: fxRate,
+      },
     });
   };
 
@@ -286,6 +377,12 @@ async function ingestPriceSource(src: PriceSource, now: string): Promise<PriceRo
       const parsed = parsePriceLine(line);
       if (parsed.length) push(SYM_CARBONATE, region, parsed[0]);
     }
+  } else if (kind === "intratec-hydroxide") {
+    // Explicit "N,NNN USD per metric ton" in prose. Region 'CN' so the
+    // Analytics LiOH CN card fills. Already USD -> push canonicalizes (no-op).
+    for (const p of parseIntratecHydroxide(md).slice(0, 1)) {
+      push(SYM_HYDROXIDE, "CN", p);
+    }
   } else {
     // businessanalytiq-hydroxide: price is rendered in a JS chart, not markdown.
     // Parse any hydroxide line if present; usually none -> this source errors.
@@ -303,8 +400,11 @@ async function ingestPriceSource(src: PriceSource, now: string): Promise<PriceRo
 async function ingestPrices(now: string): Promise<{ rows: PriceRow[]; errors: string[] }> {
   const rows: PriceRow[] = [];
   const errors: string[] = [];
+  // Fetch FX up front; failure is non-fatal (toUsd keeps native defensively).
+  const fx = await fetchFxRates();
+  if (fx.error) errors.push(`fx: ${fx.error}`);
   const settled = await Promise.allSettled(
-    PRICE_SOURCES.map((s) => ingestPriceSource(s, now)),
+    PRICE_SOURCES.map((s) => ingestPriceSource(s, now, fx)),
   );
   for (const s of settled) {
     if (s.status === "fulfilled") rows.push(...s.value);
