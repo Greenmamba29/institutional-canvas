@@ -71,7 +71,8 @@ export function RoleProtectedRoute({
   if (requireSubscription && role) {
     if (role.org_type !== 'admin') {
       const tier = role.subscription_tier;
-      const isPro = tier === 'pro' || tier === 'active';
+      // An active free trial grants full Pro-tier access (matches get_subscription_tier / SubscriptionGate).
+      const isPro = tier === 'pro' || tier === 'active' || tier === 'trial';
       const isEnterprise = tier === 'enterprise';
       const hasTierAccess = isEnterprise || (requireSubscription === 'pro' && isPro);
 

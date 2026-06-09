@@ -14,7 +14,7 @@ export interface ServerRole {
   org_type: 'admin' | 'supplier' | 'buyer' | 'soe';
   org_name: string;
   member_role: 'owner' | 'admin' | 'member';
-  subscription_tier: 'free' | 'pro' | 'enterprise' | 'active';
+  subscription_tier: 'free' | 'pro' | 'enterprise' | 'active' | 'trial';
 }
 
 export function useServerRole(orgId?: string) {
