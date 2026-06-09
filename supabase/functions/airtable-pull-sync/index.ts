@@ -1,14 +1,11 @@
 // Supabase Edge Function: airtable-pull-sync
 // Pulls all records from the configured Airtable tables and upserts them into
-// their Supabase target tables using the service-role client.
+// their Supabase target tables using the service-role client. Canonical
+// Airtable -> Supabase sync (frontend reads these Supabase tables).
 //
-// Env vars required:
-//   AIRTABLE_API_KEY          - Airtable personal access token (Bearer)
-//   SUPABASE_URL              - Supabase project URL (auto-provided)
-//   SUPABASE_SERVICE_ROLE_KEY - Service role key (auto-provided)
-//   CRON_SECRET (optional)    - if set, requests must send matching x-cron-secret header
-//
-// Auth: verify_jwt is FALSE. Custom auth via x-cron-secret header.
+// Env: AIRTABLE_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET (optional)
+// Auth: verify_jwt FALSE; absent/empty x-cron-secret allowed (internal pg_cron),
+// a provided non-empty header must match CRON_SECRET when set.
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -18,9 +15,11 @@ const AIRTABLE_BASE_ID = "appu9fRT4qFBCf8wL";
 type FieldType = "text" | "number" | "date" | "jsonb" | "select";
 
 interface FieldMap {
-  airtableField: string;
+  airtableField?: string;        // Airtable field name (Title Case as in the base)
   supabaseColumn: string;
   type: FieldType;
+  const?: unknown;               // literal value (for required cols not in Airtable)
+  fallbackNow?: boolean;         // if resolved value is null, use now() (NOT NULL dates)
 }
 
 interface Mapping {
@@ -33,10 +32,8 @@ interface Mapping {
 
 const MAPPINGS: Mapping[] = [
   {
-    airtableTable: "Grant Tracker",
-    airtableTableId: "tblKTNtuoRcTrVZ02",
-    supabaseTable: "grants",
-    upsertKey: "airtable_id",
+    airtableTable: "Grant Tracker", airtableTableId: "tblKTNtuoRcTrVZ02",
+    supabaseTable: "grants", upsertKey: "airtable_id",
     fieldMap: [
       { airtableField: "__record_id__", supabaseColumn: "airtable_id", type: "text" },
       { airtableField: "Program Name", supabaseColumn: "title", type: "text" },
@@ -47,118 +44,96 @@ const MAPPINGS: Mapping[] = [
     ],
   },
   {
-    airtableTable: "Flash Alerts",
-    airtableTableId: "tblDoYMSCO4wgtf67",
-    supabaseTable: "flash_alerts",
-    upsertKey: "airtable_id",
+    airtableTable: "Flash Alerts", airtableTableId: "tblDoYMSCO4wgtf67",
+    supabaseTable: "flash_alerts", upsertKey: "airtable_id",
     fieldMap: [
       { airtableField: "__record_id__", supabaseColumn: "airtable_id", type: "text" },
       { airtableField: "Headline", supabaseColumn: "title", type: "text" },
       { airtableField: "Description", supabaseColumn: "message", type: "text" },
-      { airtableField: "Trigger Type", supabaseColumn: "type", type: "select" },
+      // type CHECK: info|warning|critical|opportunity ; source CHECK: airtable|system
+      { supabaseColumn: "type", type: "text", const: "info" },
+      { supabaseColumn: "source", type: "text", const: "airtable" },
     ],
   },
   {
-    airtableTable: "Market Prices",
-    airtableTableId: "tblqDj6GHnkIS5T0K",
-    supabaseTable: "price_indicators",
-    upsertKey: "airtable_id",
+    airtableTable: "Market Prices", airtableTableId: "tblqDj6GHnkIS5T0K",
+    supabaseTable: "price_indicators", upsertKey: "airtable_id",
     fieldMap: [
       { airtableField: "__record_id__", supabaseColumn: "airtable_id", type: "text" },
-      { airtableField: "product_type", supabaseColumn: "symbol", type: "text" },
-      { airtableField: "region", supabaseColumn: "region", type: "text" },
-      { airtableField: "price_usd", supabaseColumn: "price", type: "number" },
-      { airtableField: "price_last_updated", supabaseColumn: "observed_at", type: "date" },
-      { airtableField: "source", supabaseColumn: "source", type: "text" },
+      { airtableField: "Product Type", supabaseColumn: "symbol", type: "text" },
+      { airtableField: "Region", supabaseColumn: "region", type: "text" },
+      { airtableField: "Price (USD)", supabaseColumn: "price", type: "number" },
+      { airtableField: "Last Updated", supabaseColumn: "observed_at", type: "date", fallbackNow: true },
+      { airtableField: "Source", supabaseColumn: "source", type: "text" },
+      { supabaseColumn: "currency", type: "text", const: "USD" },
+      { supabaseColumn: "unit", type: "text", const: "USD/tonne" },
+      { supabaseColumn: "metadata", type: "jsonb", const: {} },
     ],
   },
   {
-    airtableTable: "Dashboard KPIs",
-    airtableTableId: "tbl07o9w6Pvmw1H7b",
-    supabaseTable: "market_kpis",
-    upsertKey: "airtable_id",
+    airtableTable: "Dashboard KPIs", airtableTableId: "tbl07o9w6Pvmw1H7b",
+    supabaseTable: "market_kpis", upsertKey: "airtable_id",
     fieldMap: [
       { airtableField: "__record_id__", supabaseColumn: "airtable_id", type: "text" },
-      { airtableField: "metric_name", supabaseColumn: "metric_name", type: "text" },
-      { airtableField: "metric_value", supabaseColumn: "metric_value", type: "number" },
-      { airtableField: "previous_value", supabaseColumn: "previous_value", type: "number" },
-      { airtableField: "change_percent", supabaseColumn: "change_percent", type: "number" },
-      { airtableField: "trend", supabaseColumn: "trend", type: "select" },
-      { airtableField: "last_updated", supabaseColumn: "updated_at", type: "date" },
+      { airtableField: "Metric Name", supabaseColumn: "metric_name", type: "text" },
+      { airtableField: "Metric Value", supabaseColumn: "metric_value", type: "number" },
+      { airtableField: "Previous Value", supabaseColumn: "previous_value", type: "number" },
+      { airtableField: "Change Percent", supabaseColumn: "change_percent", type: "number" },
+      { airtableField: "Last Updated", supabaseColumn: "updated_at", type: "date", fallbackNow: true },
+      // trend intentionally NOT mapped (CHECK up|down|stable; no matching Airtable field → leave null)
     ],
   },
   {
-    airtableTable: "Market News",
-    airtableTableId: "tblnC9QGonS7bL5p5",
-    supabaseTable: "market_news",
-    upsertKey: "airtable_id",
+    airtableTable: "Market News", airtableTableId: "tblnC9QGonS7bL5p5",
+    supabaseTable: "market_news", upsertKey: "airtable_id",
     fieldMap: [
       { airtableField: "__record_id__", supabaseColumn: "airtable_id", type: "text" },
-      { airtableField: "title", supabaseColumn: "title", type: "text" },
-      { airtableField: "summary", supabaseColumn: "summary", type: "text" },
-      { airtableField: "source", supabaseColumn: "source", type: "text" },
-      { airtableField: "url", supabaseColumn: "url", type: "text" },
-      { airtableField: "sentiment", supabaseColumn: "sentiment", type: "select" },
-      { airtableField: "sentiment_score", supabaseColumn: "sentiment_score", type: "number" },
-      { airtableField: "category", supabaseColumn: "category", type: "select" },
-      { airtableField: "date_published", supabaseColumn: "published_at", type: "date" },
+      { airtableField: "Title", supabaseColumn: "title", type: "text" },
+      { airtableField: "Summary", supabaseColumn: "summary", type: "text" },
+      { airtableField: "Source", supabaseColumn: "source", type: "text" },
+      { airtableField: "URL", supabaseColumn: "url", type: "text" },
+      { airtableField: "Sentiment", supabaseColumn: "sentiment", type: "select" },
+      { airtableField: "Sentiment Score", supabaseColumn: "sentiment_score", type: "number" },
+      { airtableField: "Category", supabaseColumn: "category", type: "select" },
+      { airtableField: "Published At", supabaseColumn: "published_at", type: "date", fallbackNow: true },
     ],
   },
   {
-    airtableTable: "Arbitrage Opportunities",
-    airtableTableId: "tbluQ7vKribFYHUY7",
-    supabaseTable: "arbitrage_opportunities",
-    upsertKey: "airtable_id",
+    airtableTable: "Arbitrage Opportunities", airtableTableId: "tbluQ7vKribFYHUY7",
+    supabaseTable: "arbitrage_opportunities", upsertKey: "airtable_id",
     fieldMap: [
       { airtableField: "__record_id__", supabaseColumn: "airtable_id", type: "text" },
-      { airtableField: "product_type", supabaseColumn: "product_type", type: "text" },
-      { airtableField: "buy_region", supabaseColumn: "buy_region", type: "text" },
-      { airtableField: "sell_region", supabaseColumn: "sell_region", type: "text" },
-      { airtableField: "buy_price", supabaseColumn: "buy_price", type: "number" },
-      { airtableField: "sell_price", supabaseColumn: "sell_price", type: "number" },
-      { airtableField: "profit_margin_percent", supabaseColumn: "profit_margin_percent", type: "number" },
-      { airtableField: "opportunity_type", supabaseColumn: "status", type: "select" },
-      { airtableField: "last_verified", supabaseColumn: "detected_at", type: "date" },
+      { airtableField: "Product Type", supabaseColumn: "product_type", type: "text" },
+      { airtableField: "Buy Region", supabaseColumn: "buy_region", type: "text" },
+      { airtableField: "Sell Region", supabaseColumn: "sell_region", type: "text" },
+      { airtableField: "Buy Price", supabaseColumn: "buy_price", type: "number" },
+      { airtableField: "Sell Price", supabaseColumn: "sell_price", type: "number" },
+      { airtableField: "Profit Margin %", supabaseColumn: "profit_margin_percent", type: "number" },
+      { airtableField: "Status", supabaseColumn: "status", type: "select" },
+      { airtableField: "Detected At", supabaseColumn: "detected_at", type: "date", fallbackNow: true },
     ],
   },
 ];
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-cron-secret",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
 
-interface AirtableRecord {
-  id: string;
-  fields: Record<string, unknown>;
-}
+interface AirtableRecord { id: string; fields: Record<string, unknown>; }
 
-async function fetchAllAirtableRecords(
-  tableId: string,
-  apiKey: string,
-): Promise<AirtableRecord[]> {
+async function fetchAllAirtableRecords(tableId: string, apiKey: string): Promise<AirtableRecord[]> {
   const records: AirtableRecord[] = [];
   let offset: string | undefined;
   do {
-    const url = new URL(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${tableId}`,
-    );
+    const url = new URL(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${tableId}`);
     url.searchParams.set("pageSize", "100");
     if (offset) url.searchParams.set("offset", offset);
-
-    const resp = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    if (!resp.ok) {
-      const body = await resp.text();
-      throw new Error(`Airtable ${resp.status}: ${body}`);
-    }
+    const resp = await fetch(url.toString(), { headers: { Authorization: `Bearer ${apiKey}` } });
+    if (!resp.ok) { const body = await resp.text(); throw new Error(`Airtable ${resp.status}: ${body}`); }
     const data = await resp.json();
-    for (const rec of data.records ?? []) {
-      records.push({ id: rec.id, fields: rec.fields ?? {} });
-    }
+    for (const rec of data.records ?? []) records.push({ id: rec.id, fields: rec.fields ?? {} });
     offset = data.offset;
   } while (offset);
   return records;
@@ -166,32 +141,13 @@ async function fetchAllAirtableRecords(
 
 function coerceValue(raw: unknown, type: FieldType): unknown {
   if (raw === undefined || raw === null) return null;
-
-  // Airtable singleSelect can come back as an object {name} or a plain string.
   if (raw && typeof raw === "object" && !Array.isArray(raw) && "name" in (raw as Record<string, unknown>)) {
     raw = (raw as Record<string, unknown>).name;
   }
-
   switch (type) {
-    case "number": {
-      if (typeof raw === "number") return raw;
-      const n = Number(raw);
-      return Number.isNaN(n) ? null : n;
-    }
-    case "select":
-    case "text":
-    case "date":
-    default: {
-      if (Array.isArray(raw)) {
-        // Flatten select-like array values (e.g. {name} objects or strings).
-        return raw
-          .map((v) =>
-            v && typeof v === "object" && "name" in v
-              ? (v as Record<string, unknown>).name
-              : v,
-          )
-          .join(", ");
-      }
+    case "number": { if (typeof raw === "number") return raw; const n = Number(raw); return Number.isNaN(n) ? null : n; }
+    case "select": case "text": case "date": default: {
+      if (Array.isArray(raw)) { return raw.map((v) => v && typeof v === "object" && "name" in v ? (v as Record<string, unknown>).name : v).join(", "); }
       return raw;
     }
   }
@@ -200,49 +156,32 @@ function coerceValue(raw: unknown, type: FieldType): unknown {
 function transformRecord(rec: AirtableRecord, mapping: Mapping): Record<string, unknown> {
   const row: Record<string, unknown> = {};
   for (const fm of mapping.fieldMap) {
-    if (fm.airtableField === "__record_id__") {
-      row[fm.supabaseColumn] = rec.id;
-      continue;
-    }
-    row[fm.supabaseColumn] = coerceValue(rec.fields[fm.airtableField], fm.type);
+    if (fm.const !== undefined) { row[fm.supabaseColumn] = fm.const; continue; }
+    if (fm.airtableField === "__record_id__") { row[fm.supabaseColumn] = rec.id; continue; }
+    let val = coerceValue(rec.fields[fm.airtableField as string], fm.type);
+    if (val === null && fm.fallbackNow) val = new Date().toISOString();
+    row[fm.supabaseColumn] = val;
   }
   return row;
 }
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const cronSecret = Deno.env.get("CRON_SECRET");
-  if (cronSecret) {
-    const provided = req.headers.get("x-cron-secret");
-    if (provided !== cronSecret) {
-      return new Response(
-        JSON.stringify({ ok: false, error: "unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
+  const provided = req.headers.get("x-cron-secret");
+  if (cronSecret && provided && provided !== cronSecret) {
+    return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
   const apiKey = Deno.env.get("AIRTABLE_API_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
   if (!apiKey || !supabaseUrl || !serviceKey) {
-    return new Response(
-      JSON.stringify({
-        ok: false,
-        error: "missing required env vars (AIRTABLE_API_KEY / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)",
-      }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ ok: false, error: "missing required env vars" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
-  const supabase = createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false },
-  });
-
+  const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
   const perTable: Record<string, { upserted: number; errors: string[] }> = {};
   let ok = true;
 
@@ -251,32 +190,17 @@ serve(async (req: Request) => {
     perTable[mapping.supabaseTable] = entry;
     try {
       const records = await fetchAllAirtableRecords(mapping.airtableTableId, apiKey);
+      // Skip rows missing a required mapped (non-const, non-fallback) value? Upsert and report errors.
       const rows = records.map((r) => transformRecord(r, mapping));
-
       if (rows.length === 0) continue;
-
-      // Upsert in batches to stay within request limits.
       const batchSize = 500;
       for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize);
-        const { error } = await supabase
-          .from(mapping.supabaseTable)
-          .upsert(batch, { onConflict: mapping.upsertKey });
-        if (error) {
-          ok = false;
-          entry.errors.push(error.message);
-        } else {
-          entry.upserted += batch.length;
-        }
+        const { error } = await supabase.from(mapping.supabaseTable).upsert(batch, { onConflict: mapping.upsertKey });
+        if (error) { ok = false; entry.errors.push(error.message); } else { entry.upserted += batch.length; }
       }
-    } catch (err) {
-      ok = false;
-      entry.errors.push(err instanceof Error ? err.message : String(err));
-    }
+    } catch (err) { ok = false; entry.errors.push(err instanceof Error ? err.message : String(err)); }
   }
 
-  return new Response(JSON.stringify({ ok, perTable }), {
-    status: ok ? 200 : 207,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  return new Response(JSON.stringify({ ok, perTable }), { status: ok ? 200 : 207, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });
