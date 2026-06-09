@@ -11,6 +11,7 @@
  */
 
 import { isFeatureEnabled } from '@/config/env';
+import { supabase } from '@/integrations/supabase/client';
 
 // Agent IDs only - safe for frontend (not API keys!)
 const ELEVENLABS_BUYER_AGENT_ID = import.meta.env.VITE_ELEVENLABS_BUYER_AGENT_ID;
@@ -116,85 +117,146 @@ export async function getAgentConfig(
   }
 }
 
-/**
- * Create a new agent session (mock implementation)
- * TODO: Implement via Supabase Edge Function when tables are created
- */
 export async function createAgentSession(session: AgentSession): Promise<{ data: AgentSession | null; error: Error | null }> {
   if (!isMultiAgentConfigured()) {
     return { data: null, error: new Error('ElevenLabs is not configured') };
   }
-  
+
   try {
-    // Generate a mock session ID
-    const mockSession: AgentSession = {
-      ...session,
-      id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      status: session.status || 'initializing',
+    const { data, error } = await supabase
+      .from('telebuy_agent_sessions')
+      .insert({
+        telebuy_session_id: session.telebuy_session_id,
+        agent_role: session.agent_role,
+        agent_id: session.agent_id,
+        language: session.language,
+        user_id: session.user_id,
+        org_id: session.org_id,
+        status: session.status || 'initializing',
+        context: session.context || {},
+        state: session.state || {},
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      data: {
+        ...session,
+        id: data.id,
+        status: data.status as AgentSessionStatus,
+      },
+      error: null,
     };
-    
-    console.log('[ElevenLabs] Created agent session (mock):', mockSession.id);
-    return { data: mockSession, error: null };
   } catch (error) {
     return { data: null, error: error as Error };
   }
 }
 
-/**
- * Start an agent session (mock implementation)
- */
 export async function startAgentSession(
   sessionId: string,
   elevenlabsConversationId: string
 ): Promise<{ data: { id: string; status: string } | null; error: Error | null }> {
   try {
-    console.log(`[ElevenLabs] Started agent session (mock): ${sessionId} with conversation: ${elevenlabsConversationId}`);
-    return { 
-      data: { id: sessionId, status: 'active' }, 
-      error: null 
-    };
+    const { error } = await supabase
+      .from('telebuy_agent_sessions')
+      .update({
+        status: 'active',
+        elevenlabs_conversation_id: elevenlabsConversationId,
+        started_at: new Date().toISOString(),
+      })
+      .eq('id', sessionId);
+
+    if (error) throw error;
+
+    return { data: { id: sessionId, status: 'active' }, error: null };
   } catch (error) {
     return { data: null, error: error as Error };
   }
 }
 
-/**
- * End an agent session (mock implementation)
- */
 export async function endAgentSession(sessionId: string): Promise<{ data: { id: string; status: string } | null; error: Error | null }> {
   try {
-    console.log(`[ElevenLabs] Ended agent session (mock): ${sessionId}`);
-    return { 
-      data: { id: sessionId, status: 'ended' }, 
-      error: null 
-    };
+    const { data: existing } = await supabase
+      .from('telebuy_agent_sessions')
+      .select('started_at')
+      .eq('id', sessionId)
+      .single();
+
+    const endedAt = new Date();
+    const durationSeconds = existing?.started_at
+      ? Math.round((endedAt.getTime() - new Date(existing.started_at).getTime()) / 1000)
+      : null;
+
+    const { error } = await supabase
+      .from('telebuy_agent_sessions')
+      .update({
+        status: 'ended',
+        ended_at: endedAt.toISOString(),
+        duration_seconds: durationSeconds,
+      })
+      .eq('id', sessionId);
+
+    if (error) throw error;
+
+    return { data: { id: sessionId, status: 'ended' }, error: null };
   } catch (error) {
     return { data: null, error: error as Error };
   }
 }
 
-/**
- * Log an agent message (mock implementation)
- */
 export async function logAgentMessage(message: AgentMessage): Promise<{ data: AgentMessage | null; error: Error | null }> {
   try {
-    console.log('[ElevenLabs] Logged agent message (mock):', message.content.substring(0, 50) + '...');
+    const { error } = await supabase
+      .from('telebuy_agent_messages')
+      .insert({
+        agent_session_id: message.agent_session_id,
+        message_type: message.message_type,
+        speaker_role: message.speaker_role,
+        content: message.content,
+        language: message.language,
+        sentiment: message.sentiment,
+        intent: message.intent,
+        entities: message.entities,
+        metadata: message.metadata,
+      });
+
+    if (error) throw error;
+
     return { data: message, error: null };
   } catch (error) {
     return { data: null, error: error as Error };
   }
 }
 
-/**
- * Get conversation history for an agent session (mock implementation)
- */
 export async function getConversationHistory(
   agentSessionId: string,
-  _limit: number = 50
+  limit: number = 50
 ): Promise<{ data: AgentMessage[] | null; error: Error | null }> {
   try {
-    console.log(`[ElevenLabs] Getting conversation history for session (mock): ${agentSessionId}`);
-    return { data: [], error: null };
+    const { data, error } = await supabase
+      .from('telebuy_agent_messages')
+      .select('*')
+      .eq('agent_session_id', agentSessionId)
+      .order('timestamp', { ascending: true })
+      .limit(limit);
+
+    if (error) throw error;
+
+    const messages: AgentMessage[] = (data || []).map((row) => ({
+      agent_session_id: row.agent_session_id,
+      message_type: row.message_type as AgentMessage['message_type'],
+      speaker_role: row.speaker_role as AgentMessage['speaker_role'],
+      content: row.content,
+      language: row.language ?? undefined,
+      sentiment: row.sentiment as AgentMessage['sentiment'] | undefined,
+      intent: row.intent ?? undefined,
+      entities: (row.entities as Record<string, unknown>) ?? undefined,
+      metadata: (row.metadata as Record<string, unknown>) ?? undefined,
+    }));
+
+    return { data: messages, error: null };
   } catch (error) {
     return { data: null, error: error as Error };
   }

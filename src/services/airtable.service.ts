@@ -101,7 +101,7 @@ export async function getFAQs(options?: {
       : languageFilter;
   }
 
-  return fetchAirtableRecords<AirtableFAQ>('FAQs', {
+  const raw = await fetchAirtableRecords<Record<string, unknown>>('FAQs', {
     filterByFormula: filterFormula || undefined,
     maxRecords: options?.limit || 100,
     sort: [
@@ -109,6 +109,16 @@ export async function getFAQs(options?: {
       { field: 'Question', direction: 'asc' },
     ],
   });
+
+  return raw.map((r) => ({
+    id: r['id'] as string,
+    question: (r['Question'] as string) || '',
+    answer: (r['Answer'] as string) || '',
+    category: r['Category'] as string | undefined,
+    language: r['Language'] as string | undefined,
+    tags: r['Tags'] as string[] | undefined,
+    priority: r['Priority'] as number | undefined,
+  }));
 }
 
 /**
@@ -136,30 +146,39 @@ export async function getMarketplaceProducts(options?: {
   esgCompliant?: boolean;
   limit?: number;
 }): Promise<AirtableProduct[]> {
-  let filterFormula = '';
+  let filterFormula = `{Active} = 1`;
 
   if (options?.type) {
-    filterFormula = `{Type} = '${escapeAirtableValue(options.type)}'`;
-  }
-
-  if (options?.supplier) {
-    const supplierFilter = `{Supplier} = '${escapeAirtableValue(options.supplier)}'`;
-    filterFormula = filterFormula
-      ? `AND(${filterFormula}, ${supplierFilter})`
-      : supplierFilter;
+    filterFormula = `AND(${filterFormula}, {Category} = '${escapeAirtableValue(options.type)}')`;
   }
 
   if (options?.esgCompliant !== undefined) {
-    const esgFilter = `{ESG_Compliant} = ${options.esgCompliant ? '1' : '0'}`;
-    filterFormula = filterFormula
-      ? `AND(${filterFormula}, ${esgFilter})`
-      : esgFilter;
+    const esgFilter = `{REACH Compliant} = ${options.esgCompliant ? '1' : '0'}`;
+    filterFormula = `AND(${filterFormula}, ${esgFilter})`;
   }
 
-  return fetchAirtableRecords<AirtableProduct>('Products', {
-    filterByFormula: filterFormula || undefined,
+  const raw = await fetchAirtableRecords<Record<string, unknown>>('Product Catalog', {
+    filterByFormula: filterFormula,
     maxRecords: options?.limit || 50,
-    sort: [{ field: 'Name', direction: 'asc' }],
+    sort: [{ field: 'Product Name', direction: 'asc' }],
+  });
+
+  return raw.map((r) => {
+    const moq = r['Min Order Qty'];
+    const lead = r['Typical Lead Time (days)'];
+    const availability = moq
+      ? `MOQ: ${moq} MT${lead ? `, lead time: ${lead} days` : ''}`
+      : undefined;
+
+    return {
+      id: r['id'] as string,
+      name: (r['Product Name'] as string) || '',
+      type: (r['Category'] as string) || '',
+      grade: r['Grade/Purity'] as string | undefined,
+      specifications: r['Description'] as string | undefined,
+      availability,
+      esg_compliant: Boolean(r['REACH Compliant']),
+    };
   });
 }
 
