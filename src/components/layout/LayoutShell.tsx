@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SubscriptionStatusBar } from "./SubscriptionStatusBar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -447,6 +448,9 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-h-screen">
+        {/* Trial / grace status ribbon — sits ABOVE the header in normal flow
+            (no overlay). Renders nothing for fully-paid users. */}
+        <SubscriptionStatusBar />
         {/* Top bar */}
         <header className="sticky top-0 z-30 h-16 border-b border-border/50 bg-background/80 backdrop-blur-xl">
           <div className="h-full px-4 flex items-center justify-between gap-4">

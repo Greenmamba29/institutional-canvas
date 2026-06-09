@@ -20,7 +20,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ShieldOff, Zap, Crown, Mail, ArrowRight, AlertTriangle, CreditCard, Sparkles } from 'lucide-react';
+import { ShieldOff, Zap, Crown, Mail, ArrowRight } from 'lucide-react';
 
 // ── Subscription access check ─────────────────────────────────────────────────
 
@@ -115,73 +115,9 @@ export function SubscriptionGate() {
   if (isLoading) return <LoadingScreen message="Verifying subscription..." />;
   if (!access?.allowed) return <SubscriptionRequired />;
 
-  return (
-    <>
-      {access.isTrial && (
-        <TrialBanner daysRemaining={access.trialDaysRemaining} />
-      )}
-      {access.inGracePeriod && (
-        <GracePeriodBanner daysRemaining={access.graceDaysRemaining} />
-      )}
-      <Outlet />
-    </>
-  );
-}
-
-// ── Free-trial banner ─────────────────────────────────────────────────────────
-// Shown while the org is inside its 3-day free trial. Full access — this only
-// nudges the user to upgrade before the trial expires.
-
-function TrialBanner({ daysRemaining }: { daysRemaining: number }) {
-  return (
-    <div className="sticky top-16 z-40 bg-primary/10 border-b border-primary/20 px-4 py-3">
-      <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Sparkles className="h-5 w-5 text-primary shrink-0" />
-          <p className="text-sm font-medium">
-            Free trial —{' '}
-            <span className="font-bold">
-              {daysRemaining} day{daysRemaining !== 1 ? 's' : ''}
-            </span>{' '}
-            left. Upgrade any time to keep full access.
-          </p>
-        </div>
-        <Button size="sm" asChild>
-          <a href="/settings/billing">
-            <ArrowRight className="h-4 w-4 mr-2" />
-            Upgrade
-          </a>
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// ── Grace period banner ───────────────────────────────────────────────────────
-// Shown as a sticky top banner while the customer is in the payment grace period.
-// Does NOT block access — they have full platform functionality.
-
-function GracePeriodBanner({ daysRemaining }: { daysRemaining: number }) {
-  return (
-    <div className="sticky top-16 z-40 bg-destructive/10 border-b border-destructive/20 px-4 py-3">
-      <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-          <p className="text-sm font-medium">
-            Payment overdue —{' '}
-            <span className="font-bold">{daysRemaining} day{daysRemaining !== 1 ? 's' : ''}</span>{' '}
-            until access is suspended. Please update your payment method to avoid interruption.
-          </p>
-        </div>
-        <Button size="sm" variant="destructive" asChild>
-          <a href="/settings/billing">
-            <CreditCard className="h-4 w-4 mr-2" />
-            Update Payment
-          </a>
-        </Button>
-      </div>
-    </div>
-  );
+  // Trial / grace banners are rendered by LayoutShell (SubscriptionStatusBar) so
+  // they sit inside the app chrome above the header instead of overlaying it.
+  return <Outlet />;
 }
 
 // ── Subscription required wall ────────────────────────────────────────────────
