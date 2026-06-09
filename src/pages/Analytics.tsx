@@ -5,6 +5,7 @@ import {
   usePriceIndicators,
   type PriceIndicator,
 } from "@/hooks/useMarketData";
+import { useCurrency } from "@/hooks/useCurrency";
 import {
   TrendingUp,
   TrendingDown,
@@ -76,6 +77,10 @@ function formatTime(iso: string): string {
 export default function Analytics() {
   const [activePeriod, setActivePeriod] = useState<TimePeriod>('1M');
   const limit = PERIOD_LIMITS[activePeriod];
+
+  // Locale-aware currency formatting. Prices are canonical USD; this converts
+  // and renders them in the user's local currency (falls back to USD).
+  const { format: formatCurrency, currency } = useCurrency();
 
   // Real price history from the get_price_indicators RPC (with realtime).
   const lico3CnQuery = usePriceIndicators({ symbol: SYMBOL_LICO3, region: 'CN', limit });
@@ -258,18 +263,18 @@ export default function Analytics() {
                 </div>
                 <div className="mb-4">
                   <p className="text-3xl font-bold font-mono tabular-nums text-gradient-primary">
-                    ${indicator.spotPrice.toLocaleString()}
+                    {formatCurrency(indicator.spotPrice)}
                   </p>
                   <p className="text-sm text-muted-foreground">per {indicator.unit}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/50">
                   <div>
                     <p className="text-xs text-muted-foreground">Period High</p>
-                    <p className="font-mono font-medium text-success">${indicator.high.toLocaleString()}</p>
+                    <p className="font-mono font-medium text-success">{formatCurrency(indicator.high)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Period Low</p>
-                    <p className="font-mono font-medium text-destructive">${indicator.low.toLocaleString()}</p>
+                    <p className="font-mono font-medium text-destructive">{formatCurrency(indicator.low)}</p>
                   </div>
                 </div>
               </div>
@@ -309,7 +314,7 @@ export default function Analytics() {
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-semibold flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" />
-              Price Trend Analysis (USD/MT)
+              Price Trend Analysis ({currency}/MT)
             </h3>
             <div className="flex items-center gap-1">
               {TIME_PERIODS.map((period) => (
@@ -345,7 +350,7 @@ export default function Analytics() {
                 <YAxis
                   tick={{ fontSize: 12 }}
                   stroke="hsl(var(--muted-foreground))"
-                  tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                  tickFormatter={(v) => `${formatCurrency(v / 1000)}k`}
                 />
                 <Tooltip
                   contentStyle={{
@@ -354,7 +359,7 @@ export default function Analytics() {
                     borderRadius: '8px',
                     color: 'hsl(var(--foreground))',
                   }}
-                  formatter={(value: number) => [`$${value.toLocaleString()}/MT`, '']}
+                  formatter={(value: number) => [`${formatCurrency(value)}/MT`, '']}
                 />
                 <Legend />
                 <Area
@@ -382,7 +387,7 @@ export default function Analytics() {
         <div className="card-premium p-6">
           <h3 className="font-semibold flex items-center gap-2 mb-4">
             <Globe2 className="h-5 w-5 text-primary" />
-            Regional Price Comparison (Li₂CO₃ USD/MT)
+            Regional Price Comparison (Li₂CO₃ {currency}/MT)
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {regionalData.map((r) => (
@@ -397,7 +402,7 @@ export default function Analytics() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-mono font-bold">${r.price.toLocaleString()}</p>
+                  <p className="font-mono font-bold">{formatCurrency(r.price)}</p>
                   <p className={`text-xs font-mono ${r.trend >= 0 ? 'text-success' : 'text-destructive'}`}>
                     {r.trend >= 0 ? '+' : ''}{r.trend.toFixed(1)}%
                   </p>
