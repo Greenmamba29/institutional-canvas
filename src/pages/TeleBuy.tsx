@@ -8,8 +8,9 @@
  * - AI transcription and document management
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow, isToday, isTomorrow, parseISO } from 'date-fns';
 
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -218,6 +219,94 @@ function EmptyState() {
 }
 
 // Session Detail View Component
+// ElevenLabs Convai Web Component wrapper
+function ElevenLabsAgentPanel({ sessionId, agentRole = 'buyer' }: { sessionId: string; agentRole?: 'buyer' | 'supplier' | 'neutral' }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'active' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleStart = async () => {
+    setStatus('loading');
+    try {
+      const { data, error } = await supabase.functions.invoke('elevenlabs-conversation-token', {
+        body: { agent_role: agentRole },
+      });
+      if (error || !data?.token) throw new Error(error?.message || 'No token returned');
+
+      if (!containerRef.current) return;
+
+      // Load widget script if not already loaded
+      if (!document.getElementById('elevenlabs-convai-script')) {
+        const script = document.createElement('script');
+        script.id = 'elevenlabs-convai-script';
+        script.src = 'https://elevenlabs.io/convai-widget/index.js';
+        script.async = true;
+        document.body.appendChild(script);
+        await new Promise<void>((resolve, reject) => {
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load ElevenLabs widget script'));
+        });
+      }
+
+      // Create the <elevenlabs-convai> custom element
+      containerRef.current.innerHTML = '';
+      const widget = document.createElement('elevenlabs-convai');
+      widget.setAttribute('agent-id', data.agent_id);
+      if (data.token) widget.setAttribute('signed-url', data.token);
+      containerRef.current.appendChild(widget);
+      setStatus('active');
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Failed to start agent');
+      setStatus('error');
+    }
+  };
+
+  const handleStop = () => {
+    if (containerRef.current) containerRef.current.innerHTML = '';
+    setStatus('idle');
+    setErrorMsg('');
+  };
+
+  const agentName = agentRole === 'buyer' ? 'Sterling' : agentRole === 'supplier' ? 'Maxwell' : 'LB Agent';
+  const agentDesc = agentRole === 'buyer'
+    ? 'Your AI executive concierge for buyer-side guidance, pricing intelligence, and supplier vetting.'
+    : agentRole === 'supplier'
+    ? 'Your AI concierge for showcasing products, pricing strategy, and building buyer relationships.'
+    : 'Neutral AI concierge for session facilitation and deal intelligence.';
+
+  return (
+    <Card className="border-primary/20">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <span className="text-lg">🤖</span>
+            {agentName} — AI Concierge
+          </CardTitle>
+          <Badge variant="outline" className={status === 'active' ? 'bg-green-500/20 text-green-700 border-green-400' : ''}>
+            {status === 'active' ? '● Live' : status === 'loading' ? 'Connecting…' : 'Idle'}
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">{agentDesc}</p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {status === 'error' && (
+          <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{errorMsg}</p>
+        )}
+        {status !== 'active' ? (
+          <Button onClick={handleStart} disabled={status === 'loading'} className="w-full" size="sm">
+            {status === 'loading' ? 'Connecting to agent…' : `Start ${agentName}`}
+          </Button>
+        ) : (
+          <Button onClick={handleStop} variant="destructive" className="w-full" size="sm">
+            End Agent Session
+          </Button>
+        )}
+        <div ref={containerRef} className="min-h-[80px]" />
+      </CardContent>
+    </Card>
+  );
+}
+
 function SessionDetailView({ sessionId }: { sessionId: string }) {
   const navigate = useNavigate();
   const { data: session, isLoading, error } = useTelebuySession(sessionId);
@@ -337,6 +426,9 @@ function SessionDetailView({ sessionId }: { sessionId: string }) {
           </Card>
         )}
         
+        {/* AI Agent Panel */}
+        <ElevenLabsAgentPanel sessionId={sessionId} agentRole="buyer" />
+
         {/* Session Info */}
         {session.notes && (
           <Card>
