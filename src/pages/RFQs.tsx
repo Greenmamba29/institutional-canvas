@@ -1,12 +1,10 @@
 import { useState } from "react";
 
-import { useOrganization } from "@/context/OrganizationContext";
 import { BreadcrumbNav } from "@/components/shared/BreadcrumbNav";
 import { TabBar } from "@/components/shared/TabBar";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { CountdownTimer } from "@/components/shared/CountdownTimer";
 import { MatchProgressBar } from "@/components/shared/MatchProgressBar";
-import { SupplierProfileSidebar } from "@/components/rfq/SupplierProfileSidebar";
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +30,6 @@ function formatVolume(volume: number, unit: string): string {
 }
 
 export default function RFQs() {
-  const { viewMode } = useOrganization();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<'all' | 'submitted' | 'closed' | 'awarded'>('all');
   const [activeTab, setActiveTab] = useState('live');
@@ -182,29 +179,6 @@ export default function RFQs() {
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
             <SkillRecommendations />
-          {viewMode === 'supplier' && (
-            <div>
-              <SupplierProfileSidebar
-                name="Diego Santos"
-                title="Chief Operating Officer"
-                company="LithiumCorp"
-                verificationTier="gold"
-                kycVerified={true}
-                purityGrade={96.5}
-                recycledMaterial="Up to 10%"
-                trustScore={97}
-                pricePerMT={66500}
-                origin="Chile"
-                originFlag="🇨🇱"
-                certifications={['ISO 9001', 'ISO 14001', 'RMI-RMAP', 'DCC']}
-                verificationPipeline={[
-                  { name: 'Site Inspection 2024', status: 'approved' },
-                  { name: 'RMI Sustainability Audit', status: 'in_review' },
-                  { name: 'LME Grade Registration', status: 'active' },
-                ]}
-              />
-            </div>
-          )}
           </div>
         </div>
       </div>
