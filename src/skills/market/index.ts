@@ -3,8 +3,7 @@
  *
  * THIN orchestration over existing market services:
  *   - getPriceIndicators (market.service / get_price_indicators RPC) for the data
- *   - queryMarketIntel (market-intel.service / perplexity-market-intel edge fn)
- *     for the optional best-effort refresh
+ *   - market-intel-ingest edge fn (Firecrawl) for the optional best-effort refresh
  *
  * No business logic is reinvented here. The skill validates input, composes the
  * existing reads, derives a concise summary, audits the invocation, and returns
@@ -13,7 +12,7 @@
 
 import type { Skill, SkillContext, SkillResult, ToolCallRecord } from '../types';
 import { getPriceIndicators, type PriceIndicator } from '@/services/market.service';
-import { queryMarketIntel } from '@/services/market-intel.service';
+import { supabase } from '@/integrations/supabase/client';
 import { logSkillInvocation, hashInput } from '../audit';
 import {
   marketPulseContract,
@@ -99,26 +98,23 @@ export const marketPulseSkill: Skill<MarketPulseInput, MarketPulseOutput> = {
     const validInput = parsed.data;
 
     try {
-      // 1. Best-effort refresh via perplexity market-intel edge fn.
+      // 1. Best-effort refresh via the Firecrawl-powered market-intel-ingest
+      //    edge fn (pulls fresh prices -> price_indicators and news -> market_news).
       let refreshed = false;
       if (validInput.refresh) {
         const refreshStart = performance.now();
         try {
-          await queryMarketIntel(
-            `Latest ${validInput.symbol} lithium price`,
-            'price',
-            context.subscriptionTier
-          );
+          await supabase.functions.invoke('market-intel-ingest', { body: {} });
           refreshed = true;
           toolCalls.push({
-            tool: 'edge.perplexity-market-intel',
+            tool: 'edge.market-intel-ingest',
             success: true,
             duration_ms: Math.round(performance.now() - refreshStart),
           });
         } catch (err) {
           // Best-effort: never fail the pulse on a refresh error.
           toolCalls.push({
-            tool: 'edge.perplexity-market-intel',
+            tool: 'edge.market-intel-ingest',
             success: false,
             duration_ms: Math.round(performance.now() - refreshStart),
             error: err instanceof Error ? err.message : 'refresh failed',
