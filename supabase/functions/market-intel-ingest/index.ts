@@ -427,11 +427,18 @@ interface LatestPrice {
 async function fetchLatestCarbonateByRegion(): Promise<LatestPrice[]> {
   // Pull recent non-seed USD carbonate rows, newest first, then keep the first
   // (most recent) per region. Limit generously; regions are few.
+  //
+  // IMPORTANT: arbitrage must compare HOMOGENEOUS prices from a SINGLE source
+  // methodology. We restrict to the businessanalytiq regional index rows only
+  // (source like 'firecrawl:businessanalytiq%'). The tradingeconomics China
+  // spot row (derived from CNY, different methodology) is deliberately excluded
+  // — mixing it in produced implausible 148-188% margins. The TE China spot is
+  // still ingested/displayed as the headline price; it just isn't compared here.
   const params = new URLSearchParams({
     select: "region,price,observed_at,source,currency",
     symbol: `eq.${SYM_CARBONATE}`,
     currency: "eq.USD",
-    source: "not.like.seed%",
+    source: "like.firecrawl:businessanalytiq*",
     order: "observed_at.desc",
     limit: "500",
   });
@@ -475,6 +482,12 @@ interface ArbRow {
   confidence_score: number;
 }
 
+// Sanity cap on profit margin. Real lithium-carbonate regional arbitrage is
+// single-to-low-double-digit %; anything above this is treated as
+// non-comparable / likely-bad data and dropped (honest empty state preferred
+// over fabricated margins).
+const MAX_PLAUSIBLE_MARGIN = 35;
+
 function computeArbitrage(latest: LatestPrice[], now: string): ArbRow[] {
   if (latest.length < 2) return [];
   // Cheapest region is the buy side.
@@ -484,6 +497,9 @@ function computeArbitrage(latest: LatestPrice[], now: string): ArbRow[] {
   for (const sell of sorted.slice(1)) {
     if (sell.price <= buy.price) continue;
     const margin = Math.round(((sell.price - buy.price) / buy.price) * 100 * 100) / 100;
+    // Only emit opportunities with margin in (0, 35]. Drop anything above the
+    // cap as non-comparable / likely-bad data.
+    if (margin <= 0 || margin > MAX_PLAUSIBLE_MARGIN) continue;
     rows.push({
       product_type: "Lithium Carbonate",
       buy_region: buy.region,
