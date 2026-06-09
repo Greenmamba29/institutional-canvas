@@ -7,9 +7,10 @@
  * unavailable, formatting falls back to USD.
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
+  CURRENCY_CHANGED_EVENT,
   fetchFxRates,
   formatPrice,
   resolveTargetCurrency,
@@ -30,7 +31,23 @@ export interface UseCurrencyResult {
 }
 
 export function useCurrency(): UseCurrencyResult {
-  const currency = useMemo(() => resolveTargetCurrency(), []);
+  // Hold the resolved currency in state so the component re-renders when the
+  // preference changes (same-tab via custom event, cross-tab via 'storage').
+  const [currency, setCurrency] = useState<SupportedCurrency>(() =>
+    resolveTargetCurrency()
+  );
+
+  useEffect(() => {
+    const reResolve = () => setCurrency(resolveTargetCurrency());
+    window.addEventListener(CURRENCY_CHANGED_EVENT, reResolve);
+    window.addEventListener('storage', reResolve);
+    // Re-resolve once on mount in case the preference changed before subscribe.
+    reResolve();
+    return () => {
+      window.removeEventListener(CURRENCY_CHANGED_EVENT, reResolve);
+      window.removeEventListener('storage', reResolve);
+    };
+  }, []);
 
   const { data: rates, isLoading } = useQuery({
     queryKey: ['fx-rates', 'USD'],

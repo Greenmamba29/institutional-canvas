@@ -413,6 +413,117 @@ async function ingestPrices(now: string): Promise<{ rows: PriceRow[]; errors: st
   return { rows, errors };
 }
 
+// ---- Arbitrage (derived from latest regional carbonate prices) -----------
+
+// Run a read-only SQL query via PostgREST is awkward; use a Postgres RPC-free
+// approach: query price_indicators through the REST API with filters and sort,
+// then reduce to one latest row per region in JS.
+interface LatestPrice {
+  region: string;
+  price: number;
+  observed_at: string;
+}
+
+async function fetchLatestCarbonateByRegion(): Promise<LatestPrice[]> {
+  // Pull recent non-seed USD carbonate rows, newest first, then keep the first
+  // (most recent) per region. Limit generously; regions are few.
+  const params = new URLSearchParams({
+    select: "region,price,observed_at,source,currency",
+    symbol: `eq.${SYM_CARBONATE}`,
+    currency: "eq.USD",
+    source: "not.like.seed%",
+    order: "observed_at.desc",
+    limit: "500",
+  });
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/price_indicators?${params}`, {
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`fetch latest prices ${res.status}: ${t.slice(0, 200)}`);
+  }
+  const rows = (await res.json()) as Array<
+    { region: string | null; price: number; observed_at: string }
+  >;
+  const byRegion = new Map<string, LatestPrice>();
+  for (const r of rows) {
+    if (!r.region || typeof r.price !== "number" || r.price <= 0) continue;
+    // rows are ordered observed_at desc, so first seen per region is the latest
+    if (!byRegion.has(r.region)) {
+      byRegion.set(r.region, {
+        region: r.region,
+        price: r.price,
+        observed_at: r.observed_at,
+      });
+    }
+  }
+  return [...byRegion.values()];
+}
+
+interface ArbRow {
+  product_type: string;
+  buy_region: string;
+  sell_region: string;
+  buy_price: number;
+  sell_price: number;
+  profit_margin_percent: number;
+  status: string;
+  detected_at: string;
+  confidence_score: number;
+}
+
+function computeArbitrage(latest: LatestPrice[], now: string): ArbRow[] {
+  if (latest.length < 2) return [];
+  // Cheapest region is the buy side.
+  const sorted = [...latest].sort((a, b) => a.price - b.price);
+  const buy = sorted[0];
+  const rows: ArbRow[] = [];
+  for (const sell of sorted.slice(1)) {
+    if (sell.price <= buy.price) continue;
+    const margin = Math.round(((sell.price - buy.price) / buy.price) * 100 * 100) / 100;
+    rows.push({
+      product_type: "Lithium Carbonate",
+      buy_region: buy.region,
+      sell_region: sell.region,
+      buy_price: buy.price,
+      sell_price: sell.price,
+      profit_margin_percent: margin,
+      status: "active",
+      detected_at: now,
+      confidence_score: 0.7,
+    });
+  }
+  rows.sort((a, b) => b.profit_margin_percent - a.profit_margin_percent);
+  return rows.slice(0, 5);
+}
+
+async function ingestArbitrage(
+  now: string,
+): Promise<{ upserted: number; errors: string[] }> {
+  const errors: string[] = [];
+  try {
+    const latest = await fetchLatestCarbonateByRegion();
+    if (latest.length < 2) {
+      return { upserted: 0, errors: [`only ${latest.length} region(s) with price`] };
+    }
+    const rows = computeArbitrage(latest, now);
+    if (!rows.length) return { upserted: 0, errors };
+    // Unique index on (product_type,buy_region,sell_region) exists -> upsert.
+    await sbUpsert(
+      "arbitrage_opportunities",
+      rows,
+      "product_type,buy_region,sell_region",
+    );
+    return { upserted: rows.length, errors };
+  } catch (e) {
+    errors.push(String((e as Error).message));
+    return { upserted: 0, errors };
+  }
+}
+
 // ---- News ingestion ------------------------------------------------------
 
 interface NewsRow {
@@ -554,6 +665,7 @@ serve(async (req: Request) => {
   const result = {
     ok: true,
     prices: { inserted: 0, errors: [] as string[] },
+    arbitrage: { upserted: 0, errors: [] as string[] },
     news: { upserted: 0, errors: [] as string[] },
   };
 
@@ -567,6 +679,15 @@ serve(async (req: Request) => {
     }
   } catch (e) {
     result.prices.errors.push(String((e as Error).message));
+  }
+
+  // Arbitrage: derived from latest regional carbonate prices. Best-effort.
+  try {
+    const arb = await ingestArbitrage(now);
+    result.arbitrage.upserted = arb.upserted;
+    result.arbitrage.errors.push(...arb.errors);
+  } catch (e) {
+    result.arbitrage.errors.push(String((e as Error).message));
   }
 
   // News: RSS primary + Firecrawl search backup, dedupe by url.

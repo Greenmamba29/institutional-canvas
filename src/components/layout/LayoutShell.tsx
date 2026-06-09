@@ -11,6 +11,7 @@ import { GMVSummaryPanelConnected } from "./GMVSummaryPanelConnected";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { CountBadge } from "@/components/shared/CountBadge";
 import { OrgSwitcher } from "@/components/org/OrgSwitcher";
+import { CurrencySelector } from "@/components/CurrencySelector";
 import { VerificationBadge } from "@/components/shared/VerificationBadge";
 import { FlashAlertBanner } from "@/components/shared/FlashAlertBanner";
 import {
@@ -490,6 +491,9 @@ export function LayoutShell({ children }: LayoutShellProps) {
                 <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
                 <span className="text-[10px] font-semibold text-success tracking-wider">LIVE MARKET STATUS: NORMAL</span>
               </div>
+
+              {/* Currency override */}
+              <CurrencySelector />
 
               <NotificationDropdown />
 

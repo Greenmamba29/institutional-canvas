@@ -19,6 +19,14 @@ const FX_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 /** Currencies we actively map locales to. Others default to USD. */
 export type SupportedCurrency = 'USD' | 'CNY' | 'EUR' | 'GBP' | 'JPY';
 
+/** Currencies offered in the manual override UI. */
+export const SUPPORTED_CURRENCIES: SupportedCurrency[] = [
+  'USD', 'EUR', 'GBP', 'CNY', 'JPY',
+];
+
+/** Event fired (same-tab) whenever the preferred currency changes. */
+export const CURRENCY_CHANGED_EVENT = 'lb:currency-changed';
+
 interface FxCache {
   base: string;
   rates: Record<string, number>;
@@ -73,6 +81,14 @@ export function setPreferredCurrency(currency: SupportedCurrency | null): void {
   try {
     if (currency) localStorage.setItem(PREFERRED_CURRENCY_KEY, currency);
     else localStorage.removeItem(PREFERRED_CURRENCY_KEY);
+  } catch {
+    /* ignore */
+  }
+  // Notify listeners in this tab (storage event only fires cross-tab).
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(CURRENCY_CHANGED_EVENT));
+    }
   } catch {
     /* ignore */
   }
