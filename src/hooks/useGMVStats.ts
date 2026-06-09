@@ -21,18 +21,26 @@ export function useGMVStats() {
   return useQuery({
     queryKey: ['gmv-stats'],
     queryFn: async (): Promise<GMVStats> => {
-      // Fetch verified suppliers count
-      const { count: suppliersCount } = await supabase
-        .from('suppliers')
-        .select('*', { count: 'exact', head: true })
-        .not('verification_tier', 'is', null);
+      // Verified-supplier and active-buyer counts come from market_kpis, the
+      // public-read, Airtable-synced KPI store kept current by the
+      // refresh_platform_kpis() function. Counting these directly from the
+      // client is blocked by RLS (organizations is member-scoped), so this is
+      // the canonical source. Trigger a refresh so the figures are fresh.
+      await supabase.rpc('refresh_platform_kpis');
 
-      // Fetch verified buyers (organizations with buyer type)
-      const { count: buyersCount } = await supabase
-        .from('organizations')
-        .select('*', { count: 'exact', head: true })
-        .eq('org_type', 'buyer')
-        .eq('status', 'active');
+      const { data: kpiRows } = await supabase
+        .from('market_kpis')
+        .select('metric_name, metric_value')
+        .in('metric_name', ['total_verified_suppliers', 'total_buyers']);
+
+      // metric_value is a DECIMAL column → PostgREST returns it as a string.
+      const kpi = (name: string): number | null => {
+        const raw = kpiRows?.find((r) => r.metric_name === name)?.metric_value;
+        const n = raw == null ? NaN : Number(raw);
+        return Number.isFinite(n) ? n : null;
+      };
+      const suppliersCount = kpi('total_verified_suppliers');
+      const buyersCount = kpi('total_buyers');
 
       const now = new Date();
       const yearStart = new Date(now.getFullYear(), 0, 1);

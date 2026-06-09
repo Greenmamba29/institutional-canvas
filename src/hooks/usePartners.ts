@@ -55,12 +55,14 @@ export function usePartners(limit: number = 5) {
         .in('supplier_id', supplierIds)
         .limit(supplierIds.length);
 
-      // Get real YTD revenue (paid order totals) for these suppliers.
+      // Get real YTD revenue (paid order totals) between THIS org and these
+      // suppliers — scoped to the bilateral relationship, not platform-wide.
       const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
       const { data: orders } = await supabase
         .from('orders')
         .select('supplier_id, total_amount')
         .eq('payment_status', 'paid')
+        .eq('org_id', currentOrgId)
         .gte('created_at', yearStart)
         .in('supplier_id', supplierIds);
 
@@ -74,11 +76,12 @@ export function usePartners(limit: number = 5) {
         );
       }
 
-      // Count real completed deals per supplier.
+      // Count real completed deals between THIS org and these suppliers.
       const { data: deals } = await supabase
         .from('deals')
         .select('supplier_id')
         .eq('status', 'completed')
+        .eq('org_id', currentOrgId)
         .in('supplier_id', supplierIds);
 
       const dealsBySupplier = new Map<string, number>();

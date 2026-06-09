@@ -6,33 +6,22 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, Shield, Search, FileWarning, Lightbulb, CheckCircle } from 'lucide-react';
 import { useRiskAssessment } from '@/hooks/useRiskAssessment';
+import { useSuppliers } from '@/hooks/useSuppliers';
 import type { EntityType, RiskLevel, RiskFactor } from '@/services/ai/risk-assessment.service';
 
 export function RiskAnalysis() {
-  const [entityType, setEntityType] = useState<EntityType | ''>('');
+  // The risk engine assesses real supplier entities (suppliers.org_id).
+  const entityType: EntityType = 'Supplier';
   const [entityId, setEntityId] = useState('');
-  
+
+  const { data: suppliers, isLoading: suppliersLoading } = useSuppliers();
   const { data: assessment, isLoading, refetch } = useRiskAssessment(entityType, entityId);
 
-  // Mock entities for selector (in production, fetch from Supabase)
-  const mockEntities = {
-    Deal: [
-      { id: 'deal-1', name: 'Deal #D-2026-001: 5000t Lithium Carbonate' },
-      { id: 'deal-2', name: 'Deal #D-2026-002: 3000t Lithium Hydroxide' },
-    ],
-    Supplier: [
-      { id: 'supplier-1', name: 'GlobalLithium Solutions' },
-      { id: 'supplier-2', name: 'AsiaMineral Corp' },
-    ],
-    RFQ: [
-      { id: 'deal-1', name: 'RFQ-2026-001: 5000t Lithium Carbonate' },
-      { id: 'deal-2', name: 'RFQ-2026-002: 3000t Lithium Hydroxide' },
-    ],
-    Market: [
-      { id: 'lithium_carbonate', name: 'Lithium Carbonate Market' },
-      { id: 'lithium_hydroxide', name: 'Lithium Hydroxide Market' },
-    ],
-  };
+  // Real selectable entities — suppliers loaded from Supabase.
+  const supplierEntities = (suppliers ?? []).map((s) => ({
+    id: s.org_id,
+    name: s.display_name ?? s.org_id,
+  }));
 
   const getRiskColor = (risk: RiskLevel) => {
     if (risk === 'Critical') return 'text-red-600 bg-red-500/10 border-red-500/20';
@@ -54,32 +43,17 @@ export function RiskAnalysis() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Risk Analysis Configuration</CardTitle>
-          <CardDescription>Select an entity to assess risks</CardDescription>
+          <CardDescription>Select a supplier to assess risks</CardDescription>
         </CardHeader>
         <CardContent className="flex gap-4 flex-wrap items-end">
-          <div className="space-y-2 flex-1 min-w-[200px]">
-            <label className="text-sm font-medium">Entity Type</label>
-            <Select value={entityType} onValueChange={(v) => { setEntityType(v as EntityType); setEntityId(''); }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select type..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Deal">Deal</SelectItem>
-                <SelectItem value="Supplier">Supplier</SelectItem>
-                <SelectItem value="RFQ">RFQ</SelectItem>
-                <SelectItem value="Market">Market</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="space-y-2 flex-1 min-w-[300px]">
-            <label className="text-sm font-medium">Entity</label>
-            <Select value={entityId} onValueChange={setEntityId} disabled={!entityType}>
+            <label className="text-sm font-medium">Supplier</label>
+            <Select value={entityId} onValueChange={setEntityId} disabled={suppliersLoading}>
               <SelectTrigger>
-                <SelectValue placeholder="Select entity..." />
+                <SelectValue placeholder={suppliersLoading ? 'Loading suppliers...' : 'Select a supplier...'} />
               </SelectTrigger>
               <SelectContent>
-                {entityType && mockEntities[entityType as EntityType].map((entity) => (
+                {supplierEntities.map((entity) => (
                   <SelectItem key={entity.id} value={entity.id}>
                     {entity.name}
                   </SelectItem>
@@ -90,7 +64,7 @@ export function RiskAnalysis() {
 
           <Button
             onClick={() => refetch()}
-            disabled={!entityType || !entityId || isLoading}
+            disabled={!entityId || isLoading}
             className="gap-2"
           >
             <Search className="h-4 w-4" />
@@ -257,7 +231,7 @@ export function RiskAnalysis() {
             </Card>
           )}
         </div>
-      ) : entityType && entityId ? (
+      ) : entityId ? (
         <Card>
           <CardContent className="p-12 text-center">
             <p className="text-muted-foreground">No risk assessment available</p>
@@ -267,7 +241,7 @@ export function RiskAnalysis() {
         <Card>
           <CardContent className="p-12 text-center">
             <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">Select an entity type and entity above to assess risks</p>
+            <p className="text-muted-foreground">Select a supplier above to assess risks</p>
           </CardContent>
         </Card>
       )}

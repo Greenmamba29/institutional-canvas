@@ -8,19 +8,16 @@ import { Progress } from '@/components/ui/progress';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 import { Search, Star, MapPin, Package, TrendingUp, Phone, FileText } from 'lucide-react';
 import { useSupplierMatcher } from '@/hooks/useSupplierMatcher';
+import { useRFQs } from '@/hooks/useRFQs';
 import type { SupplierMatch } from '@/services/ai/supplier-matcher.service';
 
 export function SupplierMatcher() {
   const [selectedRfqId, setSelectedRfqId] = useState<string>('');
-  
+
   const { data: matches, isLoading, refetch } = useSupplierMatcher(selectedRfqId);
 
-  // Mock RFQs for selector (in production, fetch from Supabase)
-  const mockRfqs = [
-    { id: 'rfq-1', title: 'RFQ-2026-001: 5000t Lithium Carbonate', commodity: 'Lithium Carbonate' },
-    { id: 'rfq-2', title: 'RFQ-2026-002: 3000t Lithium Hydroxide', commodity: 'Lithium Hydroxide' },
-    { id: 'rfq-3', title: 'RFQ-2026-003: 10000t Battery Grade', commodity: 'Lithium Carbonate' },
-  ];
+  // Real RFQs from Supabase (id + title) for the selector.
+  const { data: rfqs, isLoading: rfqsLoading } = useRFQs();
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600';
@@ -54,12 +51,12 @@ export function SupplierMatcher() {
         <CardContent className="flex gap-4 flex-wrap items-end">
           <div className="space-y-2 flex-1 min-w-[300px]">
             <label className="text-sm font-medium">Request for Quote (RFQ)</label>
-            <Select value={selectedRfqId} onValueChange={setSelectedRfqId}>
+            <Select value={selectedRfqId} onValueChange={setSelectedRfqId} disabled={rfqsLoading}>
               <SelectTrigger>
-                <SelectValue placeholder="Select an RFQ..." />
+                <SelectValue placeholder={rfqsLoading ? 'Loading RFQs...' : 'Select an RFQ...'} />
               </SelectTrigger>
               <SelectContent>
-                {mockRfqs.map((rfq) => (
+                {(rfqs ?? []).map((rfq) => (
                   <SelectItem key={rfq.id} value={rfq.id}>
                     {rfq.title}
                   </SelectItem>

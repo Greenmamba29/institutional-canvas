@@ -1,19 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { assessRisk, getMockRiskAssessment, type EntityType } from '@/services/ai/risk-assessment.service';
+import { assessRisk, type EntityType } from '@/services/ai/risk-assessment.service';
 
 /**
- * Hook to assess risk for an entity
+ * Hook to assess risk for a real entity using the deterministic, rule-based
+ * risk-assessment service (no mock data).
  */
 export function useRiskAssessment(entityType: EntityType | '', entityId: string) {
   return useQuery({
     queryKey: ['risk-assessment', entityType, entityId],
     queryFn: async () => {
       if (!entityType || !entityId) return null;
-
-      // For mock IDs, use mock data
-      if (entityId.startsWith('mock-') || entityId.startsWith('deal-') || entityId.startsWith('supplier-')) {
-        return getMockRiskAssessment(entityType as EntityType, entityId);
-      }
 
       const { assessment, error } = await assessRisk(entityType as EntityType, entityId);
 
