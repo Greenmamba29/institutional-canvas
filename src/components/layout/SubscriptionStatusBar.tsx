@@ -61,7 +61,7 @@ export function SubscriptionStatusBar() {
         message={
           <>
             <span className="font-semibold">Free trial</span> — {fmtDays(sub.trialDaysLeft)} left
-            <span className="hidden sm:inline text-muted-foreground"> · full access to every feature</span>
+            <span className="hidden sm:inline text-muted-foreground"> · full Pro-tier access</span>
           </>
         }
         ctaLabel="Upgrade"

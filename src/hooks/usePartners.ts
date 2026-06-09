@@ -46,7 +46,7 @@ export function usePartners(limit: number = 5) {
 
       // Get supplier org IDs
       const supplierIds = (suppliers ?? []).map(s => s.org_id);
-      
+
       // Get products for these suppliers
       const { data: products } = await supabase
         .from('products')
@@ -54,25 +54,36 @@ export function usePartners(limit: number = 5) {
         .in('supplier_id', supplierIds)
         .limit(supplierIds.length);
 
-      // Get deal totals (YTD revenue) for these suppliers
-      const { data: deals } = await supabase
-        .from('deals')
-        .select('supplier_id')
-        .eq('status', 'completed')
+      // Get real YTD revenue (paid order totals) for these suppliers.
+      const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('supplier_id, total_amount')
+        .eq('payment_status', 'paid')
+        .gte('created_at', yearStart)
         .in('supplier_id', supplierIds);
+
+      // Sum real order totals per supplier — no estimation.
+      const revenueBySupplier = new Map<string, number>();
+      for (const o of orders ?? []) {
+        if (typeof o.total_amount !== 'number') continue;
+        revenueBySupplier.set(
+          o.supplier_id,
+          (revenueBySupplier.get(o.supplier_id) ?? 0) + o.total_amount
+        );
+      }
 
       // Map suppliers to TrustedPartner format
       return (suppliers ?? []).map((supplier): TrustedPartner => {
         const product = products?.find(p => p.supplier_id === supplier.org_id);
-        const dealCount = deals?.filter(d => d.supplier_id === supplier.org_id).length ?? 0;
         const profile = supplier.public_profile as Record<string, unknown> | null;
-        
+
         return {
           id: supplier.org_id,
           name: supplier.display_name || 'Unknown Supplier',
           verified: !!supplier.verification_tier,
           verificationTier: supplier.verification_tier === 'gold' ? 'gold' : 'standard',
-          ytdRevenue: dealCount * (product?.price_per_unit ?? 50000), // Estimate based on deals
+          ytdRevenue: revenueBySupplier.get(supplier.org_id) ?? 0,
           product: product?.name || 'Lithium Products',
           pricePerMT: product?.price_per_unit ?? 0,
           responseTime: profile?.response_time_hours 

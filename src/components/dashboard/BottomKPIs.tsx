@@ -1,4 +1,4 @@
-import { FileText, CheckCircle, Lock, AlertTriangle, LucideIcon } from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 
 interface BottomKPI {
   label: string;
@@ -10,14 +10,11 @@ interface BottomKPIsProps {
   kpis?: BottomKPI[];
 }
 
-const defaultKPIs: BottomKPI[] = [
-  { label: 'ACTIVE RFQs', value: 263, icon: FileText },
-  { label: 'SETTLED ORDERS', value: 526, icon: CheckCircle },
-  { label: 'ESCROW HOLDINGS', value: '$1.8B', icon: Lock },
-  { label: 'MARKET ALERTS', value: 12, icon: AlertTriangle },
-];
+export function BottomKPIs({ kpis }: BottomKPIsProps) {
+  if (!kpis || kpis.length === 0) {
+    return null;
+  }
 
-export function BottomKPIs({ kpis = defaultKPIs }: BottomKPIsProps) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {kpis.map((kpi) => (

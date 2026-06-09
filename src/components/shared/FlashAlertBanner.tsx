@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from 'react';
 import { useFlashAlerts, useDismissAlert } from '@/hooks/useFlashAlerts';
 import { X, AlertTriangle, Info, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -9,15 +10,60 @@ const TYPE_CONFIG = {
   opportunity: { icon: TrendingUp,    bg: 'bg-green-500/10 border-green-500/20',  text: 'text-green-700 dark:text-green-300' },
 };
 
+// localStorage key holding the ids of alerts the user has dismissed. Persisting
+// these means a dismissed alert stays dismissed across navigations / reloads,
+// instead of reappearing on every route change.
+const DISMISSED_KEY = 'lb:dismissedAlerts';
+
+function readDismissed(): string[] {
+  try {
+    const raw = localStorage.getItem(DISMISSED_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 export function FlashAlertBanner() {
   const { data: alerts, isLocked } = useFlashAlerts();
   const { mutate: dismiss } = useDismissAlert();
+  const [dismissedIds, setDismissedIds] = useState<string[]>(() => readDismissed());
 
-  if (isLocked || !alerts?.length) return null;
+  // Keep in sync across tabs/windows.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === DISMISSED_KEY) setDismissedIds(readDismissed());
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  const handleDismiss = useCallback(
+    (id: string) => {
+      setDismissedIds((prev) => {
+        if (prev.includes(id)) return prev;
+        const next = [...prev, id];
+        try {
+          localStorage.setItem(DISMISSED_KEY, JSON.stringify(next));
+        } catch {
+          /* ignore quota / unavailable storage */
+        }
+        return next;
+      });
+      // Also persist server-side so it stays dismissed for this user everywhere.
+      dismiss(id);
+    },
+    [dismiss]
+  );
+
+  const visibleAlerts = alerts?.filter((a) => !dismissedIds.includes(a.id));
+
+  if (isLocked || !visibleAlerts?.length) return null;
 
   return (
     <div className="space-y-1">
-      {alerts.map((alert) => {
+      {visibleAlerts.map((alert) => {
         const config = TYPE_CONFIG[alert.type] || TYPE_CONFIG.info;
         const Icon = config.icon;
         return (
@@ -35,7 +81,7 @@ export function FlashAlertBanner() {
               </div>
             </div>
             <button
-              onClick={() => dismiss(alert.id)}
+              onClick={() => handleDismiss(alert.id)}
               className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Dismiss alert"
             >

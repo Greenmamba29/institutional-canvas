@@ -73,7 +73,7 @@ export default function Billing() {
                     : 'No Active Subscription'}
               </p>
               <p className="text-muted-foreground">
-                {isTrial && `Full access — ${trialDaysLeft} day${trialDaysLeft !== 1 ? 's' : ''} left. Choose a plan below to continue after your trial.`}
+                {isTrial && `Full Pro access — ${trialDaysLeft} day${trialDaysLeft !== 1 ? 's' : ''} left. Choose a plan below to continue after your trial.`}
                 {!isTrial && paidTier === 'pro' && 'Full procurement & grant intelligence'}
                 {!isTrial && paidTier === 'enterprise' && 'Complete platform access including partner matching & TeleBuy'}
                 {!isTrial && !paidTier && 'Your trial has ended — select a plan below to restore full access'}

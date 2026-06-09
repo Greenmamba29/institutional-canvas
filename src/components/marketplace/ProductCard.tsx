@@ -3,6 +3,22 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Package, Beaker, TrendingUp } from "lucide-react";
 import { VerificationBadge, type BadgeTier } from "@/components/shared/VerificationBadge";
+import { useCurrency } from "@/hooks/useCurrency";
+
+// Numeric purities get "%"; non-numeric grade labels render clean & title-cased.
+function formatPurity(purity: string | number | null | undefined): string {
+  if (purity === null || purity === undefined || purity === "") return "—";
+  const raw = String(purity).trim();
+  const numeric = Number(raw);
+  if (raw !== "" && !Number.isNaN(numeric)) {
+    return `${numeric}%`;
+  }
+  return raw
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 interface Product {
   id: string;
@@ -24,13 +40,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, supplierName, verificationTier }: ProductCardProps) {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: product.currency,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
+  const { format: formatPrice } = useCurrency();
 
   const getAvailabilityColor = (availability: string) => {
     switch (availability) {
@@ -94,7 +104,7 @@ export function ProductCard({ product, supplierName, verificationTier }: Product
             <div className="flex items-center gap-1 text-muted-foreground">
               <span>Purity:</span>
               <span className="font-mono font-medium text-foreground">
-                {product.purity_level}%
+                {formatPurity(product.purity_level)}
               </span>
             </div>
           </div>

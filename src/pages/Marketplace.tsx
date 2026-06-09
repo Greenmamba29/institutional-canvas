@@ -20,15 +20,23 @@ import {
 } from "lucide-react";
 import { useListings } from "@/hooks/useListings";
 import { usePrices } from "@/hooks/useMarketData";
+import { useCurrency } from "@/hooks/useCurrency";
 
-// Format currency helper
-function formatCurrency(value: number, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
+// Format a purity value: numeric purities get a "%" suffix; non-numeric grade
+// labels (e.g. "battery-grade") render as a clean title-cased label with no "%".
+function formatPurity(purity: string | number | null | undefined): string {
+  if (purity === null || purity === undefined || purity === '') return '—';
+  const raw = String(purity).trim();
+  const numeric = Number(raw);
+  if (raw !== '' && !Number.isNaN(numeric)) {
+    return `${numeric}%`;
+  }
+  // Non-numeric grade label: normalise separators and title-case.
+  return raw
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // Map availability to status for StatusPill
@@ -47,6 +55,7 @@ export default function Marketplace() {
 
   const { data: products, isLoading, error } = useListings();
   const { data: marketPrices } = usePrices();
+  const { format: formatCurrency } = useCurrency();
 
   // Filter products based on search
   const filteredProducts = products?.filter(product =>
@@ -180,7 +189,7 @@ export default function Marketplace() {
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Purity</span>
-                    <span className="font-mono">{product.purity_level}%</span>
+                    <span className="font-mono">{formatPurity(product.purity_level)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Min Order</span>
@@ -250,7 +259,7 @@ export default function Marketplace() {
                       <p className="font-medium capitalize">{product.product_type}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="font-mono">{product.purity_level}%</p>
+                      <p className="font-mono">{formatPurity(product.purity_level)}</p>
                     </td>
                     <td className="py-4 px-4 text-right font-mono font-bold">
                       {product.min_order_quantity} {product.unit}

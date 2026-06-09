@@ -18,36 +18,15 @@ import { SkillRecommendations } from "@/components/skills/SkillRecommendations";
 import { useDashboardStats, usePriceTicker } from "@/hooks/useDashboardStats";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { usePartners } from "@/hooks/usePartners";
-import { useGMVStats, useGMVSparkline } from "@/hooks/useGMVStats";
+import { useWeeklyAuctionSnapshot } from "@/hooks/useWeeklyAuctionSnapshot";
+import { useOrders } from "@/hooks/useOrders";
+import { useCurrency } from "@/hooks/useCurrency";
+import { FileText, CheckCircle, Truck, DollarSign } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
 import { WelcomeModal } from "@/components/onboarding/WelcomeModal";
 import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
-
-// Fallback chart data when no real data available
-const fallbackChartData = [
-  { date: 'Oct 1', value: 42000 },
-  { date: 'Oct 6', value: 48000 },
-  { date: 'Oct 11', value: 45000 },
-  { date: 'Oct 16', value: 52000 },
-  { date: 'Oct 21', value: 58000 },
-  { date: 'Oct 26', value: 66300 },
-];
-
-// Fallback upcoming auctions (will be replaced with real data)
-const upcomingAuctions = [
-  { id: '1', company: 'LithiumRecycle', countryCode: 'DE', verified: true, volume: 60, product: 'Recycled Carbonate', pricePerMT: 66500 },
-  { id: '2', company: 'GreenLi Tech', countryCode: 'CA', verified: true, volume: 120, product: 'Black Mass', pricePerMT: 2850 },
-];
-
-// Fallback escrowed assets
-const escrowedAssets = [
-  { description: 'Recycled Li-Hydroxide', remainder: '4.2k', gain: 1.2 },
-  { description: 'Black Mass Concentrate', remainder: '1.8k', gain: -0.4 },
-  { description: 'Spodumene Conc.', remainder: '12.4k', gain: 5.6 },
-  { description: 'Secondary Carbonate', remainder: '0.9k', gain: 0.1 },
-];
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -57,14 +36,41 @@ export default function Dashboard() {
   const { data: priceData } = usePriceTicker();
   const { data: auditEntries = [] } = useAuditLog(4);
   const { data: partners = [] } = usePartners(2);
-  const { data: gmvStats } = useGMVStats();
-  const gmvSparkline = useGMVSparkline();
+  const { data: auctionSnapshot } = useWeeklyAuctionSnapshot();
+  const { data: orders = [] } = useOrders();
+  const { format } = useCurrency();
 
-  // Build chart data from GMV sparkline
-  const chartData = gmvSparkline.map((value, i) => ({
-    date: new Date(2024, i, 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    value,
-  }));
+  // Real GMV: sum of all order totals (canonical USD) from Supabase.
+  const totalGMV = (orders ?? []).reduce(
+    (sum, o) => sum + (o.total_amount || 0),
+    0
+  );
+
+  // Real bottom KPIs sourced from live platform data.
+  const bottomKPIs = [
+    { label: 'ACTIVE RFQs', value: stats?.activeRfqs ?? 0, icon: FileText },
+    { label: 'SETTLED ORDERS', value: (orders ?? []).filter((o) => o.status === 'delivered').length, icon: CheckCircle },
+    { label: 'IN TRANSIT', value: (orders ?? []).filter((o) => o.status === 'shipped').length, icon: Truck },
+    { label: 'TOTAL GMV', value: format(totalGMV), icon: DollarSign },
+  ];
+
+  // Build chart data from real orders, aggregated by month (canonical USD).
+  const monthlyGMV = new Map<string, number>();
+  for (const o of orders ?? []) {
+    if (!o.created_at) continue;
+    const d = new Date(o.created_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
+    monthlyGMV.set(key, (monthlyGMV.get(key) || 0) + (o.total_amount || 0));
+  }
+  const chartData = Array.from(monthlyGMV.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => {
+      const [year, month] = key.split('-').map(Number);
+      return {
+        date: new Date(year, month, 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        value,
+      };
+    });
 
   const tabs = viewMode === 'supplier' 
     ? [{ id: 'overview', label: 'OVERVIEW' }, { id: 'listings', label: 'MY LISTINGS' }, { id: 'financials', label: 'FINANCIALS' }]
@@ -159,7 +165,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">TOTAL DEALS: <span className="text-foreground font-mono">{stats?.totalDeals || 0}</span></span>
               {priceData && (
-                <span className="text-accent">{priceData.symbol}: ${priceData.price.toLocaleString()}/{priceData.unit}</span>
+                <span className="text-accent">{priceData.symbol}: {format(priceData.price)}/{priceData.unit}</span>
               )}
             </div>
           </div>
@@ -187,7 +193,7 @@ export default function Dashboard() {
             </div>
             {priceData ? (
               <>
-                <p className="text-2xl font-bold font-mono">${priceData.price.toLocaleString()}</p>
+                <p className="text-2xl font-bold font-mono">{format(priceData.price)}</p>
                 <p className="text-[10px] text-muted-foreground">{priceData.symbol} per {priceData.unit}</p>
               </>
             ) : (
@@ -199,21 +205,18 @@ export default function Dashboard() {
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <GMVChart data={chartData.length > 0 ? chartData : fallbackChartData} />
+            <GMVChart data={chartData} totalGMV={totalGMV} />
             
             {viewMode === 'supplier' ? (
               <WeeklyAuctionSnapshot
-                totalBids={475000}
-                changePercent={12.4}
-                activeLots={15}
-                lotType="Carbonate & Hydroxide"
-                verifiedBidders={21}
+                totalBids={auctionSnapshot?.totalBids ?? 0}
+                changePercent={auctionSnapshot?.changePercent ?? null}
+                activeLots={auctionSnapshot?.activeLots ?? 0}
+                lotType={auctionSnapshot?.lotType ?? ''}
+                verifiedBidders={auctionSnapshot?.verifiedBidders ?? 0}
               />
             ) : (
-              <TrustedPartners partners={partners.length > 0 ? partners : [
-                { id: '1', name: 'Lithium Recycling Global', verified: true, verificationTier: 'gold', ytdRevenue: 3750000, product: 'Recycled Lithium', pricePerMT: 83250, responseTime: '4.2H' },
-                { id: '2', name: 'EcoBattery Solutions', verified: true, verificationTier: 'gold', ytdRevenue: 5200000, product: 'Black Mass (Co/Ni/Li)', pricePerMT: 24500, responseTime: '2.1H' },
-              ]} />
+              <TrustedPartners partners={partners} />
             )}
 
             {/* Market News Feed - New */}
@@ -224,17 +227,10 @@ export default function Dashboard() {
             {/* Live Price Ticker - New */}
             <LivePriceTicker />
 
-            <MetricsReview
-              totalGMV={gmvStats?.gmvYTD || 4270000}
-              todayChange={6300}
-              grossMerchandise={gmvStats?.changePercent || 52.1}
-              stackedData={52}
-              verificationMedia={17}
-              escrowedAssets={escrowedAssets}
-            />
+            <MetricsReview totalGMV={totalGMV} />
             
             {viewMode === 'supplier' ? (
-              <UpcomingAuctions auctions={upcomingAuctions} />
+              <UpcomingAuctions auctions={[]} />
             ) : (
               <>
                 <ArbitragePanel />
@@ -245,7 +241,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <BottomKPIs />
+        <BottomKPIs kpis={bottomKPIs} />
       </>
     );
   };

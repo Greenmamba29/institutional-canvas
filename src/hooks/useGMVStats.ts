@@ -1,7 +1,7 @@
 /**
  * GMV (Gross Merchandise Volume) Stats Hook
- * 
- * Aggregates platform-wide GMV statistics from deals and orders
+ *
+ * Aggregates platform-wide GMV statistics from real paid orders.
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -10,7 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 export interface GMVStats {
   gmvYTD: number;
   gmvPreviousYear: number;
-  changePercent: number;
+  /** Year-over-year change vs. the same period last year. null when there is no prior-year baseline. */
+  changePercent: number | null;
   suppliersVerified: number;
   buyersVerified: number;
   monthlyData: { month: string; value: number }[];
@@ -33,42 +34,61 @@ export function useGMVStats() {
         .eq('org_type', 'buyer')
         .eq('status', 'active');
 
-      // Fetch deals for GMV calculation
-      const { data: deals } = await supabase
-        .from('deals')
-        .select('created_at, status')
-        .eq('status', 'completed');
-
-      // Calculate monthly GMV (simplified - in production would aggregate from orders/purchases)
       const now = new Date();
       const yearStart = new Date(now.getFullYear(), 0, 1);
-      
-      const dealsThisYear = deals?.filter(d => 
-        new Date(d.created_at) >= yearStart
-      )?.length || 0;
+      const prevYearStart = new Date(now.getFullYear() - 1, 0, 1);
 
-      // Estimated average deal value for demonstration
-      const avgDealValue = 250000;
-      const gmvYTD = dealsThisYear * avgDealValue;
-      
-      // Previous year comparison (simplified)
-      const gmvPreviousYear = gmvYTD * 0.85; // Simulated 15% growth
-      const changePercent = gmvPreviousYear > 0 
-        ? ((gmvYTD - gmvPreviousYear) / gmvPreviousYear) * 100 
-        : 0;
+      // Fetch paid orders from the start of last year onwards — real transaction value.
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('total_amount, created_at')
+        .eq('payment_status', 'paid')
+        .gte('created_at', prevYearStart.toISOString());
 
-      // Generate monthly sparkline data
-      const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+      const paidOrders = (orders ?? []).filter(
+        (o): o is { total_amount: number; created_at: string } =>
+          o.created_at != null && typeof o.total_amount === 'number'
+      );
+
+      // GMV year-to-date: sum of paid order amounts this calendar year.
+      const gmvYTD = paidOrders
+        .filter((o) => new Date(o.created_at) >= yearStart)
+        .reduce((sum, o) => sum + o.total_amount, 0);
+
+      // Prior-year baseline over the same elapsed window (Jan 1 → today, last year).
+      const prevPeriodEnd = new Date(prevYearStart);
+      prevPeriodEnd.setFullYear(prevPeriodEnd.getFullYear(), now.getMonth(), now.getDate());
+      const gmvPreviousYear = paidOrders
+        .filter((o) => {
+          const d = new Date(o.created_at);
+          return d >= prevYearStart && d < yearStart && d <= prevPeriodEnd;
+        })
+        .reduce((sum, o) => sum + o.total_amount, 0);
+
+      const changePercent =
+        gmvPreviousYear > 0
+          ? ((gmvYTD - gmvPreviousYear) / gmvPreviousYear) * 100
+          : null;
+
+      // Monthly sparkline: real paid-order totals per month, this calendar year.
+      const monthlyTotals = new Array(12).fill(0);
+      for (const o of paidOrders) {
+        const d = new Date(o.created_at);
+        if (d >= yearStart) {
+          monthlyTotals[d.getMonth()] += o.total_amount;
+        }
+      }
+      const monthlyData = monthlyTotals.map((value, i) => ({
         month: new Date(now.getFullYear(), i, 1).toLocaleString('default', { month: 'short' }),
-        value: Math.floor(Math.random() * 500000) + 1000000, // Placeholder
+        value,
       }));
 
       return {
-        gmvYTD: gmvYTD || 15200000, // Fallback for demo
+        gmvYTD,
         gmvPreviousYear,
-        changePercent: changePercent || 12.4,
-        suppliersVerified: suppliersCount || 147,
-        buyersVerified: buyersCount || 17402,
+        changePercent,
+        suppliersVerified: suppliersCount ?? 0,
+        buyersVerified: buyersCount ?? 0,
         monthlyData,
       };
     },
@@ -77,10 +97,11 @@ export function useGMVStats() {
 }
 
 /**
- * Hook to get sparkline data for GMV chart
+ * Hook to get sparkline data for GMV chart.
+ * Returns an empty array when there is no real monthly order data, so the
+ * sparkline hides itself rather than rendering fabricated values.
  */
 export function useGMVSparkline() {
   const { data: gmvStats } = useGMVStats();
-  
-  return gmvStats?.monthlyData.map(d => d.value) || [10, 15, 12, 18, 22, 19, 25, 28, 24, 30];
+  return gmvStats?.monthlyData.map((d) => d.value) ?? [];
 }

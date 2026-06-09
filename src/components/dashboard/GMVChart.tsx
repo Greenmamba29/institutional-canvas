@@ -1,4 +1,5 @@
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface ChartDataPoint {
   date: string;
@@ -9,9 +10,12 @@ interface GMVChartProps {
   data: ChartDataPoint[];
   title?: string;
   subtitle?: string;
+  /** Real total GMV across the period in canonical USD. */
+  totalGMV?: number;
 }
 
-export function GMVChart({ data, title = "Daily GMV & Fees", subtitle = "30-DAY AGGREGATED REVENUE STREAM" }: GMVChartProps) {
+export function GMVChart({ data, title = "Daily GMV & Fees", subtitle = "30-DAY AGGREGATED REVENUE STREAM", totalGMV }: GMVChartProps) {
+  const { format } = useCurrency();
   return (
     <div className="glass-panel rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
@@ -51,7 +55,7 @@ export function GMVChart({ data, title = "Daily GMV & Fees", subtitle = "30-DAY 
                 borderRadius: '8px',
                 fontSize: '12px'
               }}
-              formatter={(value: number) => [`$${(value / 1000).toFixed(1)}K`, 'GMV']}
+              formatter={(value: number) => [format(value), 'GMV']}
             />
             <Area
               type="monotone"
@@ -65,17 +69,15 @@ export function GMVChart({ data, title = "Daily GMV & Fees", subtitle = "30-DAY 
       </div>
 
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/30">
-        <div>
-          <p className="text-[10px] text-muted-foreground tracking-wider">TOTAL BIDS</p>
-          <p className="text-lg font-bold font-mono">$66.3K <span className="text-xs text-success">(+21.7%)</span></p>
-        </div>
-        <button className="text-xs font-semibold text-accent hover:text-accent/80 transition-colors">
+        {typeof totalGMV === 'number' && (
+          <div>
+            <p className="text-[10px] text-muted-foreground tracking-wider">TOTAL GMV</p>
+            <p className="text-lg font-bold font-mono">{format(totalGMV)}</p>
+          </div>
+        )}
+        <button className="text-xs font-semibold text-accent hover:text-accent/80 transition-colors ml-auto">
           Performance →
         </button>
-        <div className="text-right">
-          <p className="text-[10px] text-muted-foreground tracking-wider">TRANSACTION FEES</p>
-          <p className="text-lg font-bold font-mono">$124K</p>
-        </div>
       </div>
     </div>
   );

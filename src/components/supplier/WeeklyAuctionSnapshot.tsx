@@ -1,20 +1,23 @@
-import { Globe, Users } from 'lucide-react';
+import { Globe } from 'lucide-react';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface WeeklyAuctionSnapshotProps {
   totalBids: number;
-  changePercent: number;
+  /** % change vs last event; null hides the trend line (no baseline). */
+  changePercent: number | null;
   activeLots: number;
   lotType: string;
   verifiedBidders: number;
 }
 
-export function WeeklyAuctionSnapshot({ 
-  totalBids, 
-  changePercent, 
-  activeLots, 
-  lotType, 
-  verifiedBidders 
+export function WeeklyAuctionSnapshot({
+  totalBids,
+  changePercent,
+  activeLots,
+  lotType,
+  verifiedBidders
 }: WeeklyAuctionSnapshotProps) {
+  const { format } = useCurrency();
   return (
     <div className="glass-panel rounded-xl p-5 relative overflow-hidden">
       <h3 className="text-sm font-semibold tracking-wider mb-4">WEEKLY AUCTION SNAPSHOT</h3>
@@ -37,26 +40,34 @@ export function WeeklyAuctionSnapshot({
 
       <div className="grid grid-cols-3 gap-3 text-center">
         <div>
-          <p className="text-2xl font-bold font-mono text-accent">${(totalBids / 1000).toFixed(0)}K</p>
+          <p className="text-2xl font-bold font-mono text-accent">{format(totalBids)}</p>
           <p className="text-[10px] text-muted-foreground">TOTAL BIDS</p>
-          <p className="text-[10px] text-success">+{changePercent}% vs last event</p>
+          {changePercent != null && (
+            <p className={`text-[10px] ${changePercent >= 0 ? 'text-success' : 'text-destructive'}`}>
+              {changePercent >= 0 ? '+' : ''}{changePercent.toFixed(1)}% vs last event
+            </p>
+          )}
         </div>
         <div>
           <p className="text-2xl font-bold font-mono">{activeLots}</p>
           <p className="text-[10px] text-muted-foreground">ACTIVE LOTS</p>
-          <p className="text-[10px] text-accent uppercase">{lotType}</p>
+          {lotType && <p className="text-[10px] text-accent uppercase">{lotType}</p>}
         </div>
         <div>
           <p className="text-2xl font-bold font-mono">{verifiedBidders}</p>
           <p className="text-[10px] text-muted-foreground">VERIFIED BIDDERS</p>
-          <div className="flex items-center justify-center gap-0.5 mt-1">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="w-5 h-5 -ml-1 first:ml-0 rounded-full bg-secondary border-2 border-card flex items-center justify-center text-[8px] font-bold">
-                {i}
-              </div>
-            ))}
-            <span className="text-[10px] text-muted-foreground ml-1">+{verifiedBidders - 4}</span>
-          </div>
+          {verifiedBidders > 0 && (
+            <div className="flex items-center justify-center gap-0.5 mt-1">
+              {Array.from({ length: Math.min(verifiedBidders, 4) }, (_, i) => i + 1).map((i) => (
+                <div key={i} className="w-5 h-5 -ml-1 first:ml-0 rounded-full bg-secondary border-2 border-card flex items-center justify-center text-[8px] font-bold">
+                  {i}
+                </div>
+              ))}
+              {verifiedBidders > 4 && (
+                <span className="text-[10px] text-muted-foreground ml-1">+{verifiedBidders - 4}</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

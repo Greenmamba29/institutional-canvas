@@ -1,6 +1,7 @@
 import { VerificationBadge } from '@/components/shared/VerificationBadge';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export interface TrustedPartner {
   id: string;
@@ -19,6 +20,7 @@ interface TrustedPartnersProps {
 }
 
 export function TrustedPartners({ partners }: TrustedPartnersProps) {
+  const { format } = useCurrency();
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -45,7 +47,7 @@ export function TrustedPartners({ partners }: TrustedPartnersProps) {
                   <VerificationBadge tier={partner.verificationTier} showIcon={false} />
                 </div>
                 <p className="text-lg font-bold text-accent font-mono mt-1">
-                  ${(partner.ytdRevenue).toLocaleString()} <span className="text-xs font-normal">YTD REVENUE</span>
+                  {format(partner.ytdRevenue)} <span className="text-xs font-normal">YTD REVENUE</span>
                 </p>
               </div>
             </div>
@@ -57,7 +59,7 @@ export function TrustedPartners({ partners }: TrustedPartnersProps) {
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xl font-bold font-mono">${partner.pricePerMT.toLocaleString()}</span>
+                <span className="text-xl font-bold font-mono">{format(partner.pricePerMT)}</span>
                 <span className="text-xs text-muted-foreground"> /MT</span>
               </div>
               <span className="text-[10px] text-muted-foreground px-2 py-0.5 bg-secondary/50 rounded">

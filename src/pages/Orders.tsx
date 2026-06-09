@@ -6,6 +6,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { StatsGridSkeleton, QuoteListSkeleton } from "@/components/ui/skeleton-loaders";
 import { Package, Truck, CheckCircle, Clock, DollarSign, AlertCircle } from "lucide-react";
 import { useOrders } from "@/hooks/useOrders";
+import { useCurrency } from "@/hooks/useCurrency";
 import { SkillRecommendations } from "@/components/skills/SkillRecommendations";
 import { format } from "date-fns";
 
@@ -28,6 +29,7 @@ interface OrderRow {
 
 export default function Orders() {
   const { data: orders, isLoading, error } = useOrders();
+  const { format: formatCurrency } = useCurrency();
 
   const columns = [
     {
@@ -49,7 +51,7 @@ export default function Orders() {
       header: "Total",
       render: (order: OrderRow) => (
         <span className="font-mono font-semibold text-accent">
-          {order.currency} {order.total_amount?.toLocaleString() || "0"}
+          {formatCurrency(order.total_amount || 0)}
         </span>
       ),
     },
@@ -85,10 +87,10 @@ export default function Orders() {
     { label: "Total Orders", value: safeOrders.length, icon: Package },
     { label: "In Transit", value: safeOrders.filter((o) => o.status === "shipped").length, icon: Truck },
     { label: "Delivered", value: safeOrders.filter((o) => o.status === "delivered").length, icon: CheckCircle },
-    { 
-      label: "Total Value", 
-      value: `$${(safeOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0) / 1000000).toFixed(2)}M`, 
-      icon: DollarSign 
+    {
+      label: "Total Value",
+      value: formatCurrency(safeOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)),
+      icon: DollarSign
     },
   ];
 

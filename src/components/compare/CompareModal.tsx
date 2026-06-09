@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCompare } from "@/context/CompareContext";
 import { X, CheckCircle, XCircle, Minus } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface CompareModalProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface CompareModalProps {
 
 export function CompareModal({ open, onOpenChange }: CompareModalProps) {
   const { items, removeItem, clearAll } = useCompare();
+  const { format: formatCurrency } = useCurrency();
 
   if (items.length === 0) {
     return null;
@@ -37,7 +39,7 @@ export function CompareModal({ open, onOpenChange }: CompareModalProps) {
   const formatValue = (value: unknown, format?: string): string => {
     if (value === null || value === undefined) return "-";
     if (format === "currency" && typeof value === "number") {
-      return `$${value.toLocaleString()}`;
+      return formatCurrency(value);
     }
     if (typeof value === "boolean") {
       return value ? "Yes" : "No";

@@ -2,6 +2,22 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Package, Beaker, TrendingUp } from "lucide-react";
 import { VerificationBadge } from "@/components/shared/VerificationBadge";
+import { useCurrency } from "@/hooks/useCurrency";
+
+// Numeric purities get "%"; non-numeric grade labels render clean & title-cased.
+function formatPurity(purity: string | number | null | undefined): string {
+  if (purity === null || purity === undefined || purity === "") return "—";
+  const raw = String(purity).trim();
+  const numeric = Number(raw);
+  if (raw !== "" && !Number.isNaN(numeric)) {
+    return `${numeric}%`;
+  }
+  return raw
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 interface Product {
   id: string;
@@ -21,13 +37,7 @@ interface ProductListProps {
 }
 
 export function ProductList({ products }: ProductListProps) {
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
+  const { format: formatPrice } = useCurrency();
 
   const getAvailabilityColor = (availability: string) => {
     switch (availability) {
@@ -103,14 +113,14 @@ export function ProductList({ products }: ProductListProps) {
                 </Badge>
               </td>
               <td className="py-4 px-4 hidden sm:table-cell">
-                <span className="font-mono">{product.purity_level}%</span>
+                <span className="font-mono">{formatPurity(product.purity_level)}</span>
               </td>
               <td className="py-4 px-4 text-right font-mono hidden lg:table-cell">
                 {product.min_order_quantity || "—"} {product.unit}
               </td>
               <td className="py-4 px-4 text-right">
                 <p className="font-mono font-bold text-primary">
-                  {formatPrice(product.price_per_unit, product.currency)}
+                  {formatPrice(product.price_per_unit)}
                 </p>
                 <p className="text-xs text-muted-foreground">/{product.unit}</p>
               </td>

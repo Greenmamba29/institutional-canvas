@@ -9,9 +9,14 @@ import React from 'react';
 import { useSkillRecommendations } from '@/hooks/useSkillRecommendations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import {
+  getSkillDisplayName,
+  getPriorityLabel,
+  getPriorityChipClasses,
+} from './skillDisplay';
 
 interface SkillRecommendationsProps {
   maxItems?: number;
@@ -54,7 +59,7 @@ export function SkillRecommendations({
             className="gap-1"
           >
             <Sparkles className="h-3 w-3 text-primary" />
-            {rec.displayName}
+            {getSkillDisplayName(rec.skillName, rec.displayName)}
           </Button>
         ))}
       </div>
@@ -80,10 +85,17 @@ export function SkillRecommendations({
           >
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-medium">{rec.displayName}</span>
-                <Badge variant="secondary" className="text-xs">
-                  Priority: {rec.priority}
-                </Badge>
+                <span className="font-medium">
+                  {getSkillDisplayName(rec.skillName, rec.displayName)}
+                </span>
+                <span
+                  className={cn(
+                    'inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none',
+                    getPriorityChipClasses(rec.priority)
+                  )}
+                >
+                  {getPriorityLabel(rec.priority)}
+                </span>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 {rec.reason}

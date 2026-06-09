@@ -1,6 +1,9 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useCurrency } from "@/hooks/useCurrency";
 import { useOrganization } from "@/context/OrganizationContext";
 import { useRole } from "@/context/RoleContext";
 import { useAuth } from "@/context/AuthContext";
@@ -120,6 +123,41 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const { user, signOut } = useAuth();
   const { isSuperAdmin } = useIsSuperAdmin();
   const { data: sidebarCounts } = useSidebarCounts();
+  const { format } = useCurrency();
+
+  // Real supplier-terminal metrics for the profile card (no mock figures).
+  // TOTAL SALES = sum of settled (delivered) orders fulfilled by this supplier org.
+  // LIVE RFQs    = count of open (submitted) RFQs raised by this org.
+  const supplierOrgId = currentOrg?.id ?? null;
+  const { data: supplierStats } = useQuery({
+    queryKey: ['supplier-terminal-stats', supplierOrgId],
+    enabled: viewMode === 'supplier' && !!supplierOrgId,
+    staleTime: 2 * 60 * 1000,
+    queryFn: async () => {
+      const [ordersRes, rfqsRes] = await Promise.all([
+        supabase
+          .from('orders')
+          .select('total_amount, status')
+          .eq('supplier_id', supplierOrgId as string),
+        supabase
+          .from('rfqs')
+          .select('id', { count: 'exact', head: true })
+          .eq('organization_id', supplierOrgId as string)
+          .eq('status', 'submitted'),
+      ]);
+
+      // Realized sales = settled (delivered) orders, matching the dashboard's
+      // "SETTLED ORDERS" definition.
+      const totalSales = (ordersRes.data ?? [])
+        .filter((o) => o.status === 'delivered')
+        .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+
+      return {
+        totalSales,
+        liveRfqCount: rfqsRes.count ?? 0,
+      };
+    },
+  });
 
   // Map paths to dynamic counts from real DB queries
   const dynamicCounts: Record<string, number | undefined> = useMemo(() => ({
@@ -222,7 +260,9 @@ export function LayoutShell({ children }: LayoutShellProps) {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-muted-foreground">TOTAL SALES</span>
-              <span className="font-mono font-bold text-accent">$3.75M</span>
+              <span className="font-mono font-bold text-accent">
+                {format(supplierStats?.totalSales ?? 0)}
+              </span>
             </div>
             <div className="p-2 rounded-lg bg-secondary/30 border border-border/30">
               <div className="flex items-center gap-2">
@@ -231,7 +271,11 @@ export function LayoutShell({ children }: LayoutShellProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium truncate">{userDisplayName}</p>
-                  <p className="text-[10px] text-primary">1X LIVE RFQ • $47.3K</p>
+                  {supplierStats && supplierStats.liveRfqCount > 0 && (
+                    <p className="text-[10px] text-primary">
+                      {supplierStats.liveRfqCount} LIVE RFQ{supplierStats.liveRfqCount === 1 ? '' : 's'}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

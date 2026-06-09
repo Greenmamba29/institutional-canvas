@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Filter, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export interface FilterState {
   verificationTier: string[];
@@ -61,6 +62,7 @@ const AVAILABILITY_OPTIONS = [
 
 export function SupplierFilters({ filters, onFiltersChange, onReset }: SupplierFiltersProps) {
   const [open, setOpen] = useState(false);
+  const { format: formatCurrency } = useCurrency();
 
   const activeFiltersCount = 
     filters.verificationTier.length +
@@ -153,7 +155,7 @@ export function SupplierFilters({ filters, onFiltersChange, onReset }: SupplierF
       {/* Price Range */}
       <div className="space-y-3">
         <Label className="text-sm font-medium">
-          Price Range (USD/ton)
+          Price Range (per ton)
         </Label>
         <div className="px-2">
           <Slider
@@ -167,8 +169,8 @@ export function SupplierFilters({ filters, onFiltersChange, onReset }: SupplierF
             className="w-full"
           />
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
-            <span>${filters.priceRange[0].toLocaleString()}</span>
-            <span>${filters.priceRange[1].toLocaleString()}</span>
+            <span>{formatCurrency(filters.priceRange[0])}</span>
+            <span>{formatCurrency(filters.priceRange[1])}</span>
           </div>
         </div>
       </div>

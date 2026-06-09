@@ -30,10 +30,10 @@ export const GMVSummaryPanelConnected = forwardRef<HTMLDivElement>((_, ref) => {
   return (
     <GMVSummaryPanel
       ref={ref}
-      gmvYTD={gmvStats?.gmvYTD || 0}
-      changePercent={gmvStats?.changePercent || 0}
-      suppliersVerified={gmvStats?.suppliersVerified || 0}
-      buyersVerified={gmvStats?.buyersVerified || 0}
+      gmvYTD={gmvStats?.gmvYTD ?? 0}
+      changePercent={gmvStats?.changePercent ?? null}
+      suppliersVerified={gmvStats?.suppliersVerified ?? 0}
+      buyersVerified={gmvStats?.buyersVerified ?? 0}
       sparklineData={sparklineData}
     />
   );
