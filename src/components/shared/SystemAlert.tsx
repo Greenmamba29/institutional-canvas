@@ -16,13 +16,15 @@ export function SystemAlert({ message, actionLabel = "VIEW DETAILS", onAction }:
           <span className="text-foreground">{message}</span>
         </span>
       </div>
-      <button
-        onClick={onAction}
-        className="flex items-center gap-1 text-xs font-semibold text-accent hover:text-accent/80 transition-colors shrink-0"
-      >
-        {actionLabel}
-        <ArrowRight className="h-3 w-3" />
-      </button>
+      {onAction && (
+        <button
+          onClick={onAction}
+          className="flex items-center gap-1 text-xs font-semibold text-accent hover:text-accent/80 transition-colors shrink-0"
+        >
+          {actionLabel}
+          <ArrowRight className="h-3 w-3" />
+        </button>
+      )}
     </div>
   );
 }

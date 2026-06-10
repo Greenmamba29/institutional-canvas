@@ -1,4 +1,5 @@
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import { useCurrency } from '@/hooks/useCurrency';
 
 interface ChartDataPoint {
@@ -16,6 +17,7 @@ interface GMVChartProps {
 
 export function GMVChart({ data, title = "Daily GMV & Fees", subtitle = "30-DAY AGGREGATED REVENUE STREAM", totalGMV }: GMVChartProps) {
   const { format } = useCurrency();
+  const navigate = useNavigate();
   return (
     <div className="glass-panel rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
@@ -75,7 +77,10 @@ export function GMVChart({ data, title = "Daily GMV & Fees", subtitle = "30-DAY 
             <p className="text-lg font-bold font-mono">{format(totalGMV)}</p>
           </div>
         )}
-        <button className="text-xs font-semibold text-accent hover:text-accent/80 transition-colors ml-auto">
+        <button
+          onClick={() => navigate('/analytics')}
+          className="text-xs font-semibold text-accent hover:text-accent/80 transition-colors ml-auto"
+        >
           Performance →
         </button>
       </div>

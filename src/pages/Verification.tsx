@@ -8,6 +8,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NewVerificationDialog } from "@/components/verification/NewVerificationDialog";
 import { ShieldCheck, Clock, AlertTriangle, CheckCircle, XCircle, FileSearch, Building2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -108,6 +109,7 @@ const columns = [
 
 export default function Verification() {
   const [activeTab, setActiveTab] = useState('all');
+  const [emptyStateDialogOpen, setEmptyStateDialogOpen] = useState(false);
   const { data: verifications = [], isLoading, error } = useVerificationRequests();
 
   const tabs = [
@@ -144,10 +146,7 @@ export default function Verification() {
 
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">Lithium & Recycling Verification</h1>
-          <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            <ShieldCheck className="h-4 w-4 mr-2" />
-            New Verification
-          </Button>
+          <NewVerificationDialog />
         </div>
 
         {/* Stats Cards */}
@@ -212,16 +211,22 @@ export default function Verification() {
             <p className="text-muted-foreground">Failed to load verification requests</p>
           </div>
         ) : filteredData.length === 0 ? (
-          <EmptyState
-            icon={ShieldCheck}
-            title="No verification requests"
-            description="No verification requests found for the current filter."
-            action={{
-              label: 'Submit Verification',
-              onClick: () => console.log('Submit verification'),
-              icon: ShieldCheck,
-            }}
-          />
+          <>
+            <EmptyState
+              icon={ShieldCheck}
+              title="No verification requests"
+              description="No verification requests found for the current filter."
+              action={{
+                label: 'Submit Verification',
+                onClick: () => setEmptyStateDialogOpen(true),
+                icon: ShieldCheck,
+              }}
+            />
+            <NewVerificationDialog
+              open={emptyStateDialogOpen}
+              onOpenChange={setEmptyStateDialogOpen}
+            />
+          </>
         ) : (
           <DataTable
             columns={columns}

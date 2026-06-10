@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { VerificationBadge } from '@/components/shared/VerificationBadge';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
@@ -22,6 +24,16 @@ interface TrustedPartnersProps {
 
 export function TrustedPartners({ partners }: TrustedPartnersProps) {
   const { format } = useCurrency();
+  const navigate = useNavigate();
+  const [heldIds, setHeldIds] = useState<Set<string>>(new Set());
+
+  const toggleHold = (id: string) =>
+    setHeldIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -72,9 +84,27 @@ export function TrustedPartners({ partners }: TrustedPartnersProps) {
             </div>
 
             <div className="flex items-center gap-2 pt-2 border-t border-border/30">
-              <Button variant="outline" size="sm" className="flex-1 text-xs">HOLD</Button>
-              <Button variant="outline" size="sm" className="flex-1 text-xs">MORE DETAILS</Button>
-              <Button size="sm" className="flex-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground">
+              <Button
+                variant={heldIds.has(partner.id) ? 'secondary' : 'outline'}
+                size="sm"
+                className="flex-1 text-xs"
+                onClick={() => toggleHold(partner.id)}
+              >
+                {heldIds.has(partner.id) ? 'ON HOLD' : 'HOLD'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs"
+                onClick={() => navigate('/marketplace')}
+              >
+                MORE DETAILS
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 text-xs bg-accent hover:bg-accent/90 text-accent-foreground"
+                onClick={() => navigate('/deals')}
+              >
                 ESCROW <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
             </div>
@@ -82,7 +112,7 @@ export function TrustedPartners({ partners }: TrustedPartnersProps) {
         ))}
       </div>
 
-      <Button variant="outline" className="w-full text-xs">
+      <Button variant="outline" className="w-full text-xs" onClick={() => navigate('/marketplace')}>
         VIEW GLOBAL DIRECTORY
       </Button>
     </div>

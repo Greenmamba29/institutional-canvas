@@ -1,13 +1,16 @@
 
+import { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusPill } from '@/components/shared/StatusPill';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useOrganization } from '@/context/OrganizationContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Package, ArrowUpRight } from 'lucide-react';
+import { Package, ArrowUpRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { Database } from '@/integrations/supabase/types';
+import { NewPurchaseDialog } from '@/components/purchases/NewPurchaseDialog';
+import { PurchaseDetailsDialog } from '@/components/purchases/PurchaseDetailsDialog';
 
 type Purchase = Database['public']['Tables']['purchases']['Row'];
 
@@ -25,6 +28,13 @@ const statusMap: Record<string, StatusType> = {
 export default function Purchases() {
   const { data: purchases, isLoading, error } = usePurchases();
   const { currentOrg } = useOrganization();
+  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const openDetails = (item: Purchase) => {
+    setSelectedPurchase(item);
+    setDetailsOpen(true);
+  };
 
   const columns = [
     {
@@ -67,8 +77,13 @@ export default function Purchases() {
     {
       key: 'actions',
       header: '',
-      render: () => (
-        <Button variant="ghost" size="sm" className="gap-1">
+      render: (item: Purchase) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1"
+          onClick={() => openDetails(item)}
+        >
           View
           <ArrowUpRight className="h-3 w-3" />
         </Button>
@@ -82,12 +97,7 @@ export default function Purchases() {
         <PageHeader
           title="Purchase Orders"
           description={`Manage purchase orders for ${currentOrg?.name || 'your organization'}`}
-          actions={
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Purchase
-            </Button>
-          }
+          actions={<NewPurchaseDialog />}
         />
 
         {isLoading ? (
@@ -139,13 +149,16 @@ export default function Purchases() {
             <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
               Create your first purchase order to start tracking transactions with suppliers.
             </p>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create Purchase Order
-            </Button>
+            <NewPurchaseDialog />
           </div>
         )}
       </div>
+
+      <PurchaseDetailsDialog
+        purchase={selectedPurchase}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+      />
     </>
   );
 }

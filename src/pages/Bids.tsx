@@ -142,9 +142,11 @@ export default function Bids() {
           description="Track and manage your bid activity"
           icon={Activity}
           actions={
-            <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Place Bid
+            <Button asChild className="bg-gradient-primary text-primary-foreground hover:opacity-90">
+              <Link to="/auctions">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Place Bid
+              </Link>
             </Button>
           }
         />
