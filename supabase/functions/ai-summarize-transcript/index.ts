@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -99,19 +99,22 @@ serve(async (req) => {
     runId = runData?.[0]?.run_id;
     console.log(`[ai-summarize-transcript] Started AI run: ${runId}, shadow: ${isShadow}`);
 
-    // Call Lovable AI Gateway for summarization
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY secret is not set');
+    }
+
+    // Call Anthropic API for summarization
+    const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a business meeting analyst for LithiumBuy, a B2B lithium marketplace. 
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: `You are a business meeting analyst for LithiumBuy, a B2B lithium marketplace.
 Analyze TeleBuy video call transcripts and extract:
 1. A concise summary (2-3 sentences)
 2. Key discussion points (bullet list)
@@ -126,8 +129,8 @@ Format your response as JSON:
   "action_items": [{"item": "string", "owner": "string", "deadline": "string or null"}],
   "pricing_discussed": {"mentioned": boolean, "details": "string or null"},
   "next_steps": ["step1", "step2"]
-}`
-          },
+}`,
+        messages: [
           {
             role: 'user',
             content: `Analyze this TeleBuy session transcript:\n\n${transcriptText}`
@@ -138,12 +141,12 @@ Format your response as JSON:
 
     if (!aiResponse.ok) {
       const error = await aiResponse.text();
-      console.error(`[ai-summarize-transcript] AI Gateway error: ${error}`);
-      throw new Error(`AI Gateway error: ${error}`);
+      console.error(`[ai-summarize-transcript] Anthropic API error: ${error}`);
+      throw new Error(`Anthropic API error: ${error}`);
     }
 
     const aiData = await aiResponse.json();
-    const analysisText = aiData.choices?.[0]?.message?.content;
+    const analysisText = aiData.content?.[0]?.text;
 
     // Parse the JSON response
     let analysis;

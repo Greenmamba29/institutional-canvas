@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -161,17 +161,23 @@ Format your response as JSON:
   "confidence_score": 0.0-1.0
 }`;
 
-    // Call Lovable AI Gateway
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY secret is not set');
+    }
+
+    // Call Anthropic API
+    const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: systemPrompt,
         messages: [
-          { role: 'system', content: systemPrompt },
           { role: 'user', content: `Analyze this document:\n\n${documentText}` }
         ],
       }),
@@ -179,12 +185,12 @@ Format your response as JSON:
 
     if (!aiResponse.ok) {
       const error = await aiResponse.text();
-      console.error(`[ai-process-rfq-document] AI Gateway error: ${error}`);
-      throw new Error(`AI Gateway error: ${error}`);
+      console.error(`[ai-process-rfq-document] Anthropic API error: ${error}`);
+      throw new Error(`Anthropic API error: ${error}`);
     }
 
     const aiData = await aiResponse.json();
-    const analysisText = aiData.choices?.[0]?.message?.content;
+    const analysisText = aiData.content?.[0]?.text;
 
     // Parse JSON response
     let analysis;
