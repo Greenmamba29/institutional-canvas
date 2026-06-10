@@ -28,19 +28,27 @@ interface Mapping {
   supabaseTable: string;
   upsertKey: string;
   fieldMap: FieldMap[];
+  // Skip rows where any of these Supabase column names would be null (NOT NULL guard).
+  skipIfNull?: string[];
 }
 
 const MAPPINGS: Mapping[] = [
   {
     airtableTable: "Grant Tracker", airtableTableId: "tblKTNtuoRcTrVZ02",
     supabaseTable: "grants", upsertKey: "airtable_id",
+    skipIfNull: ["title", "funding_source"],
     fieldMap: [
-      { airtableField: "__record_id__", supabaseColumn: "airtable_id", type: "text" },
-      { airtableField: "Program Name", supabaseColumn: "title", type: "text" },
-      { airtableField: "Agency", supabaseColumn: "funding_source", type: "select" },
-      { airtableField: "Amount Available", supabaseColumn: "amount_max", type: "number" },
-      { airtableField: "Deadline", supabaseColumn: "deadline", type: "date" },
-      { airtableField: "Status", supabaseColumn: "application_status", type: "select" },
+      { airtableField: "__record_id__",   supabaseColumn: "airtable_id",         type: "text" },
+      { airtableField: "Program Name",    supabaseColumn: "title",               type: "text" },
+      { airtableField: "Agency",          supabaseColumn: "funding_source",      type: "select" },
+      { airtableField: "Amount Available",supabaseColumn: "amount_max",          type: "number" },
+      { airtableField: "Deadline",        supabaseColumn: "deadline",            type: "date" },
+      { airtableField: "Status",          supabaseColumn: "application_status",  type: "select" },
+      // Grant ID = the opportunity_number for API-sourced grants (e.g. "DE-FOA-0003456").
+      // Also holds manual grant IDs entered by users (e.g. "NYC-DSNY-SWMP-2026").
+      // Storing it here prevents pull-sync from creating duplicate rows for grants
+      // already ingested by grant-ingest (which uses opportunity_number as its merge key).
+      { airtableField: "Grant ID",        supabaseColumn: "opportunity_number",  type: "text" },
     ],
   },
   {
@@ -58,59 +66,58 @@ const MAPPINGS: Mapping[] = [
   {
     airtableTable: "Market Prices", airtableTableId: "tblqDj6GHnkIS5T0K",
     supabaseTable: "price_indicators", upsertKey: "airtable_id",
+    skipIfNull: ["symbol", "region", "price"],
     fieldMap: [
       { airtableField: "__record_id__", supabaseColumn: "airtable_id", type: "text" },
-      { airtableField: "Product Type", supabaseColumn: "symbol", type: "text" },
-      { airtableField: "Region", supabaseColumn: "region", type: "text" },
-      { airtableField: "Price (USD)", supabaseColumn: "price", type: "number" },
-      { airtableField: "Last Updated", supabaseColumn: "observed_at", type: "date", fallbackNow: true },
-      { airtableField: "Source", supabaseColumn: "source", type: "text" },
+      // Real Airtable field names are lowercase snake_case (not Title Case).
+      { airtableField: "product_type", supabaseColumn: "symbol", type: "text" },
+      { airtableField: "region", supabaseColumn: "region", type: "text" },
+      { airtableField: "price_usd", supabaseColumn: "price", type: "number" },
+      { airtableField: "price_last_updated", supabaseColumn: "observed_at", type: "date", fallbackNow: true },
+      { airtableField: "source", supabaseColumn: "source", type: "text" },
       { supabaseColumn: "currency", type: "text", const: "USD" },
       { supabaseColumn: "unit", type: "text", const: "USD/tonne" },
       { supabaseColumn: "metadata", type: "jsonb", const: {} },
     ],
   },
-  {
-    airtableTable: "Dashboard KPIs", airtableTableId: "tbl07o9w6Pvmw1H7b",
-    supabaseTable: "market_kpis", upsertKey: "airtable_id",
-    fieldMap: [
-      { airtableField: "__record_id__", supabaseColumn: "airtable_id", type: "text" },
-      { airtableField: "Metric Name", supabaseColumn: "metric_name", type: "text" },
-      { airtableField: "Metric Value", supabaseColumn: "metric_value", type: "number" },
-      { airtableField: "Previous Value", supabaseColumn: "previous_value", type: "number" },
-      { airtableField: "Change Percent", supabaseColumn: "change_percent", type: "number" },
-      { airtableField: "Last Updated", supabaseColumn: "updated_at", type: "date", fallbackNow: true },
-      // trend intentionally NOT mapped (CHECK up|down|stable; no matching Airtable field → leave null)
-    ],
-  },
+  // NOTE: "Dashboard KPIs" (market_kpis) is intentionally NOT pulled here.
+  // KPIs are computed in Supabase (refresh_platform_kpis / refresh_market_kpis)
+  // and pushed to Airtable one-way by the airtable-push-sync function. Pulling
+  // them back would create a bidirectional conflict (and the old field-name
+  // mapping below was wrong — the real fields are lowercase metric_name, etc.).
   {
     airtableTable: "Market News", airtableTableId: "tblnC9QGonS7bL5p5",
     supabaseTable: "market_news", upsertKey: "airtable_id",
+    skipIfNull: ["title"],
     fieldMap: [
       { airtableField: "__record_id__", supabaseColumn: "airtable_id", type: "text" },
-      { airtableField: "Title", supabaseColumn: "title", type: "text" },
-      { airtableField: "Summary", supabaseColumn: "summary", type: "text" },
-      { airtableField: "Source", supabaseColumn: "source", type: "text" },
-      { airtableField: "URL", supabaseColumn: "url", type: "text" },
-      { airtableField: "Sentiment", supabaseColumn: "sentiment", type: "select" },
-      { airtableField: "Sentiment Score", supabaseColumn: "sentiment_score", type: "number" },
-      { airtableField: "Category", supabaseColumn: "category", type: "select" },
-      { airtableField: "Published At", supabaseColumn: "published_at", type: "date", fallbackNow: true },
+      // Real Airtable field names are lowercase snake_case (not Title Case).
+      // "Published At" does not exist; the real field is "date_published".
+      { airtableField: "title", supabaseColumn: "title", type: "text" },
+      { airtableField: "summary", supabaseColumn: "summary", type: "text" },
+      { airtableField: "source", supabaseColumn: "source", type: "text" },
+      { airtableField: "url", supabaseColumn: "url", type: "text" },
+      { airtableField: "sentiment", supabaseColumn: "sentiment", type: "select" },
+      { airtableField: "sentiment_score", supabaseColumn: "sentiment_score", type: "number" },
+      { airtableField: "category", supabaseColumn: "category", type: "select" },
+      { airtableField: "date_published", supabaseColumn: "published_at", type: "date", fallbackNow: true },
     ],
   },
   {
     airtableTable: "Arbitrage Opportunities", airtableTableId: "tbluQ7vKribFYHUY7",
     supabaseTable: "arbitrage_opportunities", upsertKey: "airtable_id",
+    skipIfNull: ["product_type", "buy_region", "sell_region", "buy_price", "sell_price", "profit_margin_percent"],
     fieldMap: [
       { airtableField: "__record_id__", supabaseColumn: "airtable_id", type: "text" },
-      { airtableField: "Product Type", supabaseColumn: "product_type", type: "text" },
-      { airtableField: "Buy Region", supabaseColumn: "buy_region", type: "text" },
-      { airtableField: "Sell Region", supabaseColumn: "sell_region", type: "text" },
-      { airtableField: "Buy Price", supabaseColumn: "buy_price", type: "number" },
-      { airtableField: "Sell Price", supabaseColumn: "sell_price", type: "number" },
-      { airtableField: "Profit Margin %", supabaseColumn: "profit_margin_percent", type: "number" },
-      { airtableField: "Status", supabaseColumn: "status", type: "select" },
-      { airtableField: "Detected At", supabaseColumn: "detected_at", type: "date", fallbackNow: true },
+      // Real Airtable field names are lowercase snake_case. "Status" and "Detected At"
+      // do not exist; the real timestamp field is "last_verified".
+      { airtableField: "product_type", supabaseColumn: "product_type", type: "text" },
+      { airtableField: "buy_region", supabaseColumn: "buy_region", type: "text" },
+      { airtableField: "sell_region", supabaseColumn: "sell_region", type: "text" },
+      { airtableField: "buy_price", supabaseColumn: "buy_price", type: "number" },
+      { airtableField: "sell_price", supabaseColumn: "sell_price", type: "number" },
+      { airtableField: "profit_margin_percent", supabaseColumn: "profit_margin_percent", type: "number" },
+      { airtableField: "last_verified", supabaseColumn: "detected_at", type: "date", fallbackNow: true },
     ],
   },
 ];
@@ -191,7 +198,10 @@ serve(async (req: Request) => {
     try {
       const records = await fetchAllAirtableRecords(mapping.airtableTableId, apiKey);
       // Skip rows missing a required mapped (non-const, non-fallback) value? Upsert and report errors.
-      const rows = records.map((r) => transformRecord(r, mapping));
+      const allRows = records.map((r) => transformRecord(r, mapping));
+      const rows = mapping.skipIfNull
+        ? allRows.filter((row) => mapping.skipIfNull!.every((col) => row[col] != null))
+        : allRows;
       if (rows.length === 0) continue;
       const batchSize = 500;
       for (let i = 0; i < rows.length; i += batchSize) {
