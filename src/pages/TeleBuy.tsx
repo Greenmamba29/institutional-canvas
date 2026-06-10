@@ -275,33 +275,62 @@ function ElevenLabsAgentPanel({ sessionId, agentRole = 'buyer' }: { sessionId: s
     : 'Neutral AI concierge for session facilitation and deal intelligence.';
 
   return (
-    <Card className="border-primary/20">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <span className="text-lg">🤖</span>
-            {agentName} — AI Concierge
-          </CardTitle>
-          <Badge variant="outline" className={status === 'active' ? 'bg-green-500/20 text-green-700 border-green-400' : ''}>
-            {status === 'active' ? '● Live' : status === 'loading' ? 'Connecting…' : 'Idle'}
-          </Badge>
-        </div>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{agentDesc}</p>
+        <Badge variant="outline" className={status === 'active' ? 'bg-green-500/20 text-green-700 border-green-400' : ''}>
+          {status === 'active' ? '● Live' : status === 'loading' ? 'Connecting…' : 'Idle'}
+        </Badge>
+      </div>
+      {status === 'error' && (
+        <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{errorMsg}</p>
+      )}
+      {status !== 'active' ? (
+        <Button onClick={handleStart} disabled={status === 'loading'} className="w-full" size="sm">
+          {status === 'loading' ? 'Connecting to agent…' : `Start ${agentName}`}
+        </Button>
+      ) : (
+        <Button onClick={handleStop} variant="destructive" className="w-full" size="sm">
+          End Agent Session
+        </Button>
+      )}
+      <div ref={containerRef} className="min-h-[80px]" />
+    </div>
+  );
+}
+
+type AgentRole = 'buyer' | 'supplier' | 'neutral';
+
+const AGENT_TABS: { role: AgentRole; label: string }[] = [
+  { role: 'buyer', label: 'Sterling' },
+  { role: 'supplier', label: 'Maxwell' },
+  { role: 'neutral', label: 'LB Agent' },
+];
+
+function AgentSelector({ sessionId }: { sessionId: string }) {
+  const [activeRole, setActiveRole] = useState<AgentRole>('buyer');
+  return (
+    <Card className="border-primary/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <span className="text-lg">🤖</span> AI Concierge
+        </CardTitle>
+        <div className="flex gap-1 mt-1">
+          {AGENT_TABS.map(({ role, label }) => (
+            <Button
+              key={role}
+              variant={activeRole === role ? 'default' : 'outline'}
+              size="sm"
+              className="text-xs h-7 px-3"
+              onClick={() => setActiveRole(role)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {status === 'error' && (
-          <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{errorMsg}</p>
-        )}
-        {status !== 'active' ? (
-          <Button onClick={handleStart} disabled={status === 'loading'} className="w-full" size="sm">
-            {status === 'loading' ? 'Connecting to agent…' : `Start ${agentName}`}
-          </Button>
-        ) : (
-          <Button onClick={handleStop} variant="destructive" className="w-full" size="sm">
-            End Agent Session
-          </Button>
-        )}
-        <div ref={containerRef} className="min-h-[80px]" />
+      <CardContent className="pt-2">
+        <ElevenLabsAgentPanel sessionId={sessionId} agentRole={activeRole} key={activeRole} />
       </CardContent>
     </Card>
   );
@@ -426,8 +455,8 @@ function SessionDetailView({ sessionId }: { sessionId: string }) {
           </Card>
         )}
         
-        {/* AI Agent Panel */}
-        <ElevenLabsAgentPanel sessionId={sessionId} agentRole="buyer" />
+        {/* AI Agent Panels */}
+        <AgentSelector sessionId={sessionId} />
 
         {/* Session Info */}
         {session.notes && (
