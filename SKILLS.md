@@ -12,6 +12,31 @@
 
 ---
 
+## MVP FIFO Orchestration Chain (Canonical)
+
+For MVP bug work, use this fixed skill chain in/out with minimal overhead:
+
+1. **Triage Skill**  
+   - Read `docs/MVP_BUG_LEDGER.md`
+   - Select oldest open item in FIFO order (Blocking first, then Non-blocking)
+   - Confirm owner + exit criteria
+
+2. **Implementation Skill**  
+   - Execute smallest change required to satisfy exit criteria
+   - Avoid unrelated refactors
+
+3. **Verification Skill**  
+   - Run focused checks/tests for the changed surface
+   - Record pass/fail evidence
+
+4. **Ledger Update Skill**  
+   - Update row status in `docs/MVP_BUG_LEDGER.md`
+   - Add closure evidence (PR/commit reference and date)
+
+**Rule:** Never skip the ledger read and never work items out of FIFO order within a queue.
+
+---
+
 ## Division of Responsibilities
 
 ### Frontend (Frontend)
