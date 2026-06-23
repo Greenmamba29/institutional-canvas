@@ -51,6 +51,9 @@ const CollectionSites = lazy(() => import("./pages/CollectionSites"));
 const CollectionWorkers = lazy(() => import("./pages/CollectionWorkers"));
 const ProcessingOrders = lazy(() => import("./pages/ProcessingOrders"));
 
+// Procurement Intelligence (pro+)
+const ProcurementIntelligence = lazy(() => import("./pages/ProcurementIntelligence"));
+
 // Enterprise-tier pages (deferred — rendered behind RoleProtectedRoute)
 const TeleBuy = lazy(() => import("./pages/TeleBuy"));
 const AIStudio = lazy(() => import("./pages/AIStudio"));
@@ -118,10 +121,11 @@ const AppContent = () => {
                 <Route path="/settings/company-verification" element={<CompanyVerification />} />
                 <Route path="/team" element={<Team />} />
 
-                {/* ── Pro routes — Analytics and Data Hub ── */}
+                {/* ── Pro routes — Analytics, Data Hub, Intelligence ── */}
                 <Route element={<RoleProtectedRoute requireSubscription="pro" />}>
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/data" element={<Data />} />
+                  <Route path="/procurement-intelligence" element={<ProcurementIntelligence />} />
                   <Route path="/compliance" element={<ComplianceDashboard />} />
                   <Route path="/compliance/inventory" element={<BatteryInventory />} />
                   <Route path="/compliance/sites" element={<CollectionSites />} />
