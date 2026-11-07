@@ -32,20 +32,27 @@ LithiumBuy is an institutional marketplace for lithium procurement and battery r
 
 ## 📋 Documentation Index
 
-### 🚀 Deployment & Setup
-- **[VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md)** - Complete Vercel deployment guide with environment variables
-- **[ARCHITECTURAL_REVIEW.md](./ARCHITECTURAL_REVIEW.md)** - Principal-level architecture review and uplift plan
-- **[QUICK_START.md](./QUICK_START.md)** - 30-minute setup guide
+### Current
+- **[CLAUDE.md](./CLAUDE.md)** - Architecture, edge-function security model, environment variables, cron setup
+- **[LITHIUMBUY_MASTER_PLAN.md](./docs/plan/LITHIUMBUY_MASTER_PLAN.md)** - Product plan, research synthesis and roadmap
+- **[SECURITY.md](./SECURITY.md)** - Security policy
 
-### 📖 Development Guides
-- **[MVP_COMPLETE_PLAN.md](./MVP_COMPLETE_PLAN.md)** - Complete phase-by-phase implementation plan
-- **[PHASE_5_7_READY.md](./PHASE_5_7_READY.md)** - Ready-to-execute tasks for Phases 5-7
-- **[PICA_OS_WORKFLOW.md](./PICA_OS_WORKFLOW.md)** - Accelerated development with PicaOS orchestration
+### Archived (historical, may be outdated; see [docs/archive](./docs/archive/README.md))
 
-### 🔧 Technical Reference
-- **[BACKEND_VERIFICATION.md](./BACKEND_VERIFICATION.md)** - Complete backend audit (52 tables, 24 RPCs)
-- **[SKILLS.md](./SKILLS.md)** - API reference with all RPC functions
-- **[MVP_STATUS.md](./MVP_STATUS.md)** - Progress tracker
+#### 🚀 Deployment & Setup
+- **[VERCEL_DEPLOYMENT.md](./docs/archive/VERCEL_DEPLOYMENT.md)** - Complete Vercel deployment guide with environment variables
+- **[ARCHITECTURAL_REVIEW.md](./docs/archive/ARCHITECTURAL_REVIEW.md)** - Principal-level architecture review and uplift plan
+- **[QUICK_START.md](./docs/archive/QUICK_START.md)** - 30-minute setup guide
+
+#### 📖 Development Guides
+- **[MVP_COMPLETE_PLAN.md](./docs/archive/MVP_COMPLETE_PLAN.md)** - Complete phase-by-phase implementation plan
+- **[PHASE_5_7_READY.md](./docs/archive/PHASE_5_7_READY.md)** - Ready-to-execute tasks for Phases 5-7
+- **[PICA_OS_WORKFLOW.md](./docs/archive/PICA_OS_WORKFLOW.md)** - Accelerated development with PicaOS orchestration
+
+#### 🔧 Technical Reference
+- **[BACKEND_VERIFICATION.md](./docs/archive/BACKEND_VERIFICATION.md)** - Complete backend audit (52 tables, 24 RPCs)
+- **[SKILLS.md](./docs/archive/SKILLS.md)** - API reference with all RPC functions
+- **[MVP_STATUS.md](./docs/archive/MVP_STATUS.md)** - Progress tracker
 
 ---
 
@@ -206,9 +213,9 @@ All data is isolated by `org_id` using Supabase RLS.
 ## 📞 Support
 
 **Documentation**: See `/docs` folder  
-**Backend Status**: [BACKEND_VERIFICATION.md](./BACKEND_VERIFICATION.md)  
-**Deployment Guide**: [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md)  
-**Development Workflow**: [PICA_OS_WORKFLOW.md](./PICA_OS_WORKFLOW.md)
+**Backend Status**: [BACKEND_VERIFICATION.md](./docs/archive/BACKEND_VERIFICATION.md)  
+**Deployment Guide**: [VERCEL_DEPLOYMENT.md](./docs/archive/VERCEL_DEPLOYMENT.md)  
+**Development Workflow**: [PICA_OS_WORKFLOW.md](./docs/archive/PICA_OS_WORKFLOW.md)
 
 **Project Maintainer**: @paco  
 

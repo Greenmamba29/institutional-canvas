@@ -321,7 +321,7 @@ async function deploy() {
   console.log('Next Steps:');
   console.log('1. Visit http://localhost:5173/telebuy');
   console.log('2. Test language detection and routing');
-  console.log('3. Update voice IDs if needed (see VOICE_SETUP_GUIDE.md)\n');
+  console.log('3. Update voice IDs if needed (see docs/archive/VOICE_SETUP_GUIDE.md)\n');
 }
 
 // Run deployment

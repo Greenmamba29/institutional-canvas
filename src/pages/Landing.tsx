@@ -21,10 +21,7 @@ import { useAuth } from '@/context/AuthContext';
 import { STRIPE_PRODUCTS } from '@/lib/stripe/config';
 import { usePublicLandingStats, formatCompactUsd } from '@/hooks/usePublicLandingStats';
 
-// Lazy load images for performance
-const lithiumHeroImg = new URL('@/assets/landing/lithium-crystal-hero.png', import.meta.url).href;
-const telebuyImg = new URL('@/assets/landing/telebuy-interface.png', import.meta.url).href;
-const dataVizImg = new URL('@/assets/landing/data-visualization.png', import.meta.url).href;
+const telebuyImg = new URL('@/assets/landing/telebuy-interface.webp', import.meta.url).href;
 
 // Memoized components for performance
 const StatCard = memo(({ value, label, color }: { value: string; label: string; color: string }) => (
