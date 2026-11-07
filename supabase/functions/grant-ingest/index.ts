@@ -12,13 +12,14 @@
 //     USASpending.gov). Set via: supabase secrets set GRANTS_GOV_API_KEY=<token>
 //   - USASpending.gov: no auth required — genuinely public API.
 //
-// Auth: absent/empty x-cron-secret allowed; non-empty header must match CRON_SECRET.
+// Auth: service-role bearer or x-cron-secret matching CRON_SECRET (fails closed).
 //
 // Env: AIRTABLE_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-//      GRANTS_GOV_API_KEY (optional), CRON_SECRET (optional)
+//      GRANTS_GOV_API_KEY (optional), CRON_SECRET
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCronOrService, withCors } from "../_shared/security.ts";
 
 const AIRTABLE_BASE_ID = "appu9fRT4qFBCf8wL";
 const GRANT_TRACKER_TABLE_ID = "tblKTNtuoRcTrVZ02";
@@ -219,24 +220,16 @@ async function searchUsaSpending(): Promise<Record<string, unknown>[]> {
 // ---- CORS / main serve -------------------------------------------------------
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
 
-serve(async (req: Request) => {
+serve(withCors(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  // Auth: only reject if CRON_SECRET is set AND a wrong non-empty header was provided.
-  // pg_cron calls arrive with no x-cron-secret header — that is always allowed.
-  const cronSecret = Deno.env.get("CRON_SECRET");
-  const provided   = req.headers.get("x-cron-secret");
-  if (cronSecret && provided && provided !== cronSecret) {
-    return new Response(
-      JSON.stringify({ ok: false, error: "unauthorized" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  }
+  // Auth: service role, or x-cron-secret matching CRON_SECRET (fails closed).
+  const auth = requireCronOrService(req);
+  if (auth !== true) return auth;
 
   const airtableKey  = Deno.env.get("AIRTABLE_API_KEY");
   const supabaseUrl  = Deno.env.get("SUPABASE_URL");
@@ -438,4 +431,4 @@ serve(async (req: Request) => {
     JSON.stringify({ ok, found, upserted, airtable_synced: airtableSynced, errors, warnings }),
     { status: ok ? 200 : 207, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
-});
+}));

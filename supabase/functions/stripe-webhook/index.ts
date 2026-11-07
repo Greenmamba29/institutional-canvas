@@ -19,12 +19,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
+import { withCors } from '../_shared/security.ts';
 
 const GRACE_PERIOD_DAYS = 7;         // past_due → access revoked after this many days
 const DOWNGRADE_WINDOW_DAYS = 30;    // cancelled → evidence vault deletion after this many days
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -35,7 +35,7 @@ function json(body: unknown, status = 200) {
   });
 }
 
-serve(async (req) => {
+serve(withCors(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   // ── Env guards ──────────────────────────────────────────────────────────────
@@ -124,7 +124,7 @@ serve(async (req) => {
     }).catch(() => {/* best-effort */});
     return json({ error: 'Processing error' }, 500);
   }
-});
+}));
 
 // ── checkout.session.completed ─────────────────────────────────────────────────
 // Stripe fires this once after the customer completes Checkout.

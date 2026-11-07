@@ -46,7 +46,14 @@ supabase secrets set STRIPE_WEBHOOK_SECRET=xxx
 supabase secrets set AIRTABLE_API_KEY=pat_xxx
 supabase secrets set AIRTABLE_BASE_ID=appu9fRT4qFBCf8wL
 supabase secrets set AIRTABLE_WEBHOOK_SECRET=$(openssl rand -hex 32)
+supabase secrets set AIRTABLE_GRANT_WEBHOOK_SECRET=$(openssl rand -hex 32)
+supabase secrets set AIRTABLE_COMPLIANCE_WEBHOOK_SECRET=$(openssl rand -hex 32)
+supabase secrets set CRON_SECRET=<value>          # also store in Vault, see Cron Jobs
+supabase secrets set ALLOWED_ORIGINS=https://*.vercel.app   # optional extra CORS origins
 ```
+
+All webhook and cron secrets **fail closed**: if a secret is unset, the
+function rejects every request (503) instead of letting it through.
 
 ## Migration Naming
 
@@ -54,16 +61,30 @@ Format: `YYYYMMDDHHMMSS_description.sql` or `YYYYMMDD000000_description.sql` for
 
 ## Edge Functions
 
-| Function | JWT Required | Purpose |
-|----------|-------------|---------|
-| airtable-proxy | yes | Proxy Airtable reads to frontend |
-| airtable-crud | no* | Full CRUD with subscription gating |
-| airtable-grants | yes | Grant intelligence actions |
-| airtable-market-webhook | no | Inbound webhook from Airtable |
-| sync-to-airtable | no | Write Supabase data to Airtable |
-| stripe-webhook | no | Stripe event processing |
+All functions set `verify_jwt = false` in `supabase/config.toml` and check the
+caller inside the handler. Shared helpers live in
+`supabase/functions/_shared/security.ts` (tests: `security.test.ts`, run with
+`deno test --allow-env supabase/functions/_shared/security.test.ts`).
 
-*airtable-crud validates the JWT manually inside the handler.
+| Function | Caller check (in handler) | Purpose |
+|----------|---------------------------|---------|
+| airtable-proxy | user JWT | Proxy Airtable reads to frontend |
+| airtable-crud | user JWT + subscription | Full CRUD with subscription gating |
+| airtable-grants | user JWT | Grant intelligence actions |
+| sync-to-airtable | user JWT or service role | Write Supabase data to Airtable |
+| setup-airtable-auctions | super admin or service role | One-off Airtable schema setup |
+| airtable-market-webhook | `x-webhook-token` = `AIRTABLE_WEBHOOK_SECRET` (or HMAC in `x-airtable-signature`) | Inbound webhook from Airtable |
+| airtable-grant-webhook | `x-webhook-token` = `AIRTABLE_GRANT_WEBHOOK_SECRET` | Inbound webhook from Airtable |
+| airtable-compliance-webhook | `x-webhook-token` = `AIRTABLE_COMPLIANCE_WEBHOOK_SECRET` | Inbound webhook from Airtable |
+| close-auctions, airtable-pull-sync, airtable-push-sync, market-intel-ingest, grant-ingest | service role or `x-cron-secret` = `CRON_SECRET` | Scheduled jobs |
+| stripe-webhook | Stripe signature | Stripe event processing |
+
+CORS: every function is wrapped in `withCors`, which only echoes origins on the
+allowlist (lithiumbuy.com, www, localhost:8080, plus `ALLOWED_ORIGINS`).
+
+New SECURITY DEFINER SQL functions get PUBLIC execute by default. Every
+migration that creates one must `REVOKE EXECUTE ... FROM PUBLIC, anon` and
+`GRANT EXECUTE ... TO authenticated` (see `20261107000200_*`).
 
 ## Feature Flags
 
@@ -92,7 +113,7 @@ LithiumBuy Phase 2 adds a Critical Minerals Recycling & Compliance OS.
 - **California**: AB 2440 (e-waste fees on battery products), SB 1215
 - **New Jersey**: Electric and Hybrid Vehicle Battery Management Act — producer registration 2025, reporting 2026, disposal ban 2027
 - **Washington**: SB 5144 — EPR stewardship organizations required by 2027
-- **EU**: Battery Regulation 2023/1542 — minimum recycled content (12% cobalt, 4% lithium, 4% nickel by 2030), mandatory labeling 2025–27
+- **EU**: Battery Regulation 2023/1542 — minimum recycled content (verify figures with counsel: the regulation text reads 16% cobalt, 6% lithium, 6% nickel from 2031), mandatory labeling 2025–27
 
 ### Compliance Tables (Supabase)
 | Table | Purpose | RLS |
@@ -115,11 +136,22 @@ Market data:      https://<project>.supabase.co/functions/v1/airtable-market-web
 1. In your Airtable base, go to Automations
 2. Create automation: Trigger = "When a record is updated"
 3. Action = "Send webhook" → POST to the appropriate URL above
-4. Headers: `x-airtable-signature: <your webhook secret>` and `Content-Type: application/json`
+4. Headers: `x-webhook-token: <the matching webhook secret>` and `Content-Type: application/json`
+   (market: `AIRTABLE_WEBHOOK_SECRET`, grant: `AIRTABLE_GRANT_WEBHOOK_SECRET`, compliance: `AIRTABLE_COMPLIANCE_WEBHOOK_SECRET`)
 5. Body format: `{ "table": "<TableName>", "action": "update", "record": <fields>, "recordId": "<id>" }`
 
 ### Cron Jobs
-The `close-auctions` function runs every 5 minutes. When calling it manually, pass:
+pg_cron calls close-auctions (every 5 min), airtable-pull-sync and airtable-push-sync
+(15 min), market-intel-ingest (30 min) and grant-ingest (daily). Each job sends
+`x-cron-secret` read from Supabase Vault (migration `20261107000100_*`). One-time setup,
+same value in both places:
+```bash
+supabase secrets set CRON_SECRET=<value>
+```
+```sql
+select vault.create_secret('<value>', 'cron_secret');
+```
+When calling a job manually, pass:
 ```bash
 curl -X POST <fn-url> -H "x-cron-secret: $CRON_SECRET"
 ```

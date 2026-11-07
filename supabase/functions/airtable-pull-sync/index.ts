@@ -3,12 +3,13 @@
 // their Supabase target tables using the service-role client. Canonical
 // Airtable -> Supabase sync (frontend reads these Supabase tables).
 //
-// Env: AIRTABLE_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET (optional)
-// Auth: verify_jwt FALSE; absent/empty x-cron-secret allowed (internal pg_cron),
-// a provided non-empty header must match CRON_SECRET when set.
+// Env: AIRTABLE_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET
+// Auth: verify_jwt FALSE; requires the service-role bearer or an x-cron-secret
+// header matching CRON_SECRET (fails closed; see _shared/security.ts).
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCronOrService, withCors } from "../_shared/security.ts";
 
 const AIRTABLE_BASE_ID = "appu9fRT4qFBCf8wL";
 
@@ -123,7 +124,6 @@ const MAPPINGS: Mapping[] = [
 ];
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
@@ -172,14 +172,11 @@ function transformRecord(rec: AirtableRecord, mapping: Mapping): Record<string, 
   return row;
 }
 
-serve(async (req: Request) => {
+serve(withCors(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const cronSecret = Deno.env.get("CRON_SECRET");
-  const provided = req.headers.get("x-cron-secret");
-  if (cronSecret && provided && provided !== cronSecret) {
-    return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  }
+  const auth = requireCronOrService(req);
+  if (auth !== true) return auth;
 
   const apiKey = Deno.env.get("AIRTABLE_API_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -213,4 +210,4 @@ serve(async (req: Request) => {
   }
 
   return new Response(JSON.stringify({ ok, perTable }), { status: ok ? 200 : 207, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-});
+}));

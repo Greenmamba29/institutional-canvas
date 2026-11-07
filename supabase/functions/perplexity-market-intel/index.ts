@@ -7,13 +7,13 @@
 // slug resolves; it performs no work.
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { withCors } from "../_shared/security.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve((req) => {
+serve(withCors((req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   return new Response(
     JSON.stringify({
@@ -23,4 +23,4 @@ serve((req) => {
     }),
     { status: 410, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
-});
+}));

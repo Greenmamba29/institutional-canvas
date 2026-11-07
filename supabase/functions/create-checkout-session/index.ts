@@ -20,9 +20,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
+import { withCors } from '../_shared/security.ts';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -40,7 +40,7 @@ interface CheckoutRequest {
   billing?: 'monthly' | 'annual';
 }
 
-serve(async (req) => {
+serve(withCors(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
@@ -202,4 +202,4 @@ serve(async (req) => {
     const msg = err instanceof Error ? err.message : 'Failed to create checkout session';
     return json({ error: msg }, 500);
   }
-});
+}));

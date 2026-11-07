@@ -1,13 +1,12 @@
  import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { hmacSha256Hex, requireSharedSecret, timingSafeEqual, withCors } from '../_shared/security.ts';
  
- const AIRTABLE_WEBHOOK_SECRET = Deno.env.get('AIRTABLE_WEBHOOK_SECRET');
  const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
  
  const corsHeaders = {
-   'Access-Control-Allow-Origin': '*',
-   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-airtable-signature',
+   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-airtable-signature, x-webhook-token',
  };
  
  // Map Airtable table names to Supabase tables
@@ -129,34 +128,6 @@
    return transformed;
  }
  
- async function verifySignature(body: string, signature: string | null): Promise<boolean> {
-   if (!AIRTABLE_WEBHOOK_SECRET || !signature) {
-     console.warn('Webhook signature verification skipped: missing secret or signature');
-     return true; // Allow if not configured (development mode)
-   }
- 
-   try {
-     const encoder = new TextEncoder();
-     const key = await crypto.subtle.importKey(
-       'raw',
-       encoder.encode(AIRTABLE_WEBHOOK_SECRET),
-       { name: 'HMAC', hash: 'SHA-256' },
-       false,
-       ['sign']
-     );
-     
-     const signatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(body));
-     const computedSignature = Array.from(new Uint8Array(signatureBytes))
-       .map(b => b.toString(16).padStart(2, '0'))
-       .join('');
-     
-     return computedSignature === signature;
-   } catch (error) {
-     console.error('Signature verification error:', error);
-     return false;
-   }
- }
- 
  interface AirtableWebhookPayload {
    base: { id: string };
    webhook: { id: string };
@@ -180,7 +151,7 @@
    recordId?: string;
  }
  
- serve(async (req) => {
+ serve(withCors(async (req) => {
    // Handle CORS preflight
    if (req.method === 'OPTIONS') {
      return new Response('ok', { headers: corsHeaders });
@@ -188,16 +159,17 @@
  
    try {
      const bodyText = await req.text();
-     const signature = req.headers.get('x-airtable-signature');
- 
-     // Verify webhook signature
-     const isValid = await verifySignature(bodyText, signature);
-     if (!isValid) {
-       console.error('Invalid webhook signature');
-       return new Response(
-         JSON.stringify({ error: 'Invalid signature' }),
-         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-       );
+
+     // Accept the static secret (x-webhook-token, or legacy x-airtable-signature),
+     // or an HMAC-SHA256 hex of the raw body in x-airtable-signature.
+     // Fails closed when AIRTABLE_WEBHOOK_SECRET is unset.
+     const auth = requireSharedSecret(req, 'AIRTABLE_WEBHOOK_SECRET', ['x-webhook-token', 'x-airtable-signature']);
+     if (auth !== true) {
+       const secret = Deno.env.get('AIRTABLE_WEBHOOK_SECRET') ?? '';
+       const signature = req.headers.get('x-airtable-signature') ?? '';
+       const hmacOk = secret !== '' && signature !== '' &&
+         timingSafeEqual(signature, await hmacSha256Hex(secret, bodyText));
+       if (!hmacOk) return auth;
      }
  
      const payload: AirtableWebhookPayload = JSON.parse(bodyText);
@@ -304,4 +276,4 @@
        }
      );
    }
- });
+ }));

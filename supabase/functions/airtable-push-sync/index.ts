@@ -13,11 +13,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCronOrService, withCors } from "../_shared/security.ts";
 
 const AIRTABLE_BASE_ID = Deno.env.get("AIRTABLE_BASE_ID") || "appu9fRT4qFBCf8wL";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-cron-secret",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
@@ -600,17 +600,11 @@ async function upsertBatch(
   }
 }
 
-serve(async (req: Request) => {
+serve(withCors(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const cronSecret = Deno.env.get("CRON_SECRET");
-  const provided = req.headers.get("x-cron-secret");
-  if (cronSecret && provided && provided !== cronSecret) {
-    return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  const auth = requireCronOrService(req);
+  if (auth !== true) return auth;
 
   const apiKey = Deno.env.get("AIRTABLE_API_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -698,4 +692,4 @@ serve(async (req: Request) => {
     status: ok ? 200 : 207,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-});
+}));

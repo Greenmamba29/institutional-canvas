@@ -1,12 +1,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { requireSharedSecret, withCors } from '../_shared/security.ts';
 
-const WEBHOOK_TOKEN = Deno.env.get('AIRTABLE_GRANT_WEBHOOK_SECRET');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-token',
 };
 
@@ -76,13 +75,6 @@ function transformAirtableFields(tableName: string, fields: Record<string, any>)
   return transformed;
 }
 
-function verifyToken(token: string | null): boolean {
-  // Airtable "Send webhook" action sends a static header value — simple equality check.
-  // Set x-webhook-token header in your Airtable automation to match AIRTABLE_GRANT_WEBHOOK_SECRET.
-  if (!WEBHOOK_TOKEN) return true;
-  return token === WEBHOOK_TOKEN;
-}
-
 interface AirtableWebhookPayload {
   base?: { id: string };
   webhook?: { id: string };
@@ -106,7 +98,7 @@ interface AirtableWebhookPayload {
   recordId?: string;
 }
 
-serve(async (req) => {
+serve(withCors(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -114,10 +106,9 @@ serve(async (req) => {
 
   try {
     const bodyText = await req.text();
-    const token = req.headers.get('x-webhook-token');
-    if (!verifyToken(token)) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 });
-    }
+    // Airtable "Send webhook" automations send a static header; fail closed if the secret is unset.
+    const auth = requireSharedSecret(req, 'AIRTABLE_GRANT_WEBHOOK_SECRET', ['x-webhook-token']);
+    if (auth !== true) return auth;
 
     const payload: AirtableWebhookPayload = JSON.parse(bodyText);
     console.log('Received Airtable grant webhook:', JSON.stringify(payload, null, 2));
@@ -204,4 +195,4 @@ serve(async (req) => {
       }
     );
   }
-});
+}));

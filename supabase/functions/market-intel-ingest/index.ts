@@ -4,16 +4,16 @@
 // public.price_indicators (append/time-series) and public.market_news
 // (upsert on url). Single Deno file, std http serve.
 //
-// Env: FIRECRAWL_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, optional CRON_SECRET.
-// Auth: verify_jwt FALSE. Relaxed cron gate: allow absent/empty x-cron-secret;
-// reject only a provided non-empty value that mismatches CRON_SECRET.
+// Env: FIRECRAWL_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET.
+// Auth: verify_jwt FALSE. Requires the service-role bearer or an x-cron-secret
+// header matching CRON_SECRET (fails closed; see _shared/security.ts).
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { requireCronOrService, withCors } from "../_shared/security.ts";
 
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
 
 const FC_SCRAPE = "https://api.firecrawl.dev/v2/scrape";
 const FC_SEARCH = "https://api.firecrawl.dev/v2/search";
@@ -659,16 +659,14 @@ async function ingestNewsFirecrawl(): Promise<{ rows: NewsRow[]; error?: string 
 
 // ---- Handler -------------------------------------------------------------
 
-serve(async (req: Request) => {
+serve(withCors(async (req: Request) => {
   if (req.method !== "POST" && req.method !== "GET") {
     return json({ ok: false, error: "method not allowed" }, 405);
   }
 
-  // Relaxed cron gate.
-  const provided = req.headers.get("x-cron-secret");
-  if (provided && provided.length > 0 && CRON_SECRET && provided !== CRON_SECRET) {
-    return json({ ok: false, error: "forbidden" }, 403);
-  }
+  // Service role, or x-cron-secret matching CRON_SECRET (fails closed).
+  const auth = requireCronOrService(req);
+  if (auth !== true) return auth;
 
   if (!FIRECRAWL_API_KEY) {
     return json({ ok: false, error: "missing FIRECRAWL_API_KEY" }, 500);
@@ -729,4 +727,4 @@ serve(async (req: Request) => {
   }
 
   return json(result);
-});
+}));
