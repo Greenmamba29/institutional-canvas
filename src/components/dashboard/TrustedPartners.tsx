@@ -30,7 +30,8 @@ export function TrustedPartners({ partners }: TrustedPartnersProps) {
   const toggleHold = (id: string) =>
     setHeldIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
 

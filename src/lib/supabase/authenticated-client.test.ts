@@ -47,7 +47,7 @@ describe('Authenticated Client', () => {
       
       const result = await callAuthenticatedRpc(
         mockClient,
-        'list_rfqs' as any,
+        'list_rfqs' as never,
         {}
       );
       
@@ -64,7 +64,7 @@ describe('Authenticated Client', () => {
       
       const result = await callAuthenticatedRpc(
         mockClient,
-        'list_rfqs' as any,
+        'list_rfqs' as never,
         {}
       );
       
@@ -83,7 +83,7 @@ describe('Authenticated Client', () => {
         p_description: 'Test description',
       };
       
-      await callAuthenticatedRpc(mockClient, 'create_rfq' as any, args);
+      await callAuthenticatedRpc(mockClient, 'create_rfq' as never, args);
       
       expect(mockClient.rpc).toHaveBeenCalledWith('create_rfq', args);
     });

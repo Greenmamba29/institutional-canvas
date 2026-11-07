@@ -189,7 +189,8 @@ export async function fetchPriceIndicators(
   if (!parsed.success) {
     throw new Error(`Invalid price indicator payload: ${parsed.error.message}`);
   }
-  return parsed.data;
+  // Zod validated the shape; with strictNullChecks off its inferred type marks every field optional.
+  return parsed.data as PriceIndicator[];
 }
 
 // ============================================================================

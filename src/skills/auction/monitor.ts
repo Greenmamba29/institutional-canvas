@@ -14,6 +14,7 @@ import { z } from 'zod';
 import type { Skill, SkillContext, SkillContract, SkillResult, ToolCallRecord } from '../types';
 import { getAuctionById, getAuctionBids } from '@/services/auctions.service';
 import { logSkillInvocation, hashInput } from '../audit';
+import { errorMessage } from '@/lib/errors';
 
 export const auctionMonitorInputSchema = z.object({
   auctionId: z.string().uuid('Auction ID must be a valid UUID'),
@@ -139,8 +140,8 @@ export const auctionMonitorSkill: Skill<AuctionMonitorInput, AuctionMonitorOutpu
       });
 
       return { success: true, data: result };
-    } catch (error: any) {
-      return fail('UNEXPECTED_ERROR', error?.message || 'An unexpected error occurred', true);
+    } catch (error: unknown) {
+      return fail('UNEXPECTED_ERROR', errorMessage(error), true);
     }
   },
 };

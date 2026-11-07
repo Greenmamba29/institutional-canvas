@@ -12,6 +12,7 @@
 
 import { isFeatureEnabled } from '@/config/env';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 // Agent IDs only - safe for frontend (not API keys!)
 const ELEVENLABS_BUYER_AGENT_ID = import.meta.env.VITE_ELEVENLABS_BUYER_AGENT_ID;
@@ -133,8 +134,8 @@ export async function createAgentSession(session: AgentSession): Promise<{ data:
         user_id: session.user_id,
         org_id: session.org_id,
         status: session.status || 'initializing',
-        context: session.context || {},
-        state: session.state || {},
+        context: (session.context || {}) as Json,
+        state: (session.state || {}) as Json,
       })
       .select()
       .single();
@@ -218,8 +219,8 @@ export async function logAgentMessage(message: AgentMessage): Promise<{ data: Ag
         language: message.language,
         sentiment: message.sentiment,
         intent: message.intent,
-        entities: message.entities,
-        metadata: message.metadata,
+        entities: message.entities as Json | undefined,
+        metadata: message.metadata as Json | undefined,
       });
 
     if (error) throw error;

@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AUTH_CONFIG } from '@/lib/auth/config';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { errorMessage } from '@/lib/errors';
 
 const STEPS = ['Verifying credentials...', 'Setting up session...', 'Redirecting...'];
 
@@ -40,7 +41,7 @@ export default function AuthCallback() {
 
             // Check if first-time user (no org membership)
             const { data: orgMembers } = await supabase
-              .from('org_members' as any)
+              .from('org_members')
               .select('id')
               .eq('user_id', data.session.user.id)
               .limit(1);
@@ -88,9 +89,9 @@ export default function AuthCallback() {
         });
 
         setTimeout(() => { subscription.unsubscribe(); navigate('/auth', { replace: true }); }, 5000);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Auth callback error:', err);
-        const msg = err.message || 'Authentication failed';
+        const msg = errorMessage(err, 'Authentication failed');
         // Provider-specific messages
         const friendlyMsg = msg.toLowerCase().includes('google') ? 'Google authentication failed. Please try again.'
           : msg.toLowerCase().includes('apple') ? 'Apple sign-in was cancelled or failed.'

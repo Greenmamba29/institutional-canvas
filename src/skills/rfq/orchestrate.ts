@@ -16,6 +16,7 @@ import type { Skill, SkillContext, SkillContract, SkillResult, ToolCallRecord } 
 import { createRfq } from '@/services/rfqs.service';
 import type { CreateRfqInput } from '@/lib/validation/schemas';
 import { logSkillInvocation, hashInput } from '../audit';
+import { errorMessage } from '@/lib/errors';
 
 // Input mirrors the create_rfq RPC contract (see createRfqSchema).
 export const orchestrateRfqInputSchema = z.object({
@@ -155,12 +156,12 @@ export const rfqOrchestrateSkill: Skill<OrchestrateRfqInput, OrchestrateRfqOutpu
       });
 
       return { success: true, data: result };
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorResult: SkillResult<OrchestrateRfqOutput> = {
         success: false,
         error: {
           code: 'UNEXPECTED_ERROR',
-          message: error?.message || 'An unexpected error occurred',
+          message: errorMessage(error),
           retryable: true,
         },
       };

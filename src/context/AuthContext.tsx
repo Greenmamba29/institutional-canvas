@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.auth.signOut();
       // Force full page reload to clear all React Query cache and in-memory state
       window.location.href = '/auth';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sign out error:', error);
       toast({
         title: 'Error',

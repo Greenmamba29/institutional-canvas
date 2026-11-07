@@ -5139,6 +5139,161 @@ export type Database = {
           },
         ]
       }
+      telebuy_agent_messages: {
+        Row: {
+          agent_session_id: string
+          audio_duration_ms: number | null
+          audio_url: string | null
+          confidence_score: number | null
+          content: string
+          created_at: string | null
+          entities: Json | null
+          id: string
+          intent: string | null
+          language: string | null
+          message_type: string
+          metadata: Json | null
+          response_time_ms: number | null
+          sentiment: string | null
+          speaker_role: string
+          timestamp: string | null
+        }
+        Insert: {
+          agent_session_id: string
+          audio_duration_ms?: number | null
+          audio_url?: string | null
+          confidence_score?: number | null
+          content: string
+          created_at?: string | null
+          entities?: Json | null
+          id?: string
+          intent?: string | null
+          language?: string | null
+          message_type: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          sentiment?: string | null
+          speaker_role: string
+          timestamp?: string | null
+        }
+        Update: {
+          agent_session_id?: string
+          audio_duration_ms?: number | null
+          audio_url?: string | null
+          confidence_score?: number | null
+          content?: string
+          created_at?: string | null
+          entities?: Json | null
+          id?: string
+          intent?: string | null
+          language?: string | null
+          message_type?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          sentiment?: string | null
+          speaker_role?: string
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telebuy_agent_messages_agent_session_id_fkey"
+            columns: ["agent_session_id"]
+            isOneToOne: false
+            referencedRelation: "telebuy_agent_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telebuy_agent_sessions: {
+        Row: {
+          agent_id: string
+          agent_role: Database["public"]["Enums"]["agent_role"]
+          avg_response_time_ms: number | null
+          context: Json | null
+          created_at: string | null
+          duration_seconds: number | null
+          elevenlabs_conversation_id: string | null
+          ended_at: string | null
+          id: string
+          language: Database["public"]["Enums"]["agent_language"] | null
+          language_detected: string | null
+          languages_used: string[] | null
+          message_count: number | null
+          metadata: Json | null
+          org_id: string | null
+          sentiment_score: number | null
+          started_at: string | null
+          state: Json | null
+          status: Database["public"]["Enums"]["agent_session_status"] | null
+          telebuy_session_id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          agent_role: Database["public"]["Enums"]["agent_role"]
+          avg_response_time_ms?: number | null
+          context?: Json | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          elevenlabs_conversation_id?: string | null
+          ended_at?: string | null
+          id?: string
+          language?: Database["public"]["Enums"]["agent_language"] | null
+          language_detected?: string | null
+          languages_used?: string[] | null
+          message_count?: number | null
+          metadata?: Json | null
+          org_id?: string | null
+          sentiment_score?: number | null
+          started_at?: string | null
+          state?: Json | null
+          status?: Database["public"]["Enums"]["agent_session_status"] | null
+          telebuy_session_id: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          agent_role?: Database["public"]["Enums"]["agent_role"]
+          avg_response_time_ms?: number | null
+          context?: Json | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          elevenlabs_conversation_id?: string | null
+          ended_at?: string | null
+          id?: string
+          language?: Database["public"]["Enums"]["agent_language"] | null
+          language_detected?: string | null
+          languages_used?: string[] | null
+          message_count?: number | null
+          metadata?: Json | null
+          org_id?: string | null
+          sentiment_score?: number | null
+          started_at?: string | null
+          state?: Json | null
+          status?: Database["public"]["Enums"]["agent_session_status"] | null
+          telebuy_session_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telebuy_agent_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telebuy_agent_sessions_telebuy_session_id_fkey"
+            columns: ["telebuy_session_id"]
+            isOneToOne: false
+            referencedRelation: "telebuy_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telebuy_sessions: {
         Row: {
           created_at: string | null
@@ -6869,6 +7024,7 @@ export type Database = {
         Args: { p_amount: number; p_auction_id: string; p_currency?: string }
         Returns: Json
       }
+      refresh_platform_kpis: { Args: never; Returns: undefined }
       refresh_market_kpis: { Args: never; Returns: Json }
       remove_org_member: {
         Args: { p_org_id: string; p_user_id: string }
@@ -7234,6 +7390,21 @@ export type Database = {
       withdraw_bid: { Args: { p_bid_id: string }; Returns: boolean }
     }
     Enums: {
+      agent_language:
+        | "en"
+        | "es"
+        | "pt"
+        | "zh"
+        | "zh-TW"
+        | "ja"
+        | "ko"
+        | "de"
+        | "fr"
+        | "it"
+        | "ru"
+        | "af"
+      agent_role: "buyer" | "supplier" | "neutral"
+      agent_session_status: "initializing" | "active" | "paused" | "ended" | "error"
       app_role: "admin" | "moderator" | "user"
       auction_bid_status:
         | "active"
@@ -7408,6 +7579,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agent_language: ["en", "es", "pt", "zh", "zh-TW", "ja", "ko", "de", "fr", "it", "ru", "af"],
+      agent_role: ["buyer", "supplier", "neutral"],
+      agent_session_status: ["initializing", "active", "paused", "ended", "error"],
       app_role: ["admin", "moderator", "user"],
       auction_bid_status: [
         "active",

@@ -54,7 +54,7 @@ export function useWeeklyAuctionSnapshot() {
       const { data: auctions } = await supabase
         .from('auctions')
         .select('product_type, status')
-        .in('status', OPEN_STATUSES as unknown as string[]);
+        .in('status', [...OPEN_STATUSES]);
 
       const allBids = bids ?? [];
       const thisWeek = allBids.filter(

@@ -51,6 +51,8 @@ export function useRealtimeSubscription({
       channel = supabase.channel(channelName);
 
       // Use type assertion to handle the postgres_changes subscription
+      // supabase-js overloads can't infer the postgres_changes payload from a runtime event string.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (channel as any).on(
         'postgres_changes',
         {

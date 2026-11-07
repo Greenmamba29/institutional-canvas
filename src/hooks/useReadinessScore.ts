@@ -2,15 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useHasFeature } from '@/hooks/useSubscription';
 import { useCurrentOrg } from '@/hooks/useCurrentOrg';
+import type { Database } from '@/integrations/supabase/types';
 
-export interface ReadinessScore {
-  id: string;
-  org_id: string;
-  score: number;
-  details: Record<string, unknown> | null;
-  criteria_met: Record<string, unknown> | null;
-  updated_at: string;
-}
+/** A row of public.readiness_scores, typed from the database schema. */
+export type ReadinessScore = Database['public']['Tables']['readiness_scores']['Row'];
 
 export function useReadinessScore() {
   const hasAccess = useHasFeature('READINESS_DASHBOARD');
@@ -28,7 +23,7 @@ export function useReadinessScore() {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return data as ReadinessScore | null;
+      return data;
     },
     enabled: hasAccess && !!currentOrg?.id,
     staleTime: 5 * 60 * 1000,

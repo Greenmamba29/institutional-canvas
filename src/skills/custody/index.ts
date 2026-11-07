@@ -14,7 +14,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Skill, SkillContext, SkillResult, ToolCallRecord } from '../types';
 import { logSkillInvocation, hashInput } from '../audit';
-import { addCustodyEvent } from '@/services/custody.service';
+import { addCustodyEvent, type CreateCustodyEventParams } from '@/services/custody.service';
 import {
   lbProcureCustodyContract,
   type LbProcureCustodyInput,
@@ -74,8 +74,9 @@ export const lbProcureCustodySkill: Skill<
         dealId: validInput.dealId,
         occurredAt: validInput.occurredAt,
         verifiedBy: validInput.verifiedBy,
-        documents: validInput.documents,
-        coordinates: validInput.coordinates,
+        // Zod validated these; with strictNullChecks off its inferred types mark every field optional.
+        documents: validInput.documents as CreateCustodyEventParams['documents'],
+        coordinates: validInput.coordinates as CreateCustodyEventParams['coordinates'],
         metadata: validInput.metadata,
       });
       toolCalls.push({

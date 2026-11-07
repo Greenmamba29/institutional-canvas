@@ -16,6 +16,7 @@ import {
   SubmitBidInput,
 } from './contract';
 import { logSkillInvocation, hashInput } from '../audit';
+import { errorMessage } from '@/lib/errors';
 
 // Create RFQ skill
 export const rfqCreateSkill: Skill<CreateRfqInput, CreateRfqOutput> = {
@@ -99,12 +100,12 @@ export const rfqCreateSkill: Skill<CreateRfqInput, CreateRfqOutput> = {
       });
       
       return { success: true, data: result };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: {
           code: 'UNEXPECTED_ERROR',
-          message: error.message || 'An unexpected error occurred',
+          message: errorMessage(error),
           retryable: true,
         },
       };
@@ -154,12 +155,12 @@ export const rfqListSkill: Skill<ListRfqsInput, unknown> = {
       }
       
       return { success: true, data: data || [] };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: {
           code: 'UNEXPECTED_ERROR',
-          message: error.message || 'An unexpected error occurred',
+          message: errorMessage(error),
           retryable: true,
         },
       };
@@ -226,12 +227,12 @@ export const rfqRespondSkill: Skill<SubmitBidInput, unknown> = {
           status: 'submitted',
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: {
           code: 'UNEXPECTED_ERROR',
-          message: error.message || 'An unexpected error occurred',
+          message: errorMessage(error),
           retryable: true,
         },
       };

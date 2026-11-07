@@ -8,6 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Sparkles, Shield, Zap, Globe, Loader2, KeyRound, CheckCircle2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { asErrorLike, errorMessage } from '@/lib/errors';
+import type { Session } from '@supabase/supabase-js';
 
 // Google icon SVG component
 const GoogleIcon = forwardRef<SVGSVGElement, React.SVGProps<SVGSVGElement>>((props, ref) => (
@@ -52,8 +54,9 @@ const getPasswordStrength = (pw: string): PasswordStrength => {
   return { label: 'Strong', value: 100, color: 'bg-green-500' };
 };
 
-const getAuthErrorMessage = (error: any): string => {
-  const code = error?.code || error?.message || '';
+const getAuthErrorMessage = (error: unknown): string => {
+  const { code: errCode, message } = asErrorLike(error);
+  const code = errCode || message || '';
   if (code.includes('invalid_credentials') || code.includes('Invalid login credentials')) return 'Invalid email or password. Please check your credentials or sign up for a new account.';
   if (code.includes('user_not_found') || code.includes('User not found')) return 'No account found with this email. Please sign up first.';
   if (code.includes('email_not_confirmed')) return 'Please confirm your email before signing in. Check your inbox for a confirmation link.';
@@ -61,7 +64,7 @@ const getAuthErrorMessage = (error: any): string => {
   if (code.includes('user_already_exists') || code.includes('User already registered')) return 'An account with this email already exists. Please sign in instead.';
   if (code.includes('weak_password')) return 'Password is too weak. Please use at least 6 characters with a mix of letters and numbers.';
   if (code.includes('invalid_email')) return 'Please enter a valid email address.';
-  return error?.message || 'An unexpected error occurred. Please try again.';
+  return message || 'An unexpected error occurred. Please try again.';
 };
 
 export default function Auth() {
@@ -72,7 +75,7 @@ export default function Auth() {
   const [isUpdatePasswordMode, setIsUpdatePasswordMode] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [emailTouched, setEmailTouched] = useState(false);
   const [loadingStates, setLoadingStates] = useState({ form: false, google: false, apple: false, demo: false });
   const navigate = useNavigate();
@@ -137,10 +140,10 @@ export default function Auth() {
         if (error) throw error;
         toast({ title: 'Welcome back!', description: 'You have successfully signed in.' });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Auth error:', error);
       toast({ title: isResetMode ? 'Reset failed' : isSignUp ? 'Sign up failed' : 'Sign in failed', description: getAuthErrorMessage(error), variant: 'destructive' });
-      if (!isSignUp && !isResetMode && (error?.code?.includes('invalid_credentials') || error?.message?.includes('Invalid login credentials'))) {
+      if (!isSignUp && !isResetMode && (asErrorLike(error).code?.includes('invalid_credentials') || asErrorLike(error).message?.includes('Invalid login credentials'))) {
         toast({ title: 'Need an account?', description: 'Click "Sign up" below to create a new account.', duration: 6000 });
       }
     } finally {
@@ -159,9 +162,9 @@ export default function Auth() {
       toast({ title: 'Password updated successfully!', description: 'You can now sign in with your new password.' });
       setIsUpdatePasswordMode(false); setNewPassword(''); setConfirmPassword('');
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Password update error:', error);
-      toast({ title: 'Password update failed', description: error.message || 'Please try again.', variant: 'destructive' });
+      toast({ title: 'Password update failed', description: errorMessage(error, 'Please try again.'), variant: 'destructive' });
     } finally { setLoading('form', false); }
   };
 
@@ -176,8 +179,8 @@ export default function Auth() {
         },
       });
       if (error) throw error;
-    } catch (error: any) {
-      toast({ title: `${provider === 'google' ? 'Google' : 'Apple'} sign in failed`, description: error.message || 'Please try again.', variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: `${provider === 'google' ? 'Google' : 'Apple'} sign in failed`, description: errorMessage(error, 'Please try again.'), variant: 'destructive' });
       setLoading(provider, false);
     }
   };
@@ -196,7 +199,7 @@ export default function Auth() {
           else { toast({ title: 'Demo account created', description: 'Please check email to confirm.', duration: 8000 }); }
         } else throw signInError;
       } else { toast({ title: 'Welcome back!', description: 'Signed in with demo account.' }); }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Demo login error:', error);
       toast({ title: 'Demo login failed', description: getAuthErrorMessage(error), variant: 'destructive' });
     } finally { setLoading('demo', false); }

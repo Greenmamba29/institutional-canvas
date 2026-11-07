@@ -2,25 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useHasFeature } from '@/hooks/useSubscription';
 
-export interface Grant {
-  id: string;
-  title: string;
-  funding_source: string;
-  category: string;
-  amount_min: number | null;
-  amount_max: number | null;
-  deadline: string | null;
-  status: string;
-  eligibility_criteria: Record<string, unknown> | null;
-  external_url: string | null;
-  notes: string | null;
-  airtable_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import type { Database } from '@/integrations/supabase/types';
+
+/** A row of public.grants, typed from the database schema. */
+export type Grant = Database['public']['Tables']['grants']['Row'];
 
 interface GrantFilters {
-  status?: string;
+  /** grants.application_status: open | closed | awarded */
+  application_status?: string;
   funding_source?: string;
   deadline_before?: string;
 }
@@ -31,13 +20,17 @@ export function useGrants(filters?: GrantFilters) {
   return useQuery<Grant[]>({
     queryKey: ['grants', filters],
     queryFn: async () => {
-      let query = supabase.from('grants').select('*');
-      if (filters?.status) query = query.eq('status', filters.status);
-      if (filters?.funding_source) query = query.eq('funding_source', filters.funding_source);
-      if (filters?.deadline_before) query = query.lte('deadline', filters.deadline_before);
-      const { data, error } = await query.order('deadline', { ascending: true });
+      const base = supabase
+        .from('grants')
+        .select('*')
+        .match({
+          ...(filters?.application_status ? { application_status: filters.application_status } : {}),
+          ...(filters?.funding_source ? { funding_source: filters.funding_source } : {}),
+        });
+      const filtered = filters?.deadline_before ? base.lte('deadline', filters.deadline_before) : base;
+      const { data, error } = await filtered.order('deadline', { ascending: true });
       if (error) throw error;
-      return data as Grant[];
+      return data ?? [];
     },
     enabled: hasAccess,
     staleTime: 5 * 60 * 1000,
@@ -52,7 +45,7 @@ export function useGrant(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase.from('grants').select('*').eq('id', id).single();
       if (error) throw error;
-      return data as Grant;
+      return data;
     },
     enabled: hasAccess && !!id,
     staleTime: 5 * 60 * 1000,

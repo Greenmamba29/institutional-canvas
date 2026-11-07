@@ -15,6 +15,7 @@ import {
 } from './contract';
 import { checkFeatureFlag } from '@/policy/featureFlags';
 import { logSkillInvocation, hashInput } from '../audit';
+import { errorMessage } from '@/lib/errors';
 
 // Generate demo meeting URL
 function generateDemoMeetingUrl(): string {
@@ -146,14 +147,14 @@ export const telebuyStartSkill: Skill<StartSessionInput, StartSessionOutput> = {
         success: true,
         data: result,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       const durationMs = Math.round(performance.now() - startTime);
       
       const errorResult = {
         success: false as const,
         error: {
           code: 'UNEXPECTED_ERROR',
-          message: error.message || 'An unexpected error occurred',
+          message: errorMessage(error),
           retryable: true,
         },
       };
@@ -219,12 +220,12 @@ export const telebuyListSkill: Skill<ListSessionsInput, unknown> = {
         success: true,
         data: data || [],
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: {
           code: 'UNEXPECTED_ERROR',
-          message: error.message || 'An unexpected error occurred',
+          message: errorMessage(error),
           retryable: true,
         },
       };

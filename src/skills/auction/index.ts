@@ -16,6 +16,7 @@ import {
   SettleAuctionInput,
 } from './contract';
 import { logSkillInvocation, hashInput } from '../audit';
+import { errorMessage } from '@/lib/errors';
 
 // Bid on auction skill
 export const auctionBidSkill: Skill<AuctionBidInput, AuctionBidOutput> = {
@@ -105,12 +106,12 @@ export const auctionBidSkill: Skill<AuctionBidInput, AuctionBidOutput> = {
       });
       
       return { success: true, data: result };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: {
           code: 'UNEXPECTED_ERROR',
-          message: error.message || 'An unexpected error occurred',
+          message: errorMessage(error),
           retryable: true,
         },
       };
@@ -160,12 +161,12 @@ export const auctionListSkill: Skill<ListAuctionsInput, unknown> = {
       }
       
       return { success: true, data: data || [] };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: {
           code: 'UNEXPECTED_ERROR',
-          message: error.message || 'An unexpected error occurred',
+          message: errorMessage(error),
           retryable: true,
         },
       };
@@ -223,12 +224,12 @@ export const auctionSettleSkill: Skill<SettleAuctionInput, unknown> = {
           status: 'settled',
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: {
           code: 'UNEXPECTED_ERROR',
-          message: error.message || 'An unexpected error occurred',
+          message: errorMessage(error),
           retryable: true,
         },
       };
