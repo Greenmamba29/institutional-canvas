@@ -230,13 +230,23 @@ Dates assume today is 2026-11-07. Each phase has exit criteria.
 | # | Task | Files / area | Exit criterion |
 |---|---|---|---|
 | 0.1 | ✅ Remove Make.com entirely | done (this branch) | No Make references; RPC dropped |
-| 0.2 | Add authentication to `sync-to-airtable` (service-role or signed internal caller) and `setup-airtable-auctions` (admin JWT) | `supabase/functions/*` | Requests without credentials get 401 |
-| 0.3 | Webhook/cron secrets **fail closed**; constant-time compare; fix header-name drift (`x-webhook-token` vs `x-airtable-signature`) | 3 Airtable webhooks, pull-sync, market-intel-ingest, grant-ingest, close-auctions | A missing secret rejects requests in production |
-| 0.4 | Restrict CORS to `https://lithiumbuy.com` (+ preview domains) | shared CORS helper | No `*` on authenticated functions |
-| 0.5 | **Remove unverified marketing claims** ($2.4B, 312, 47, 847+, "#1", Tesla/CATL/… logos) and replace them with live counts from `refresh_platform_kpis` or neutral copy | `src/pages/Landing.tsx`, `index.html` meta | Every number on the page traces to a query |
-| 0.6 | Make CI real: `tsc -p tsconfig.app.json`, fix the 32 errors, remove `continue-on-error`, `npm audit fix` | `.github/workflows/ci.yml` | CI fails on type, lint or test errors |
-| 0.7 | Revoke default PUBLIC EXECUTE on SECURITY DEFINER functions; grant only to `authenticated`/`service_role` as needed | new migration | Supabase security advisor clean |
-| 0.8 | Compress landing images (WebP/AVIF), and archive the 64 root `.md` files into `docs/archive/` | `src/assets`, root | Images under 300 KB each; root keeps README, CLAUDE.md, SECURITY.md |
+| 0.2 | ✅ Add authentication to `sync-to-airtable` (service-role or signed internal caller) and `setup-airtable-auctions` (admin JWT) | `supabase/functions/*` | Requests without credentials get 401 |
+| 0.3 | ✅ Webhook/cron secrets **fail closed**; constant-time compare; fix header-name drift (`x-webhook-token` vs `x-airtable-signature`) | 3 Airtable webhooks, pull-sync, market-intel-ingest, grant-ingest, close-auctions | A missing secret rejects requests in production |
+| 0.4 | ✅ Restrict CORS to `https://lithiumbuy.com` (+ preview domains) | shared CORS helper | No `*` on authenticated functions |
+| 0.5 | ✅ **Remove unverified marketing claims** ($2.4B, 312, 47, 847+, "#1", Tesla/CATL/… logos) and replace them with live counts from `refresh_platform_kpis` or neutral copy | `src/pages/Landing.tsx`, `index.html` meta | Every number on the page traces to a query |
+| 0.6 | ✅ Make CI real: `tsc -p tsconfig.app.json`, fix the 32 errors, remove `continue-on-error`, `npm audit fix` | `.github/workflows/ci.yml` | CI fails on type, lint or test errors |
+| 0.7 | ✅ Revoke default PUBLIC EXECUTE on SECURITY DEFINER functions; grant only to `authenticated`/`service_role` as needed | new migration | Supabase security advisor clean |
+| 0.8 | ✅ Compress landing images (WebP/AVIF), and archive the 64 root `.md` files into `docs/archive/` | `src/assets`, root | Images under 300 KB each; root keeps README, CLAUDE.md, SECURITY.md |
+
+**Phase 0 status (2026-11-07): code complete on branch `claude/clever-galileo-x9evw8`.** Also fixed along the way: the market tables' write policies let anonymous users insert/update prices, KPIs, news, arbitrage and briefings (dropped); grant/evidence hooks queried columns that don't exist. Remaining highs in `npm audit` (vite 5, zod 3) need major upgrades.
+
+**Rollout checklist (order matters: cron jobs and webhooks fail closed once the functions are deployed):**
+1. Set secrets: `CRON_SECRET`, `AIRTABLE_WEBHOOK_SECRET`, `AIRTABLE_GRANT_WEBHOOK_SECRET`, `AIRTABLE_COMPLIANCE_WEBHOOK_SECRET`, optional `ALLOWED_ORIGINS` (e.g. `https://*.vercel.app`).
+2. Store the same cron value in Vault: `select vault.create_secret('<CRON_SECRET>', 'cron_secret');`
+3. Apply migrations `20261107000000`, `20261107000100`, `20261107000200`.
+4. Update each Airtable automation to send `x-webhook-token: <matching secret>`.
+5. Deploy all edge functions (`supabase functions deploy`); delete the old `make-webhook` and `market-data` deployments.
+6. Smoke test: sign in and trigger an Airtable sync from the app; watch the next cron run in the `cron.job_run_details` table and the function logs for 401/503.
 
 ### Phase 1: Recycling wedge MVP (weeks 3–8)
 
