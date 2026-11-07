@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 
 const TEASER_HEADLINES = [
-  'Lithium carbonate prices stabilize amid shifting demand signals from EV sector',
-  'DOE announces $2.4B in critical mineral supply chain grants for 2026',
-  'Chilean lithium output hits record high — impact on global spot markets',
+  'Lithium carbonate and hydroxide price movements',
+  'Federal critical-minerals funding announcements',
+  'Supply updates from major producing regions',
 ];
 
 export function MarketNewsFeed() {

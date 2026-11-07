@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { STRIPE_PRODUCTS } from '@/lib/stripe/config';
+import { usePublicLandingStats, formatCompactUsd } from '@/hooks/usePublicLandingStats';
 
 // Lazy load images for performance
 const lithiumHeroImg = new URL('@/assets/landing/lithium-crystal-hero.png', import.meta.url).href;
@@ -55,6 +57,15 @@ PricingFeature.displayName = 'PricingFeature';
 export default function Landing() {
   const [scrolled, setScrolled] = useState(false);
   const { isAuthenticated, signOut, user } = useAuth();
+  const { data: stats } = usePublicLandingStats();
+
+  // Only real, non-zero figures from the database are shown; anything else is hidden.
+  const liveStats = [
+    stats?.verifiedSuppliers != null && { value: stats.verifiedSuppliers.toLocaleString('en-US'), label: 'Verified Suppliers', color: 'text-accent' },
+    stats?.activeBuyers != null && { value: stats.activeBuyers.toLocaleString('en-US'), label: 'Active Buyers', color: 'text-success' },
+    stats?.gmvYtdUsd != null && { value: formatCompactUsd(stats.gmvYtdUsd), label: 'Paid Orders YTD', color: 'text-primary' },
+  ].filter(Boolean) as { value: string; label: string; color: string }[];
+  const carbonate = stats?.carbonatePrice ?? null;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -130,7 +141,7 @@ export default function Landing() {
             {/* Badge */}
             <Badge className="mb-4 sm:mb-6 px-3 py-1.5 text-xs sm:text-sm font-medium bg-accent/10 text-accent border-accent/30">
               <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
-              #1 Lithium Marketplace
+              Lithium &amp; Battery Recycling Marketplace
             </Badge>
 
             {/* Headline */}
@@ -145,9 +156,9 @@ export default function Landing() {
 
             {/* Subheading */}
             <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8 px-2">
-              The world's largest <strong className="text-foreground">lithium marketplace</strong> with{' '}
-              <span className="text-primary font-medium">312+ verified suppliers</span>.{' '}
-              Buy lithium carbonate, hydroxide, and battery-grade lithium.
+              A <strong className="text-foreground">lithium marketplace</strong> built on{' '}
+              <span className="text-primary font-medium">verified suppliers and auditable chain of custody</span>.{' '}
+              Source lithium carbonate, hydroxide, and recycled battery materials.
             </p>
 
             {/* CTAs */}
@@ -180,35 +191,17 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Stats Row */}
-          <div className="flex items-center justify-center gap-6 sm:gap-10 lg:gap-16 mt-10 sm:mt-16 px-4">
-            <StatCard value="$2.4B+" label="Lithium Traded" color="text-primary" />
-            <div className="w-px h-10 bg-border/50" />
-            <StatCard value="312" label="Suppliers" color="text-accent" />
-            <div className="w-px h-10 bg-border/50 hidden sm:block" />
-            <div className="hidden sm:block">
-              <StatCard value="47" label="Countries" color="text-success" />
+          {/* Stats Row: live figures only */}
+          {liveStats.length > 0 && (
+            <div className="flex items-center justify-center gap-6 sm:gap-10 lg:gap-16 mt-10 sm:mt-16 px-4">
+              {liveStats.map((stat, i) => (
+                <div key={stat.label} className="flex items-center gap-6 sm:gap-10 lg:gap-16">
+                  {i > 0 && <div className="w-px h-10 bg-border/50" />}
+                  <StatCard value={stat.value} label={stat.label} color={stat.color} />
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trusted By */}
-      <section className="py-10 sm:py-16 border-y border-border/30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-center text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8 tracking-widest uppercase">
-            Trusted by industry leaders
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 lg:gap-12">
-            {['Tesla', 'CATL', 'Panasonic', 'BYD', 'Samsung SDI', 'LG Energy'].map((name) => (
-              <div 
-                key={name} 
-                className="text-base sm:text-lg lg:text-xl font-semibold text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-              >
-                {name}
-              </div>
-            ))}
-          </div>
+          )}
         </div>
       </section>
 
@@ -245,8 +238,8 @@ export default function Landing() {
                     Native video integration with real-time transcript analysis and AI-powered deal recommendations.
                   </p>
                   <div className="grid grid-cols-2 gap-3">
-                    <FeatureItem icon={CheckCircle2} title="AI Summaries" desc="Real-time transcription" />
-                    <FeatureItem icon={Lock} title="Privacy Controls" desc="End-to-end encrypted" />
+                    <FeatureItem icon={CheckCircle2} title="AI Summaries" desc="Call transcripts and notes" />
+                    <FeatureItem icon={Lock} title="Private Rooms" desc="Invite-only video sessions" />
                   </div>
                 </div>
                 <div className="lg:w-1/2">
@@ -299,14 +292,26 @@ export default function Landing() {
                 Real-time lithium carbonate and hydroxide market prices.
               </p>
               <div className="bg-muted/30 rounded-xl p-4">
-                <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-xl sm:text-2xl font-bold text-primary font-mono">$24,500</span>
-                  <span className="text-xs sm:text-sm text-muted-foreground">/MT</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-success">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  <span className="text-xs sm:text-sm font-medium">Li₂CO₃ spot price</span>
-                </div>
+                {carbonate ? (
+                  <>
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-xl sm:text-2xl font-bold text-primary font-mono">
+                        {carbonate.priceUsd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+                      </span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">/MT</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-success">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      <span className="text-xs sm:text-sm font-medium">{carbonate.productType}</span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-1">
+                      {carbonate.source ? `Source: ${carbonate.source}` : 'Latest ingested quote'}
+                      {carbonate.updatedAt ? ` · ${new Date(carbonate.updatedAt).toLocaleDateString('en-US')}` : ''}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-muted-foreground">Sign in to view live market prices.</div>
+                )}
               </div>
             </div>
 
@@ -319,21 +324,12 @@ export default function Landing() {
                 <h3 className="text-lg sm:text-xl font-bold">Global Suppliers</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Verified suppliers from Chile, Australia, China, Argentina and more.
+                Miners, refiners, converters, recyclers and traders across Asia-Pacific, the Americas, Europe and Africa.
               </p>
-              <div className="flex items-center justify-between">
-                <div className="text-center">
-                  <div className="text-xl sm:text-2xl font-bold">47</div>
-                  <div className="text-xs text-muted-foreground">Countries</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl sm:text-2xl font-bold">312</div>
-                  <div className="text-xs text-muted-foreground">Suppliers</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl sm:text-2xl font-bold">24/7</div>
-                  <div className="text-xs text-muted-foreground">Trading</div>
-                </div>
+              <div className="flex flex-wrap gap-2">
+                {['Miners', 'Refiners', 'Converters', 'Recyclers', 'Traders'].map((t) => (
+                  <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
+                ))}
               </div>
             </div>
 
@@ -375,9 +371,9 @@ export default function Landing() {
 
           <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
             {[
-              { num: 1, title: 'Ingestion Layer', desc: 'Real-time market data from 50+ sources including LME, CME, and proprietary feeds.', color: 'bg-primary/20 text-primary' },
+              { num: 1, title: 'Ingestion Layer', desc: 'Lithium price and market news ingestion from public benchmark sources, normalized to USD per metric ton.', color: 'bg-primary/20 text-primary' },
               { num: 2, title: 'Supabase Data Hub', desc: 'PostgreSQL backbone with real-time subscriptions, RLS policies, and edge functions.', color: 'bg-accent/20 text-accent' },
-              { num: 3, title: 'Reliability Layer', desc: 'Multi-region deployment with 99.99% uptime SLA and automatic failover.', color: 'bg-success/20 text-success' },
+              { num: 3, title: 'Reliability Layer', desc: 'Organization-level data isolation, role-based access, and an audit trail on every custody transfer.', color: 'bg-success/20 text-success' },
             ].map((step) => (
               <div key={step.num} className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-5 sm:p-6">
                 <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-4", step.color)}>
@@ -400,68 +396,63 @@ export default function Landing() {
               Start Buying Lithium <span className="text-primary">Today</span>
             </h2>
             <p className="text-sm sm:text-lg text-muted-foreground max-w-xl mx-auto">
-              From startup labs to Fortune 500 manufacturers
+              Start with a free trial. No credit card required to explore.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-            {/* Free */}
+            {/* Trial */}
             <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl sm:rounded-3xl p-5 sm:p-8">
-              <h3 className="text-lg sm:text-xl font-bold mb-1">Free</h3>
-              <p className="text-sm text-muted-foreground mb-4 sm:mb-6">For exploring</p>
+              <h3 className="text-lg sm:text-xl font-bold mb-1">Free Trial</h3>
+              <p className="text-sm text-muted-foreground mb-4 sm:mb-6">Full Pro access to evaluate</p>
               <div className="flex items-baseline gap-1 mb-6 sm:mb-8">
                 <span className="text-3xl sm:text-4xl font-bold">$0</span>
-                <span className="text-muted-foreground text-sm">/month</span>
+                <span className="text-muted-foreground text-sm">to start</span>
               </div>
               <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-                <PricingFeature>Basic supplier search</PricingFeature>
-                <PricingFeature>3 RFQs per month</PricingFeature>
-                <PricingFeature>Email support</PricingFeature>
+                <PricingFeature>Every Pro feature during the trial</PricingFeature>
+                <PricingFeature>Supplier search and RFQs</PricingFeature>
+                <PricingFeature>Grant tracker and eligibility scoring</PricingFeature>
               </ul>
               <Link to="/auth" className="block">
-                <Button variant="outline" className="w-full">Get Started</Button>
+                <Button variant="outline" className="w-full">Start Free Trial</Button>
               </Link>
             </div>
 
             {/* Pro - Featured */}
             <div className="relative bg-card/80 backdrop-blur-sm border-2 border-primary/50 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:-mt-4 md:mb-4">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <Badge className="bg-primary text-primary-foreground text-xs">Most Popular</Badge>
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-1">Pro</h3>
-              <p className="text-sm text-muted-foreground mb-4 sm:mb-6">For growing businesses</p>
+              <h3 className="text-lg sm:text-xl font-bold mb-1">{STRIPE_PRODUCTS.pro.name}</h3>
+              <p className="text-sm text-muted-foreground mb-4 sm:mb-6">Procurement + grant intelligence</p>
               <div className="flex items-baseline gap-1 mb-6 sm:mb-8">
-                <span className="text-3xl sm:text-4xl font-bold">$199</span>
+                <span className="text-3xl sm:text-4xl font-bold">${STRIPE_PRODUCTS.pro.price.toLocaleString('en-US')}</span>
                 <span className="text-muted-foreground text-sm">/month</span>
               </div>
               <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-                <PricingFeature>SPOT.ai Market Intelligence</PricingFeature>
-                <PricingFeature>TeleBuy AI Summaries</PricingFeature>
-                <PricingFeature>Unlimited RFQs</PricingFeature>
-                <PricingFeature>Advanced analytics</PricingFeature>
-                <PricingFeature>Priority support</PricingFeature>
+                {STRIPE_PRODUCTS.pro.features.slice(0, 6).map((f) => (
+                  <PricingFeature key={f}>{f}</PricingFeature>
+                ))}
               </ul>
               <Link to="/auth" className="block">
-                <Button className="w-full bg-primary hover:bg-primary/90">Upgrade to Pro</Button>
+                <Button className="w-full bg-primary hover:bg-primary/90">Get Pro</Button>
               </Link>
             </div>
 
             {/* Enterprise */}
             <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl sm:rounded-3xl p-5 sm:p-8">
-              <h3 className="text-lg sm:text-xl font-bold mb-1">Enterprise</h3>
-              <p className="text-sm text-muted-foreground mb-4 sm:mb-6">For large orgs</p>
+              <h3 className="text-lg sm:text-xl font-bold mb-1">{STRIPE_PRODUCTS.enterprise.name}</h3>
+              <p className="text-sm text-muted-foreground mb-4 sm:mb-6">Full suite for large organizations</p>
               <div className="flex items-baseline gap-1 mb-6 sm:mb-8">
-                <span className="text-3xl sm:text-4xl font-bold">$1,999</span>
+                <span className="text-3xl sm:text-4xl font-bold">${STRIPE_PRODUCTS.enterprise.price.toLocaleString('en-US')}</span>
                 <span className="text-muted-foreground text-sm">/month</span>
               </div>
               <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-                <PricingFeature>Full API access</PricingFeature>
-                <PricingFeature>White-label options</PricingFeature>
-                <PricingFeature>SSO / SAML integration</PricingFeature>
-                <PricingFeature>Dedicated CSM</PricingFeature>
-                <PricingFeature>Custom SLA</PricingFeature>
+                {STRIPE_PRODUCTS.enterprise.features.slice(0, 6).map((f) => (
+                  <PricingFeature key={f}>{f}</PricingFeature>
+                ))}
               </ul>
-              <Button variant="outline" className="w-full">Contact Sales</Button>
+              <a href="mailto:sales@lithiumbuy.com" className="block">
+                <Button variant="outline" className="w-full">Contact Sales</Button>
+              </a>
             </div>
           </div>
         </div>
@@ -474,7 +465,7 @@ export default function Landing() {
             Ready to Buy Lithium?
           </h2>
           <p className="text-sm sm:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-xl mx-auto">
-            Join 847+ companies on the world's #1 lithium marketplace.
+            Join buyers, suppliers and recyclers building a transparent lithium supply chain.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <Link to="/auth" className="w-full sm:w-auto">
@@ -506,7 +497,7 @@ export default function Landing() {
                 <span className="text-base sm:text-lg font-bold">LithiumBuy</span>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                The #1 marketplace to buy lithium online.
+                The marketplace for lithium and battery materials.
               </p>
             </div>
             

@@ -6,6 +6,7 @@ import {
   type PriceIndicator,
 } from "@/hooks/useMarketData";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useGMVStats } from "@/hooks/useGMVStats";
 import {
   TrendingUp,
   TrendingDown,
@@ -81,6 +82,7 @@ export default function Analytics() {
   // Locale-aware currency formatting. Prices are canonical USD; this converts
   // and renders them in the user's local currency (falls back to USD).
   const { format: formatCurrency, currency } = useCurrency();
+  const { data: gmvStats } = useGMVStats();
 
   // Real price history from the get_price_indicators RPC (with realtime).
   const lico3CnQuery = usePriceIndicators({ symbol: SYMBOL_LICO3, region: 'CN', limit });
@@ -285,26 +287,22 @@ export default function Analytics() {
         {/* KPI Row */}
         <div className="grid lg:grid-cols-3 gap-4">
           <KpiCard
-            title="Global Material Volume"
-            value="$2.4B"
-            change={8.5}
-            changeLabel="vs last month"
+            title="Paid Order Volume (YTD)"
+            value={gmvStats ? formatCurrency(gmvStats.gmvYTD) : "—"}
+            change={gmvStats?.changePercent ?? undefined}
+            changeLabel={gmvStats?.changePercent != null ? "vs same period last year" : undefined}
             icon={Globe}
             variant="primary"
           />
           <KpiCard
-            title="Active Suppliers"
-            value="89"
-            change={12}
-            changeLabel="new this quarter"
+            title="Verified Suppliers"
+            value={gmvStats ? gmvStats.suppliersVerified.toLocaleString("en-US") : "—"}
             icon={Zap}
             variant="success"
           />
           <KpiCard
-            title="Avg. Transaction Size"
-            value="$4.2M"
-            change={-2.3}
-            changeLabel="vs last month"
+            title="Active Buyers"
+            value={gmvStats ? gmvStats.buyersVerified.toLocaleString("en-US") : "—"}
             icon={BarChart3}
           />
         </div>

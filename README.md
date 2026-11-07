@@ -1,4 +1,4 @@
-# LithiumBuy - The World's #1 Lithium & Lithium Recycling Marketplace
+# LithiumBuy - Lithium & Battery Recycling Marketplace
 
 **Global Institutional Platform for Primary Lithium Procurement and Advanced Battery Recycling**
 
@@ -12,7 +12,7 @@
 
 ## 🎯 Overview
 
-LithiumBuy is the global authority in lithium supply chain management. We provide a next-generation institutional marketplace connecting buyers with primary lithium suppliers and advanced recycling facilities. Our platform facilitates the complete circular economy for battery materials, ensuring sustainable procurement for industry leaders like Tesla, Panasonic, and Rio Tinto.
+LithiumBuy is an institutional marketplace for lithium procurement and battery recycling. It connects buyers with primary lithium suppliers and recycling facilities, with verified supplier tiers, chain-of-custody tracking, compliance tools and grant intelligence.
 
 ### Key SEO Pillars
 - **Lithium Excellence**: Global marketplace for high-grade lithium carbonate and hydroxide.
@@ -52,7 +52,7 @@ LithiumBuy is the global authority in lithium supply chain management. We provid
 ## 🏗️ Tech Stack
 
 ### Frontend
-- **React 19.2.0** - Latest React with concurrent features
+- **React 18.3** - UI library
 - **TypeScript** - Type-safe development
 - **Vite** - Lightning-fast build tool
 - **TailwindCSS** - Utility-first styling
@@ -193,9 +193,9 @@ respond_to_offer(dealId, decision)  // Accept/reject deal
 ## 🏢 Multi-Tenant Architecture
 
 ### Organization Types
-- **Buyers**: Tesla, Panasonic, Rio Tinto (create RFQs, award deals, create POs)
-- **Suppliers**: Albemarle, SQM, Livent (submit bids, respond to deals)
-- **Recyclers**: Redwood Materials, Li-Cycle (manage recycling projects, bid on black mass)
+- **Buyers**: cathode, cell, ESS and OEM procurement teams (create RFQs, award deals, create POs)
+- **Suppliers**: miners, refiners and converters (submit bids, respond to deals)
+- **Recyclers**: battery recyclers and black-mass processors (manage recycling projects, bid on black mass)
 - **Admins**: Platform operators (manage all orgs)
 
 ### Data Isolation

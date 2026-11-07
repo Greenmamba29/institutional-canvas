@@ -1,7 +1,7 @@
 {
   "name": "LithiumBuy - B2B Lithium Trading",
   "short_name": "LithiumBuy",
-  "description": "The world's leading B2B marketplace for institutional lithium trading. Connect with verified suppliers, manage RFQs, and execute deals securely.",
+  "description": "B2B marketplace for institutional lithium and battery-materials trading. Connect with verified suppliers, manage RFQs, and execute deals securely.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0f1a",
