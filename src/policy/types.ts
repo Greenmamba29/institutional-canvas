@@ -24,7 +24,6 @@ export type ToolCategory =
   | 'supabase.write.rpc'        // RPC functions only
   | 'external.daily'            // Daily.co API
   | 'external.airtable'         // Airtable API
-  | 'external.make'             // Make.com API
   | 'admin_ops';                // Super admin only
 
 // Tool definition in the manifest

@@ -146,12 +146,6 @@ export const TOOL_MANIFEST: Record<string, ToolDefinition> = {
     description: 'Sync data to Airtable',
     allowedSkills: ['threepl.sync', 'admin_ops.sync_airtable'],
   },
-  'external.make.webhook': {
-    name: 'external.make.webhook',
-    category: 'external.make',
-    description: 'Trigger Make.com webhook',
-    allowedSkills: ['threepl.notify', 'admin_ops.webhook'],
-  },
 
   // ============================================
   // ADMIN-ONLY OPERATIONS

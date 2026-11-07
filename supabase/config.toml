@@ -33,13 +33,7 @@ verify_jwt = false
 [functions.telebuy-guard]
 verify_jwt = false
 
-[functions.make-webhook]
-verify_jwt = false
-
 [functions.sync-to-airtable]
-verify_jwt = false
-
-[functions.market-data]
 verify_jwt = false
 
 [functions.airtable-market-webhook]

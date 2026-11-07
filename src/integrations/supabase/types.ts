@@ -6592,7 +6592,6 @@ export type Database = {
         Returns: Database["public"]["Enums"]["onboarding_profile_type"]
       }
       grace_period_days_remaining: { Args: never; Returns: number }
-      handle_make_webhook: { Args: { payload: Json }; Returns: Json }
       has_active_subscription: { Args: never; Returns: boolean }
       has_capability: { Args: { p_capability: string }; Returns: boolean }
       has_org_role: {

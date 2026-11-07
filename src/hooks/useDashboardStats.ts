@@ -2,7 +2,7 @@
  * Dashboard Stats Hook
  * 
  * Aggregates org-level statistics from various data sources
- * Now uses real-time market data from Make.com integration
+ * Market data comes from the Supabase market tables (Firecrawl ingest + Airtable sync)
  */
 
 import { useRFQs } from './useRFQs';
