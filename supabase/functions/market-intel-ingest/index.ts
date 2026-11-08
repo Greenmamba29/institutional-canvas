@@ -4,17 +4,23 @@
 // public.price_indicators (append/time-series) and public.market_news
 // (upsert on url). Single Deno file, std http serve.
 //
-// Env: FIRECRAWL_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET.
-// Auth: verify_jwt FALSE. Requires the service-role bearer or an x-cron-secret
-// header matching CRON_SECRET (fails closed; see _shared/security.ts).
+// Env: FIRECRAWL_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET,
+//      optional USER_REFRESH_MIN_MINUTES (default 15).
+// Auth: verify_jwt FALSE. Scheduled runs: service-role bearer or x-cron-secret
+// matching CRON_SECRET (fails closed). Signed-in users may also trigger a run,
+// throttled across all users: if any run started in the last
+// USER_REFRESH_MIN_MINUTES, the request returns { skipped: true } without
+// spending Firecrawl credits. Runs are recorded in webhook_events.
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { requireCronOrService, withCors } from "../_shared/security.ts";
+import { requireCronOrService, requireUserOrService, withCors } from "../_shared/security.ts";
+import { isFresh, lastRunAt, recordRun } from "../_shared/refresh-throttle.ts";
 
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+const JOB_NAME = "market_intel_ingest";
 const FC_SCRAPE = "https://api.firecrawl.dev/v2/scrape";
 const FC_SEARCH = "https://api.firecrawl.dev/v2/search";
 
@@ -664,9 +670,13 @@ serve(withCors(async (req: Request) => {
     return json({ ok: false, error: "method not allowed" }, 405);
   }
 
-  // Service role, or x-cron-secret matching CRON_SECRET (fails closed).
-  const auth = requireCronOrService(req);
-  if (auth !== true) return auth;
+  // Scheduled caller (service role or x-cron-secret), else a signed-in user.
+  let trigger: "cron" | "user" = "cron";
+  if (requireCronOrService(req) !== true) {
+    const caller = await requireUserOrService(req);
+    if (caller instanceof Response) return caller;
+    trigger = "user";
+  }
 
   if (!FIRECRAWL_API_KEY) {
     return json({ ok: false, error: "missing FIRECRAWL_API_KEY" }, 500);
@@ -674,6 +684,15 @@ serve(withCors(async (req: Request) => {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     return json({ ok: false, error: "missing supabase env" }, 500);
   }
+
+  if (trigger === "user") {
+    const minMinutes = Number(Deno.env.get("USER_REFRESH_MIN_MINUTES") ?? "15") || 15;
+    const last = await lastRunAt(JOB_NAME);
+    if (isFresh(last, minMinutes)) {
+      return json({ ok: true, skipped: true, reason: "recently refreshed", last_run_at: last });
+    }
+  }
+  await recordRun(JOB_NAME, trigger);
 
   const now = new Date().toISOString();
   const result = {

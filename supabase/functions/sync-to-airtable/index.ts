@@ -1,6 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { requireUserOrService, withCors } from '../_shared/security.ts';
+import { jsonResponse, requireUserOrService, withCors } from '../_shared/security.ts';
+import {
+  AIRTABLE_BATCH_SIZE,
+  checkUserSyncRequest,
+  chunk,
+  fetchRowsAsUser,
+} from '../_shared/sync-policy.ts';
 
 const AIRTABLE_API_KEY = Deno.env.get('AIRTABLE_API_KEY');
 const AIRTABLE_BASE_ID = Deno.env.get('AIRTABLE_BASE_ID') || 'appu9fRT4qFBCf8wL';
@@ -396,6 +402,13 @@ function transformFields(table: string, record: Record<string, any>): Record<str
   return transformed;
 }
 
+/** Airtable field holding the Supabase row id, used to upsert instead of duplicating. */
+function mergeFieldFor(table: string): string | null {
+  if (table === 'auctions') return 'Auction_ID';
+  if (table === 'auction_bids') return 'Bid_ID';
+  return fieldTransformers[table]?.['id'] ?? null;
+}
+
 interface SyncRequest {
   table: string;
   record: Record<string, any>;
@@ -420,106 +433,106 @@ serve(withCors(async (req) => {
 
     const { table, record, action = 'create', recordId, records }: SyncRequest = await req.json();
 
-    if (!table || (!record && !records)) {
-      throw new Error('Missing required fields: table and (record or records)');
+    if (!table || (!record && !(records && records.length))) {
+      return jsonResponse({ success: false, error: 'Missing required fields: table and (record or records)' }, 400);
     }
 
     const airtableTableId = tableMapping[table];
     if (!airtableTableId) {
-      throw new Error(`Unknown table: ${table}`);
+      return jsonResponse({ success: false, error: `Unknown table: ${table}` }, 400);
     }
 
     if (!AIRTABLE_API_KEY) {
       throw new Error('AIRTABLE_API_KEY environment variable is not set');
     }
 
-    // Handle batch operations
-    if (records && records.length > 0) {
-      const batchRecords = records.map(r => ({ fields: transformFields(table, r) }));
-      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${airtableTableId}`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ records: batchRecords, typecast: true }),
-      });
+    // Decide which rows to write. Signed-in users may only mirror rows they can
+    // read under RLS, and the content is re-read from the database as them:
+    // client-supplied field values and Airtable record ids are never trusted.
+    let rows: Record<string, any>[];
+    let targetRecordId: string | undefined = recordId;
+    if (caller.kind === 'user') {
+      const decision = checkUserSyncRequest({ table, action, record, records });
+      if (!decision.ok) return jsonResponse({ success: false, error: decision.error }, decision.status);
 
+      const dbRows = await fetchRowsAsUser(table, decision.ids, caller.token);
+      if (dbRows === null) {
+        return jsonResponse({ success: false, error: 'Could not verify access to the record' }, 502);
+      }
+      if (dbRows.length !== decision.ids.length) {
+        return jsonResponse({ success: false, error: 'Record not found or not accessible' }, 403);
+      }
+      rows = dbRows;
+      targetRecordId = undefined;
+    } else {
+      rows = records && records.length > 0 ? records : [record];
+    }
+
+    const airtableBase = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${airtableTableId}`;
+    const airtableHeaders = {
+      'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+      'Content-Type': 'application/json',
+    };
+    const responses: unknown[] = [];
+    let mode: 'upsert' | 'create' | 'update' | 'delete';
+
+    const callAirtable = async (url: string, init: RequestInit) => {
+      const response = await fetch(url, init);
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Airtable batch API error (${response.status}): ${errorText}`);
+        throw new Error(`Airtable API error (${response.status}): ${errorText}`);
       }
+      responses.push(await response.json());
+    };
 
-      const data = await response.json();
-      console.log(`Batch synced ${records.length} records to ${table}`);
-      
-      return new Response(
-        JSON.stringify({
-          success: true,
-          action: 'batch_create',
-          count: records.length,
-          data,
-          message: `Successfully created ${records.length} records in Airtable table ${table}`,
-        }),
-        {
-          headers: { 'Content-Type': 'application/json' },
-          status: 200,
-        }
-      );
-    }
-
-    // Single record operations
-    const transformedRecord = transformFields(table, record);
-    const airtableRecord = { fields: transformedRecord };
-    let response: Response;
-    let url: string;
-
-    if (action === 'update' && recordId) {
-      url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${airtableTableId}/${recordId}`;
-      response = await fetch(url, {
+    if (action === 'delete') {
+      // Users are blocked from deleting by checkUserSyncRequest above.
+      if (!targetRecordId) {
+        return jsonResponse({ success: false, error: 'delete requires recordId' }, 400);
+      }
+      mode = 'delete';
+      await callAirtable(`${airtableBase}/${targetRecordId}`, { method: 'DELETE', headers: airtableHeaders });
+    } else if (action === 'update' && targetRecordId && rows.length === 1) {
+      // Server callers that already know the Airtable record id.
+      mode = 'update';
+      await callAirtable(`${airtableBase}/${targetRecordId}`, {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(airtableRecord),
-      });
-    } else if (action === 'delete' && recordId) {
-      url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${airtableTableId}/${recordId}`;
-      response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-        },
+        headers: airtableHeaders,
+        body: JSON.stringify({ fields: transformFields(table, rows[0]), typecast: true }),
       });
     } else {
-      url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${airtableTableId}`;
-      response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ...airtableRecord, typecast: true }),
-      });
+      // Create or update without an Airtable id: upsert on the Supabase id field
+      // so repeated syncs of the same row update it instead of duplicating it.
+      const fieldSets = rows.map((r) => transformFields(table, r));
+      const mergeField = mergeFieldFor(table);
+      const canUpsert = mergeField !== null && fieldSets.every((f) => f[mergeField] != null && f[mergeField] !== '');
+      mode = canUpsert ? 'upsert' : 'create';
+      for (const batch of chunk(fieldSets, AIRTABLE_BATCH_SIZE)) {
+        await callAirtable(airtableBase, {
+          method: canUpsert ? 'PATCH' : 'POST',
+          headers: airtableHeaders,
+          body: JSON.stringify({
+            records: batch.map((fields) => ({ fields })),
+            typecast: true,
+            ...(canUpsert ? { performUpsert: { fieldsToMergeOn: [mergeField] } } : {}),
+          }),
+        });
+      }
     }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Airtable API error (${response.status}): ${errorText}`);
-    }
-
-    const data = await response.json();
 
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         await supabase.from('webhook_events').insert({
-          event_type: `airtable_sync_${action}`,
+          event_type: `airtable_sync_${mode}`,
           source: 'sync-to-airtable',
           table_name: table,
-          payload: { table, record: transformedRecord, action, airtable_response: data },
+          payload: {
+            table,
+            mode,
+            count: rows.length,
+            caller: caller.kind === 'user' ? caller.user.id : 'service',
+          },
           status: 'success',
         });
       } catch (logError) {
@@ -527,22 +540,15 @@ serve(withCors(async (req) => {
       }
     }
 
-    console.log(`Successfully synced ${table} record to Airtable:`, { action, recordId: data.id });
+    console.log(`Synced ${rows.length} ${table} record(s) to Airtable via ${mode}`);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        action,
-        data,
-        message: `Successfully ${action}d record to Airtable table ${table}`,
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        status: 200,
-      }
-    );
+    return jsonResponse({
+      success: true,
+      action: mode,
+      count: rows.length,
+      data: responses.length === 1 ? responses[0] : responses,
+      message: `Successfully synced ${rows.length} record(s) to Airtable table ${table} (${mode})`,
+    });
   } catch (error: unknown) {
     console.error('Sync error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
@@ -570,7 +576,7 @@ serve(withCors(async (req) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        status: 400,
+        status: 502,
       }
     );
   }

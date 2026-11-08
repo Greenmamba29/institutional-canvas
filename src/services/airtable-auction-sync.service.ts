@@ -17,6 +17,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 type Auction = Tables<'auctions'>;
 type AuctionBid = Tables<'auction_bids'>;
 
+/** Auction record shape as stored in Airtable (used by the inbound pull). */
 export interface AirtableAuctionFields {
   Auction_ID: string;
   Title: string;
@@ -39,18 +40,6 @@ export interface AirtableAuctionFields {
   Org_ID: string;
 }
 
-export interface AirtableBidFields {
-  Bid_ID: string;
-  Auction_ID: string;
-  Bidder_ID: string | null;
-  Org_ID: string;
-  Amount: number;
-  Currency: string;
-  Status: string | null;
-  Placed_At: string | null;
-  Created_At: string;
-}
-
 export interface SyncLogEntry {
   timestamp: string;
   direction: 'outbound' | 'inbound';
@@ -65,44 +54,6 @@ export interface SyncLogEntry {
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'success';
 
 // ─── Field Mapping ───────────────────────────────────────────────────
-
-function mapAuctionToAirtable(auction: Auction): AirtableAuctionFields {
-  return {
-    Auction_ID: auction.id,
-    Title: auction.title,
-    Description: auction.description,
-    Product_Type: auction.product_type,
-    Status: auction.status,
-    Start_Time: auction.start_time ?? auction.starts_at,
-    End_Time: auction.end_time ?? auction.ends_at,
-    Reserve_Price: auction.reserve_price,
-    Starting_Bid: auction.starting_bid,
-    Current_Bid: auction.current_bid,
-    Bid_Increment: auction.bid_increment,
-    Currency: auction.currency,
-    Quantity: auction.quantity,
-    Unit: auction.unit,
-    Winner_ID: auction.winner_id,
-    Extended_Count: auction.extended_count,
-    Created_At: auction.created_at,
-    Updated_At: auction.updated_at,
-    Org_ID: auction.org_id,
-  };
-}
-
-function mapBidToAirtable(bid: AuctionBid): AirtableBidFields {
-  return {
-    Bid_ID: bid.id,
-    Auction_ID: bid.auction_id,
-    Bidder_ID: bid.bidder_id,
-    Org_ID: bid.org_id,
-    Amount: bid.amount,
-    Currency: bid.currency,
-    Status: bid.status,
-    Placed_At: bid.placed_at ?? bid.created_at,
-    Created_At: bid.created_at,
-  };
-}
 
 function mapAirtableToAuction(fields: Record<string, unknown>): Partial<Auction> {
   return {
@@ -173,8 +124,9 @@ export async function syncAuctionToAirtable(
   auction: Auction,
   action: 'create' | 'update' = 'create'
 ): Promise<boolean> {
-  const fields = mapAuctionToAirtable(auction);
-  const success = await syncToAirtableWithRetry('auctions', fields as unknown as Record<string, unknown>, action);
+  // Send the raw row: sync-to-airtable maps fields server-side (and, for
+  // signed-in users, re-reads the row under RLS before writing).
+  const success = await syncToAirtableWithRetry('auctions', auction as unknown as Record<string, unknown>, action);
 
   addLog({
     timestamp: new Date().toISOString(),
@@ -189,8 +141,7 @@ export async function syncAuctionToAirtable(
 }
 
 export async function syncBidToAirtable(bid: AuctionBid): Promise<boolean> {
-  const fields = mapBidToAirtable(bid);
-  const success = await syncToAirtableWithRetry('auction_bids', fields as unknown as Record<string, unknown>, 'create');
+  const success = await syncToAirtableWithRetry('auction_bids', bid as unknown as Record<string, unknown>, 'create');
 
   addLog({
     timestamp: new Date().toISOString(),
@@ -211,7 +162,7 @@ export async function syncBatchAuctionsToAirtable(auctions: Auction[]): Promise<
   // Batch in groups of 10 (Airtable limit)
   for (let i = 0; i < auctions.length; i += 10) {
     const batch = auctions.slice(i, i + 10);
-    const records = batch.map((a) => mapAuctionToAirtable(a));
+    const records = batch as unknown as Record<string, unknown>[];
 
     try {
       const { data, error } = await supabase.functions.invoke('sync-to-airtable', {

@@ -104,7 +104,15 @@ export const marketPulseSkill: Skill<MarketPulseInput, MarketPulseOutput> = {
       if (validInput.refresh) {
         const refreshStart = performance.now();
         try {
-          await supabase.functions.invoke('market-intel-ingest', { body: {} });
+          // functions.invoke resolves (not throws) on HTTP errors, so check both.
+          // The function throttles user refreshes server-side and answers
+          // { ok: true, skipped: true } when data was refreshed recently.
+          const { data: ingest, error: ingestError } = await supabase.functions.invoke(
+            'market-intel-ingest',
+            { body: {} },
+          );
+          if (ingestError) throw ingestError;
+          if (!ingest?.ok) throw new Error(ingest?.error || 'refresh failed');
           refreshed = true;
           toolCalls.push({
             tool: 'edge.market-intel-ingest',

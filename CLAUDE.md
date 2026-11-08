@@ -63,20 +63,22 @@ Format: `YYYYMMDDHHMMSS_description.sql` or `YYYYMMDD000000_description.sql` for
 
 All functions set `verify_jwt = false` in `supabase/config.toml` and check the
 caller inside the handler. Shared helpers live in
-`supabase/functions/_shared/security.ts` (tests: `security.test.ts`, run with
-`deno test --allow-env supabase/functions/_shared/security.test.ts`).
+`supabase/functions/_shared/` (`security.ts`, `sync-policy.ts`, `refresh-throttle.ts`).
+Tests: `deno test --allow-env supabase/functions/_shared/` and, for handlers with
+the network faked, `deno test --allow-env --allow-read --no-check --import-map=supabase/functions/_tests/import_map.json supabase/functions/_tests/`.
 
 | Function | Caller check (in handler) | Purpose |
 |----------|---------------------------|---------|
 | airtable-proxy | user JWT | Proxy Airtable reads to frontend |
 | airtable-crud | user JWT + subscription | Full CRUD with subscription gating |
 | airtable-grants | user JWT | Grant intelligence actions |
-| sync-to-airtable | user JWT or service role | Write Supabase data to Airtable |
+| sync-to-airtable | service role, or user JWT limited to rfqs/bids/deals/purchases/custody_events/telebuy_sessions/auctions/auction_bids, create/update only, rows the user can read (re-read under RLS; upserts on the Supabase id) | Write Supabase data to Airtable |
 | setup-airtable-auctions | super admin or service role | One-off Airtable schema setup |
 | airtable-market-webhook | `x-webhook-token` = `AIRTABLE_WEBHOOK_SECRET` (or HMAC in `x-airtable-signature`) | Inbound webhook from Airtable |
 | airtable-grant-webhook | `x-webhook-token` = `AIRTABLE_GRANT_WEBHOOK_SECRET` | Inbound webhook from Airtable |
 | airtable-compliance-webhook | `x-webhook-token` = `AIRTABLE_COMPLIANCE_WEBHOOK_SECRET` | Inbound webhook from Airtable |
-| close-auctions, airtable-pull-sync, airtable-push-sync, market-intel-ingest, grant-ingest | service role or `x-cron-secret` = `CRON_SECRET` | Scheduled jobs |
+| close-auctions, airtable-pull-sync, airtable-push-sync, grant-ingest | service role or `x-cron-secret` = `CRON_SECRET` | Scheduled jobs |
+| market-intel-ingest | service role / `x-cron-secret`, or user JWT throttled to one run per `USER_REFRESH_MIN_MINUTES` (default 15) across all users | Scheduled + on-demand market data |
 | stripe-webhook | Stripe signature | Stripe event processing |
 
 CORS: every function is wrapped in `withCors`, which only echoes origins on the

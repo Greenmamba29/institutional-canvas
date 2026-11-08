@@ -61,8 +61,12 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Shared security helper tests
-        run: deno test --allow-env supabase/functions/_shared/security.test.ts
+      - name: Shared helper tests (security, sync policy, refresh throttle)
+        run: deno test --allow-env supabase/functions/_shared/
+
+      # Handler tests: remote imports are mapped to local stubs, network is faked.
+      - name: Edge function handler tests
+        run: deno test --allow-env --allow-read --no-check --import-map=supabase/functions/_tests/import_map.json supabase/functions/_tests/
 
       # Catches syntax errors and undefined identifiers without fetching remote imports.
       - name: Lint edge functions

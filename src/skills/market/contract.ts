@@ -16,8 +16,9 @@ export const marketPulseInputSchema = z.object({
   /** Max number of indicator observations to consider. */
   limit: z.number().int().min(1).max(100).default(20),
   /**
-   * When true, best-effort trigger of the perplexity market-intel refresh
-   * before reading. Never blocks the result.
+   * When true, best-effort trigger of the market-intel-ingest refresh before
+   * reading. Throttled server-side (one run per 15 min across all users).
+   * Never blocks the result.
    */
   refresh: z.boolean().default(false),
 });
