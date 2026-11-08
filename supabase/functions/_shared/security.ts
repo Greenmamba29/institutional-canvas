@@ -217,6 +217,51 @@ export function requireSharedSecret(req: Request, secretEnv: string, headerNames
   return unauthorized('Invalid webhook token');
 }
 
+/** Headers Airtable automations may use to send a static webhook secret. */
+export const WEBHOOK_SECRET_HEADERS = ['x-webhook-token', 'x-webhook-secret'];
+
+/**
+ * Parse a JSON webhook body and remove the `_secret` field (Airtable "Run a
+ * script" automations send the shared secret there), so it is never logged or
+ * stored. Returns null when the body is not a JSON object.
+ */
+export function parseWebhookBody(bodyText: string): { body: Record<string, unknown>; bodySecret: string | null } | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(bodyText);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
+  const body = parsed as Record<string, unknown>;
+  const raw = body._secret;
+  delete body._secret;
+  return { body, bodySecret: typeof raw === 'string' ? raw : null };
+}
+
+/**
+ * Verify an inbound webhook's shared secret, sent either in a header
+ * (x-webhook-token / x-webhook-secret, plus `extraHeaders`) or as `_secret` in
+ * the JSON body. Fails closed when `secretEnv` is unset. On success returns
+ * the parsed body with `_secret` removed.
+ */
+export function verifyWebhookSecret(
+  req: Request,
+  bodyText: string,
+  secretEnv: string,
+  extraHeaders: string[] = [],
+): { ok: true; body: Record<string, unknown> } | { ok: false; response: Response; parsed: ReturnType<typeof parseWebhookBody> } {
+  const parsed = parseWebhookBody(bodyText);
+  const expected = Deno.env.get(secretEnv) ?? '';
+  if (!expected) return { ok: false, response: notConfigured(secretEnv), parsed };
+  const candidates = [...WEBHOOK_SECRET_HEADERS, ...extraHeaders].map((h) => req.headers.get(h));
+  candidates.push(parsed?.bodySecret ?? null);
+  const matched = candidates.some((c) => typeof c === 'string' && c !== '' && timingSafeEqual(c, expected));
+  if (!matched) return { ok: false, response: unauthorized('Invalid webhook token'), parsed };
+  if (!parsed) return { ok: false, response: jsonResponse({ error: 'Body must be a JSON object' }, 400), parsed };
+  return { ok: true, body: parsed.body };
+}
+
 /** Hex HMAC-SHA256 of `body` with `secret`. */
 export async function hmacSha256Hex(secret: string, body: string): Promise<string> {
   const key = await crypto.subtle.importKey(

@@ -74,9 +74,9 @@ the network faked, `deno test --allow-env --allow-read --no-check --import-map=s
 | airtable-grants | user JWT | Grant intelligence actions |
 | sync-to-airtable | service role, or user JWT limited to rfqs/bids/deals/purchases/custody_events/telebuy_sessions/auctions/auction_bids, create/update only, rows the user can read (re-read under RLS; upserts on the Supabase id) | Write Supabase data to Airtable |
 | setup-airtable-auctions | super admin or service role | One-off Airtable schema setup |
-| airtable-market-webhook | `x-webhook-token` = `AIRTABLE_WEBHOOK_SECRET` (or HMAC in `x-airtable-signature`) | Inbound webhook from Airtable |
-| airtable-grant-webhook | `x-webhook-token` = `AIRTABLE_GRANT_WEBHOOK_SECRET` | Inbound webhook from Airtable |
-| airtable-compliance-webhook | `x-webhook-token` = `AIRTABLE_COMPLIANCE_WEBHOOK_SECRET` | Inbound webhook from Airtable |
+| airtable-market-webhook | `AIRTABLE_WEBHOOK_SECRET` in `x-webhook-token` / `x-webhook-secret` header or `_secret` body field (or HMAC in `x-airtable-signature`) | Inbound webhook from Airtable |
+| airtable-grant-webhook | `AIRTABLE_GRANT_WEBHOOK_SECRET` in `x-webhook-token` / `x-webhook-secret` header or `_secret` body field | Inbound webhook from Airtable |
+| airtable-compliance-webhook | `AIRTABLE_COMPLIANCE_WEBHOOK_SECRET` in `x-webhook-token` / `x-webhook-secret` header or `_secret` body field | Inbound webhook from Airtable |
 | close-auctions, airtable-pull-sync, airtable-push-sync, grant-ingest | service role or `x-cron-secret` = `CRON_SECRET` | Scheduled jobs |
 | market-intel-ingest | service role / `x-cron-secret`, or user JWT throttled to one run per `USER_REFRESH_MIN_MINUTES` (default 15) across all users | Scheduled + on-demand market data |
 | stripe-webhook | Stripe signature | Stripe event processing |
@@ -138,8 +138,10 @@ Market data:      https://<project>.supabase.co/functions/v1/airtable-market-web
 1. In your Airtable base, go to Automations
 2. Create automation: Trigger = "When a record is updated"
 3. Action = "Send webhook" → POST to the appropriate URL above
-4. Headers: `x-webhook-token: <the matching webhook secret>` and `Content-Type: application/json`
-   (market: `AIRTABLE_WEBHOOK_SECRET`, grant: `AIRTABLE_GRANT_WEBHOOK_SECRET`, compliance: `AIRTABLE_COMPLIANCE_WEBHOOK_SECRET`)
+4. Send the matching secret (market: `AIRTABLE_WEBHOOK_SECRET`, grant: `AIRTABLE_GRANT_WEBHOOK_SECRET`,
+   compliance: `AIRTABLE_COMPLIANCE_WEBHOOK_SECRET`) either as a header (`x-webhook-token` or
+   `x-webhook-secret`) or, from a "Run a script" action, as a `_secret` field in the JSON body.
+   The function strips `_secret` before logging or storing the payload. Plus `Content-Type: application/json`.
 5. Body format: `{ "table": "<TableName>", "action": "update", "record": <fields>, "recordId": "<id>" }`
 
 ### Cron Jobs

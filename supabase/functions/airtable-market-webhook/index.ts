@@ -1,12 +1,12 @@
  import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { hmacSha256Hex, requireSharedSecret, timingSafeEqual, withCors } from '../_shared/security.ts';
+import { hmacSha256Hex, timingSafeEqual, verifyWebhookSecret, withCors } from '../_shared/security.ts';
  
  const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
  
  const corsHeaders = {
-   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-airtable-signature, x-webhook-token',
+   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-airtable-signature, x-webhook-token, x-webhook-secret',
  };
  
  // Map Airtable table names to Supabase tables
@@ -160,19 +160,24 @@ import { hmacSha256Hex, requireSharedSecret, timingSafeEqual, withCors } from '.
    try {
      const bodyText = await req.text();
 
-     // Accept the static secret (x-webhook-token, or legacy x-airtable-signature),
+     // Accept the shared secret in x-webhook-token / x-webhook-secret / legacy
+     // x-airtable-signature, or as `_secret` in the body (Airtable "Run a script"),
      // or an HMAC-SHA256 hex of the raw body in x-airtable-signature.
-     // Fails closed when AIRTABLE_WEBHOOK_SECRET is unset.
-     const auth = requireSharedSecret(req, 'AIRTABLE_WEBHOOK_SECRET', ['x-webhook-token', 'x-airtable-signature']);
-     if (auth !== true) {
+     // Fails closed when AIRTABLE_WEBHOOK_SECRET is unset. `_secret` is stripped.
+     const verified = verifyWebhookSecret(req, bodyText, 'AIRTABLE_WEBHOOK_SECRET', ['x-airtable-signature']);
+     let body: Record<string, unknown>;
+     if (verified.ok) {
+       body = verified.body;
+     } else {
        const secret = Deno.env.get('AIRTABLE_WEBHOOK_SECRET') ?? '';
        const signature = req.headers.get('x-airtable-signature') ?? '';
-       const hmacOk = secret !== '' && signature !== '' &&
+       const hmacOk = secret !== '' && signature !== '' && verified.parsed !== null &&
          timingSafeEqual(signature, await hmacSha256Hex(secret, bodyText));
-       if (!hmacOk) return auth;
+       if (!hmacOk) return verified.response;
+       body = verified.parsed!.body;
      }
- 
-     const payload: AirtableWebhookPayload = JSON.parse(bodyText);
+
+     const payload = body as unknown as AirtableWebhookPayload;
      console.log('Received Airtable webhook:', JSON.stringify(payload, null, 2));
  
      if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {

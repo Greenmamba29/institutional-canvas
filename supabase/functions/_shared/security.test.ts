@@ -7,6 +7,7 @@ import {
   requireSharedSecret,
   requireUserOrService,
   timingSafeEqual,
+  verifyWebhookSecret,
   withCors,
 } from './security.ts';
 
@@ -121,4 +122,22 @@ Deno.test('hmacSha256Hex matches a known vector', async () => {
     await hmacSha256Hex('Jefe', 'what do ya want for nothing?'),
     '5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843',
   );
+});
+
+Deno.test('verifyWebhookSecret: headers, body _secret (stripped), fail closed', () => {
+  resetEnv();
+  const mk = (body: unknown, headers: Record<string, string> = {}) =>
+    [new Request('https://fn.test/', { method: 'POST', headers }), JSON.stringify(body)] as const;
+  const unset = verifyWebhookSecret(...mk({ _secret: 'x' }), 'TEST_WEBHOOK_SECRET');
+  assert(!unset.ok && unset.response.status === 503);
+  Deno.env.set('TEST_WEBHOOK_SECRET', 'tok');
+  const viaBody = verifyWebhookSecret(...mk({ _secret: 'tok', table: 't' }), 'TEST_WEBHOOK_SECRET');
+  assert(viaBody.ok); assertEquals(viaBody.body, { table: 't' });
+  assert(verifyWebhookSecret(...mk({ a: 1 }, { 'x-webhook-secret': 'tok' }), 'TEST_WEBHOOK_SECRET').ok);
+  assert(verifyWebhookSecret(...mk({ a: 1 }, { 'x-webhook-token': 'tok' }), 'TEST_WEBHOOK_SECRET').ok);
+  assert(verifyWebhookSecret(...mk({ a: 1 }, { 'x-extra': 'tok' }), 'TEST_WEBHOOK_SECRET', ['x-extra']).ok);
+  const wrong = verifyWebhookSecret(...mk({ _secret: 'nope' }), 'TEST_WEBHOOK_SECRET');
+  assert(!wrong.ok && wrong.response.status === 401);
+  const notJson = verifyWebhookSecret(new Request('https://fn.test/', { method: 'POST', headers: { 'x-webhook-token': 'tok' } }), 'not json', 'TEST_WEBHOOK_SECRET');
+  assert(!notJson.ok && notJson.response.status === 400);
 });

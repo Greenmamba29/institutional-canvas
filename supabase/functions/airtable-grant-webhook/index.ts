@@ -1,12 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { requireSharedSecret, withCors } from '../_shared/security.ts';
+import { verifyWebhookSecret, withCors } from '../_shared/security.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
 const corsHeaders = {
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-token, x-webhook-secret',
 };
 
 // Map Airtable table names to Supabase tables
@@ -107,10 +107,12 @@ serve(withCors(async (req) => {
   try {
     const bodyText = await req.text();
     // Airtable "Send webhook" automations send a static header; fail closed if the secret is unset.
-    const auth = requireSharedSecret(req, 'AIRTABLE_GRANT_WEBHOOK_SECRET', ['x-webhook-token']);
-    if (auth !== true) return auth;
+    // Secret in x-webhook-token / x-webhook-secret header or `_secret` body field
+    // (Airtable "Run a script"); `_secret` is stripped before logging/storage.
+    const verified = verifyWebhookSecret(req, bodyText, 'AIRTABLE_GRANT_WEBHOOK_SECRET');
+    if (!verified.ok) return verified.response;
 
-    const payload: AirtableWebhookPayload = JSON.parse(bodyText);
+    const payload = verified.body as unknown as AirtableWebhookPayload;
     console.log('Received Airtable grant webhook:', JSON.stringify(payload, null, 2));
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
