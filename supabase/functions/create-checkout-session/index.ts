@@ -21,6 +21,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { withCors } from '../_shared/security.ts';
+import { trialDays } from '../_shared/billing.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -99,7 +100,7 @@ serve(withCors(async (req) => {
     // ── Get or create Stripe customer (idempotent) ────────────────────────────
     const { data: org } = await supabase
       .from('organizations')
-      .select('stripe_customer_id, name, email')
+      .select('stripe_customer_id, name, email, trial_started_at')
       .eq('id', organizationId)
       .single();
 
@@ -154,10 +155,22 @@ serve(withCors(async (req) => {
       return json({ checkoutUrl: portalSession.url, sessionId: null, mode: 'portal' });
     }
 
+    // ── Trial eligibility: card always required ───────────────────────────────
+    // One trial per organization, only if it has never had a subscription and
+    // never used the old card-less trial. The card is collected up front either
+    // way; Stripe charges it when the trial ends.
+    const { count: priorSubs } = await supabase
+      .from('subscriptions')
+      .select('id', { count: 'exact', head: true })
+      .eq('org_id', organizationId);
+    const trialPeriodDays = trialDays();
+    const offerTrial = trialPeriodDays > 0 && (priorSubs ?? 0) === 0 && !org?.trial_started_at;
+
     // ── Create Checkout session ───────────────────────────────────────────────
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
+      payment_method_collection: 'always',
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
 
@@ -175,6 +188,7 @@ serve(withCors(async (req) => {
           organization_id: organizationId,
           user_id: user.id,
         },
+        ...(offerTrial ? { trial_period_days: trialPeriodDays } : {}),
       },
 
       // Tax collection (Stripe Tax must be configured in dashboard)
@@ -190,7 +204,9 @@ serve(withCors(async (req) => {
       // Show the plan name in Checkout
       custom_text: {
         submit: {
-          message: `You're subscribing to LithiumBuy ${billing === 'annual' ? 'annual' : 'monthly'} — billed immediately.`,
+          message: offerTrial
+            ? `Your ${trialPeriodDays}-day LithiumBuy trial starts now. Your card is charged for the ${billing === 'annual' ? 'annual' : 'monthly'} plan when the trial ends unless you cancel before then.`
+            : `You're subscribing to LithiumBuy ${billing === 'annual' ? 'annual' : 'monthly'} — billed immediately.`,
         },
       },
     });

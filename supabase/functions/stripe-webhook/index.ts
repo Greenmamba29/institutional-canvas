@@ -20,6 +20,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { withCors } from '../_shared/security.ts';
+import { resolveTierFromConfig } from '../_shared/billing.ts';
 
 const GRACE_PERIOD_DAYS = 7;         // past_due → access revoked after this many days
 const DOWNGRADE_WINDOW_DAYS = 30;    // cancelled → evidence vault deletion after this many days
@@ -303,6 +304,7 @@ async function handleSubscriptionUpdated(
 
   switch (sub.status) {
     case 'active':
+    case 'trialing': // trial started in Checkout with a card on file
       status = 'active';
       break;
     case 'past_due':
@@ -429,11 +431,14 @@ async function handleSubscriptionDeleted(
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
+// Real Stripe price IDs look like "price_1Qx..." and never contain the plan
+// name, so the tier must come from the configured IDs. (Matching on the word
+// "enterprise" recorded every Enterprise purchase as Pro.)
 function resolveTier(priceId: string): 'pro' | 'enterprise' {
-  if (priceId.toLowerCase().includes('enterprise') || priceId.toLowerCase().includes('ent_')) {
-    return 'enterprise';
-  }
-  return 'pro';
+  return resolveTierFromConfig(priceId, {
+    enterprise: [Deno.env.get('STRIPE_ENTERPRISE_PRICE_ID'), Deno.env.get('STRIPE_ENTERPRISE_ANNUAL_PRICE_ID')],
+    pro: [Deno.env.get('STRIPE_PRO_PRICE_ID'), Deno.env.get('STRIPE_PRO_ANNUAL_PRICE_ID')],
+  });
 }
 
 interface SubscriptionUpsert {

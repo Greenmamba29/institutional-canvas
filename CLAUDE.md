@@ -50,7 +50,18 @@ supabase secrets set AIRTABLE_GRANT_WEBHOOK_SECRET=$(openssl rand -hex 32)
 supabase secrets set AIRTABLE_COMPLIANCE_WEBHOOK_SECRET=$(openssl rand -hex 32)
 supabase secrets set CRON_SECRET=<value>          # also store in Vault, see Cron Jobs
 supabase secrets set ALLOWED_ORIGINS=https://*.vercel.app   # optional extra CORS origins
+# Stripe price IDs (same values as the VITE_STRIPE_*_PRICE_ID frontend vars). The
+# webhook maps purchases to Pro/Enterprise by these IDs; without them every
+# purchase is recorded as Pro.
+supabase secrets set STRIPE_PRO_PRICE_ID=price_xxx STRIPE_PRO_ANNUAL_PRICE_ID=price_xxx
+supabase secrets set STRIPE_ENTERPRISE_PRICE_ID=price_xxx STRIPE_ENTERPRISE_ANNUAL_PRICE_ID=price_xxx
+supabase secrets set STRIPE_TRIAL_DAYS=3   # optional; 0 disables the trial
 ```
+
+**A card is always required.** There is no card-less trial: new organizations get
+access only through Stripe Checkout, which always collects a card and grants one
+`STRIPE_TRIAL_DAYS` trial per organization (never to orgs that had a subscription
+or used the old card-less trial). Stripe's `trialing` status counts as active.
 
 All webhook and cron secrets **fail closed**: if a secret is unset, the
 function rejects every request (503) instead of letting it through.

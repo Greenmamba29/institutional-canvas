@@ -130,11 +130,12 @@ function SubscriptionRequired() {
           <div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
             <ShieldOff className="h-8 w-8 text-destructive" />
           </div>
-          <h1 className="text-3xl font-bold">Your trial has ended</h1>
+          <h1 className="text-3xl font-bold">Choose a plan to continue</h1>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Your free trial is over. Choose a plan below to keep your full access to
-            procurement, supplier verification, and grant readiness tools — all your
-            data is preserved and resumes the moment you upgrade.
+            Procurement, supplier verification and grant readiness tools need an active
+            plan. New organizations start with a 3-day trial: a card is required, and
+            you are only charged if you keep your plan after the trial. Any data you
+            already have is preserved.
           </p>
         </div>
 

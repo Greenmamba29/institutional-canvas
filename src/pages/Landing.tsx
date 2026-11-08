@@ -393,26 +393,27 @@ export default function Landing() {
               Start Buying Lithium <span className="text-primary">Today</span>
             </h2>
             <p className="text-sm sm:text-lg text-muted-foreground max-w-xl mx-auto">
-              Start with a free trial. No credit card required to explore.
+              Start with a 3-day trial. Card required; cancel before it ends and you are not charged.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {/* Trial */}
             <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl sm:rounded-3xl p-5 sm:p-8">
-              <h3 className="text-lg sm:text-xl font-bold mb-1">Free Trial</h3>
+              <h3 className="text-lg sm:text-xl font-bold mb-1">3-Day Trial</h3>
               <p className="text-sm text-muted-foreground mb-4 sm:mb-6">Full Pro access to evaluate</p>
               <div className="flex items-baseline gap-1 mb-6 sm:mb-8">
                 <span className="text-3xl sm:text-4xl font-bold">$0</span>
-                <span className="text-muted-foreground text-sm">to start</span>
+                <span className="text-muted-foreground text-sm">today, card required</span>
               </div>
               <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
                 <PricingFeature>Every Pro feature during the trial</PricingFeature>
+                <PricingFeature>Charged only if you keep your plan</PricingFeature>
                 <PricingFeature>Supplier search and RFQs</PricingFeature>
                 <PricingFeature>Grant tracker and eligibility scoring</PricingFeature>
               </ul>
               <Link to="/auth" className="block">
-                <Button variant="outline" className="w-full">Start Free Trial</Button>
+                <Button variant="outline" className="w-full">Start 3-Day Trial</Button>
               </Link>
             </div>
 

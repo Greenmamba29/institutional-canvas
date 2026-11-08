@@ -76,7 +76,7 @@ export default function Billing() {
                 {isTrial && `Full Pro access — ${trialDaysLeft} day${trialDaysLeft !== 1 ? 's' : ''} left. Choose a plan below to continue after your trial.`}
                 {!isTrial && paidTier === 'pro' && 'Full procurement & grant intelligence'}
                 {!isTrial && paidTier === 'enterprise' && 'Complete platform access including partner matching & TeleBuy'}
-                {!isTrial && !paidTier && 'Your trial has ended — select a plan below to restore full access'}
+                {!isTrial && !paidTier && 'No active plan. Choose one below; new organizations start with a 3-day trial (card required).'}
               </p>
             </div>
             {isTrial ? (
